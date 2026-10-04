@@ -1,6 +1,6 @@
 # Stufe 5: Erweiterte Messung (Handsonde mit Ortung, Sonden-Array, Phase)
 
-Stand: 2026-10-04 · Status: Idee, konserviert · Voraussetzung: Stufe 4
+Stand: 2026-10-04 · Status: 5.4 Quellen-Anpassung umgesetzt, sonst Idee · Voraussetzung: Stufe 4
 
 ## 5.1 Handsonde mit optischer Ortung („Feld malen“)
 
@@ -47,6 +47,28 @@ rekonstruierbar und das Fernfeld aus dem Nahfeld berechenbar.
   sich in die Simulation einspeisen: **Messung und Simulation schließen sich zum Kreis.**
 - Ohne Referenzkanal: Phasenrückgewinnung aus zwei Messhöhen (iterative Verfahren) als
   Forschungsoption.
+
+## 5.4 Quellen an die Messung anpassen (umgesetzt 2026-10-04)
+
+Ohne Phase lässt sich die Quellenrekonstruktion (5.3) in einer einfachen Form schon mit
+Beträgen machen: Die Quellen addieren sich leistungsmäßig, also ist die gemessene Leistung an
+jedem Scanpunkt eine nichtnegative Mischung der simulierten Leistungen je Quelle,
+M_i ≈ Σ_s a_s·P_si. Die Faktoren a_s ergeben sich aus nichtnegativen kleinsten Quadraten
+(Lawson-Hanson) mit relativen Gewichten, sodass jeder Punkt als relativer Fehler zählt.
+
+- Quellen, die nirgends mindestens 1 % der gemessenen Leistung ausmachen, gelten als „zu
+  schwach in diesem Frequenzbereich“ und behalten ihren Wert.
+- Ein schwacher Zug zum Modellwert (Gewicht 0,2 eines Punkts) verhindert, dass räumlich
+  überlappende Quellen (Schaltregler und seine Spule) Leistung untereinander tauschen.
+- Punkte im Rauschen des Hintergrunds bleiben außen vor.
+- „Faktoren übernehmen“ skaliert die Amplituden; „Differenz zur Simulation“ zeigt danach, was
+  das Modell nicht erklärt, etwa eine Quelle, die im Szenario fehlt.
+
+Geprüft mit dem virtuellen Prüfstand auf der Demo-Platine (Band 30–230 MHz, 706 Punkte nach
+Hintergrundabzug): Ohne Änderung liegen alle Quellen bei −0,5 bis 0 dB, die LED-Leitung ist zu
+schwach. Nach Halbieren der Amplitude des schlechten Takts im Modell meldet die Anpassung
++5,99 dB (erwartet 6,02 dB), Übernehmen setzt 3,288 V (vorher 3,3 V). Code:
+`src/scanner/fit.ts`, Reiter Messung → „Quellen anpassen“.
 
 ## Darstellung in der PCB-World
 - Live-Füllung des Volumens beim Malen, Unsicherheit als Transparenz.

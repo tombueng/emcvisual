@@ -19,6 +19,8 @@
     startScan,
     stopScan,
     showMeasurement,
+    fitToMeasurement,
+    applyFit,
   } from '../state/scanner.svelte';
 
   const pads = $derived(app.board ? app.board.pads.map((p) => `${p.ref}.${p.number}`) : []);
@@ -226,6 +228,7 @@
         <div class="row">
           <button class="btn small" class:on={scanner.shown?.index === i && scanner.shown.mode === 'measured'} onclick={() => show(i, 'measured')}>{t.scan.showMeasured}</button>
           <button class="btn small" class:on={scanner.shown?.index === i && scanner.shown.mode === 'diff'} onclick={() => show(i, 'diff')}>{t.scan.showDiff}</button>
+          <button class="btn small" class:on={scanner.fit?.index === i} onclick={() => fitToMeasurement(i)} title={t.scan.fitHint}>{t.scan.fit}</button>
           <button class="btn ghost small" onclick={() => save(i)}>{t.scan.save}</button>
           <button class="btn ghost small" onclick={() => remove(i)} aria-label={t.scan.remove}>✕</button>
         </div>
@@ -234,9 +237,37 @@
   </ul>
   <button class="btn small" onclick={load} disabled={!app.board}>{t.scan.load}</button>
   {#if scanner.shown?.mode === 'diff'}<p class="hint">{t.scan.diffHint}</p>{/if}
+  {#if scanner.fit}
+    <div class="section-title">{t.scan.fitTitle}</div>
+    <ul class="fit">
+      {#each scanner.fit.sources as f (f.id)}
+        <li style:--c={f.color}>
+          <span>{f.name}</span>
+          <span class="value">{f.db === null ? t.scan.fitNotSeen : t.scan.fitDb(f.db)}</span>
+        </li>
+      {/each}
+    </ul>
+    <p class="hint value">{t.scan.fitResidual(fmtNum(scanner.fit.residualDb, 1), scanner.fit.points)}</p>
+    <button class="btn small primary" onclick={applyFit}>{t.scan.fitApply}</button>
+    <p class="hint">{t.scan.fitApplyHint}</p>
+  {/if}
 </div>
 
 <style>
+  .fit {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .fit li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    border-left: 3px solid var(--c);
+    padding: 2px 8px;
+    margin-bottom: 3px;
+    font-size: 12px;
+  }
   .row {
     display: flex;
     gap: 6px;

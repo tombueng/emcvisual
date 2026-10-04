@@ -84,3 +84,32 @@ describe('tinySA protocol', () => {
     expect(s.dbm[2]).toBeCloseTo(-12);
   });
 });
+
+describe('fitting sources to a measurement', () => {
+  it('solves non-negative least squares', async () => {
+    const { nnls } = await import('../src/scanner/fit');
+    // exact solution has a negative part: the constrained one sets it to zero
+    const A = [[1, 0], [0, 1], [1, 1]];
+    const x = nnls(A, [2, -1, 1]);
+    expect(x[1]).toBe(0);
+    expect(x[0]).toBeCloseTo(1.5, 6);
+    expect(nnls([[2, 0], [0, 3]], [4, 9])).toEqual([2, 3].map((v) => expect.closeTo(v, 9)));
+  });
+
+  it('recovers how much louder each source is, and ignores one that is not there', async () => {
+    const { fitSources } = await import('../src/scanner/fit');
+    // three sources with different spatial patterns over 50 points
+    const P = [0, 1, 2].map((s) => Array.from({ length: 50 }, (_, i) => Math.exp(-(((i - 10 - 15 * s) / 6) ** 2)) + 1e-3));
+    const truth = [4, 0.5, 0];
+    const meas = P[0]!.map((_, i) => truth.reduce((t, a, s) => t + a * P[s]![i]!, 0) * (1 + 0.02 * Math.sin(i)));
+    const r = fitSources(P, meas, { prior: 0.1, minShare: 0.01 });
+    expect(10 * Math.log10(r.factors[0]!)).toBeCloseTo(10 * Math.log10(4), 0);
+    expect(10 * Math.log10(r.factors[1]!)).toBeCloseTo(10 * Math.log10(0.5), 0);
+    expect(r.factors[2]!).toBeLessThan(0.05);
+    expect(r.residualDb).toBeLessThan(0.2);
+    // a source far below the measured power everywhere cannot be judged and keeps factor 1
+    const faint = fitSources([P[0]!, P[0]!.map((v) => v * 1e-6)], meas.map((_, i) => 4 * P[0]![i]!));
+    expect(faint.determined).toEqual([true, false]);
+    expect(faint.factors[1]).toBe(1);
+  });
+});

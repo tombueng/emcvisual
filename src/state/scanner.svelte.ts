@@ -11,6 +11,7 @@ import { runScan } from '../scanner/runner';
 import { VirtualPositioner, VirtualReceiver } from '../scanner/virtual';
 import { OctoPrintPositioner, SerialGcodePositioner, TinySAReceiver } from '../scanner/drivers';
 import { slices } from '../scanner/measurement';
+import { fitSources } from '../scanner/fit';
 import { MEASUREMENT_KIND, type Measurement, type MeasuredPoint, type Positioner, type PrinterPoint, type Receiver } from '../scanner/types';
 import { findPad } from '../physics/currents';
 import type { ProbeKind } from '../scanner/probe';
@@ -50,6 +51,16 @@ class ScannerState {
   measurements = $state.raw<Measurement[]>([]);
   shown = $state<{ index: number; mode: 'measured' | 'diff' } | null>(null);
   residual = $state<number | null>(null);
+  /** Result of fitting the sources to a measurement (stage 5). */
+  fit = $state.raw<SourceFitResult | null>(null);
+}
+
+export interface SourceFitResult {
+  index: number;
+  /** Per enabled source: power factor in dB (null: too weak in the measurement to say). */
+  sources: { id: string; name: string; color: string; db: number | null }[];
+  residualDb: number;
+  points: number;
 }
 
 export const scanner = new ScannerState();
@@ -282,4 +293,61 @@ export function showMeasurement() {
     };
   });
   v.setMeasurementSlices(out, app.view.colormap);
+}
+
+/**
+ * Fit the enabled sources to a measurement: one power factor per source so that the simulated
+ * power sum matches the measured power at the scan points (selected frequencies; points in the
+ * background noise are left out).
+ */
+export function fitToMeasurement(index: number): SourceFitResult | null {
+  const m = scanner.measurements[index];
+  if (!m || !app.board || m.points.length === 0) return null;
+  const sel = selectionFromView();
+  const sl = slices(m, sel);
+  const inSel = (f: number) => sel.mode === 'all' || (sel.mode === 'band' ? f >= sel.f0 && f < sel.f1 : Math.abs(f - sel.f) <= Math.max(1, sel.f * 1e-6));
+  const sources = app.sources.filter((s) => s.enabled && app.models[s.id]);
+  const P = sources.map(() => [] as number[]);
+  const meas: number[] = [];
+  for (const p of m.points) {
+    const k = p.iy * m.grid.nx + p.ix;
+    const s = sl[p.layer];
+    const v = s?.values[k];
+    const r = engine.readoutAt(p.bx - engine.frame.ox, p.height, p.by - engine.frame.oy, false);
+    meas.push(s && v !== undefined && Number.isFinite(v) && !s.nearNoise[k] ? 10 ** (v / 10) : 0);
+    sources.forEach((src, si) => {
+      let pw = 0;
+      for (const l of r?.sources.find((x) => x.id === src.id)?.lines ?? []) if (inSel(l.f)) pw += 10 ** (l.db / 10);
+      P[si]!.push(pw);
+    });
+  }
+  const f = fitSources(P, meas);
+  const result: SourceFitResult = {
+    index,
+    sources: sources.map((s, i) => ({
+      id: s.id,
+      name: s.name,
+      color: s.color,
+      db: f.determined[i] && f.factors[i]! > 0 ? 10 * Math.log10(f.factors[i]!) : null,
+    })),
+    residualDb: f.residualDb,
+    points: f.points,
+  };
+  scanner.fit = result;
+  return result;
+}
+
+/** Scale the sources' amplitudes by the fitted factors (power factor → amplitude √factor). */
+export function applyFit() {
+  const fit = scanner.fit;
+  if (!fit) return;
+  for (const r of fit.sources) {
+    if (r.db === null) continue;
+    const s = app.sources.find((x) => x.id === r.id);
+    if (!s) continue;
+    s.waveform.amplitude *= 10 ** (r.db / 20);
+    engine.sourceChanged(s.id);
+  }
+  scanner.fit = null;
+  showMeasurement();
 }

@@ -110,6 +110,10 @@ test('virtual scan: measure, background, difference to the simulation', async ({
   await expect(page.getByText(/mit Hintergrund/)).toBeVisible({ timeout: 60_000 });
   await page.getByRole('button', { name: 'Differenz zur Simulation' }).click();
   await expect(page.getByText(/Rot: Messung lauter/)).toBeVisible();
+  // the virtual rig measures the model itself: every source fits within a fraction of a dB
+  await page.getByRole('button', { name: 'Quellen anpassen' }).click();
+  await expect(page.getByText('Quellen an die Messung angepasst')).toBeVisible();
+  await expect(page.getByText(/Rest nach der Anpassung/)).toBeVisible();
   expect(errors).toEqual([]);
 });
 
