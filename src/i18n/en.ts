@@ -357,7 +357,7 @@ export const en: Strings = {
     chart: (std: string) => `3 m · ${std}`,
     chartFixed: '3 m · dashed: fixed',
     inWorld: 'Inside the scene instead of an overlay (HTML-in-Canvas)',
-    inWorldHint: 'The bubbles are real HTML elements in the 3D scene: hidden by parts in front, smaller in the distance, also in VR. Experimental.',
+    inWorldHint: 'The bubbles are real HTML elements in the 3D scene: smaller in the distance, also in VR; green points are hidden by parts in front, red and yellow bubbles never. Experimental.',
     inWorldMissing: 'Inside the scene needs HTML-in-Canvas: Chrome or Edge with the origin trial or chrome://flags/#canvas-draw-element. Here the bubbles are an overlay.',
     maxHints: 'Hints',
     top: (n: number) => `first ${n}`,
@@ -371,6 +371,7 @@ export const en: Strings = {
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
     far: (m: string) => `3 m: ${m}`,
+    pointHint: 'Click to look closer',
   },
   parts: {
     export: 'Export parts data for AI',

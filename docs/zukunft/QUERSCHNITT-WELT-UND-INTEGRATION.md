@@ -31,9 +31,14 @@ Stufe und können parallel wachsen.
   geheftet und nach jedem gezeichneten Bild nachgeführt. Hinweise tragen dieselbe Nummer wie in
   der Diagnose-Rangliste und zeigen, was die Behebung im Fernfeld bringt; Quellen zeigen
   Nahfeld-Maximum und Abstand zum Grenzwert, Hotspots ihren Pegel. Blasen weichen einander
-  aus (höher, dann links); ohne Platz bleibt von einem Hinweis die nummerierte Nadel. Klick
-  setzt die Sonde dorthin oder wählt die Quelle. Schalter unter „Sprechblasen in 3D“
-  (`src/ui/Callouts.svelte`).
+  aus (höher, dann links, dann darunter). Klick öffnet die Problemansicht oder wählt die
+  Quelle. Schalter unter „Sprechblasen in 3D“ (`src/ui/Callouts.svelte`).
+  - **Nach Schweregrad (2026-10-05):** Rote und gelbe Blasen werden zuerst gelegt und
+    verschwinden nie: Ohne freien Platz werden sie kompakt (Titel, Bewertung, Fernfeld; der
+    Rest beim Darüberfahren), dann nehmen sie die am wenigsten verdeckte Stelle. Liegt ihr Ort
+    außerhalb des Bildes oder hinter der Kamera, warten sie am Rand, ein Pfeil zeigt die
+    Richtung. Grüne Befunde sind nur Punkte mit dem Text als Tooltip; Klick öffnet die
+    Problemansicht. Eine Quelle, deren Hinweise schon Blasen haben, erscheint kompakt.
 - **Sprechblasen im Raum** (umgesetzt 2026-10-05, experimentell): Mit HTML-in-Canvas (WICG,
   Origin Trial in Chrome und Edge seit Google I/O 2026, verlängert bis Chrome 160) sind die
   Blasen echte HTML-Elemente als Kinder des WebGL-Canvas. three.js (`HTMLTexture`,

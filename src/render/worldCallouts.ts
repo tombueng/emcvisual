@@ -1,8 +1,9 @@
 /**
  * Speech bubbles inside the 3D world (HTML-in-Canvas): each bubble is a real HTML element, a
  * child of the WebGL canvas, drawn by the browser into a texture (three.js HTMLTexture) on a
- * plane that faces the viewer. Unlike the overlay, the bubbles sit in the scene: parts in front
- * hide them, they get smaller with distance, and they also show in VR. three.js'
+ * plane that faces the viewer. Unlike the overlay, the bubbles sit in the scene: they get
+ * smaller with distance and also show in VR. Red and yellow bubbles are drawn over everything
+ * and never give way; green ones are small points that parts in front may hide. three.js'
  * InteractionManager keeps each element under its plane (CSS matrix3d), so clicks still reach it.
  *
  * Needs a browser with HTML-in-Canvas (Chrome/Edge origin trial since 2026, or the flag
@@ -10,7 +11,7 @@
  */
 import * as THREE from 'three';
 import { InteractionManager } from 'three/examples/jsm/interaction/InteractionManager.js';
-import type { Callout } from '../ui/calloutData';
+import { calloutPriority, pointText, type Callout } from '../ui/calloutData';
 
 /** The generation of the API that this three.js version speaks (Chrome 138–154). */
 export function htmlInCanvasSupported(): boolean {
@@ -29,6 +30,9 @@ interface Item {
   anchor: THREE.Vector3;
   signature: string;
   lift: number;
+  /** Layout order (calloutPriority); 0 and 1 are the bubbles that always stay. */
+  priority: number;
+  point: boolean;
   onclick: () => void;
 }
 
@@ -91,7 +95,7 @@ export class WorldCallouts {
     const seen = new Set<string>();
     list.forEach((c, i) => {
       seen.add(c.key);
-      const signature = JSON.stringify([c.badge, c.title, c.lines, c.accent, c.color, c.kind, c.spectrum, c.severity]);
+      const signature = JSON.stringify([c.badge, c.title, c.lines, c.accent, c.color, c.kind, c.spectrum, c.severity, c.level, c.brief]);
       let it = this.items.get(c.key);
       if (!it) {
         it = this.create(c);
@@ -99,6 +103,13 @@ export class WorldCallouts {
       }
       it.anchor.set(c.pos[0], c.pos[1], c.pos[2]);
       it.onclick = c.onclick;
+      it.priority = calloutPriority(c);
+      it.point = c.level === 'minor';
+      // red and yellow: over every part, never hidden by the board or a component
+      const always = it.priority < 2;
+      it.mesh.material.depthTest = !always;
+      it.leader.material.depthTest = !always;
+      it.mesh.renderOrder = always ? 30 : 20;
       // a little stagger, so neighbouring bubbles do not sit on one line
       it.lift = 30 * this.scale;
       if (it.signature !== signature) {
@@ -124,7 +135,7 @@ export class WorldCallouts {
         if (type === 'click') it.onclick();
       });
     this.renderer.domElement.appendChild(el);
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
     mesh.renderOrder = 20;
     mesh.visible = false;
     const leader = new THREE.Line(
@@ -133,7 +144,7 @@ export class WorldCallouts {
     );
     this.group.add(mesh, leader);
     this.interactions.add(mesh);
-    const it: Item = { el, texture: null, mesh, leader, anchor: new THREE.Vector3(), signature: '', lift: 1, onclick: c.onclick };
+    const it: Item = { el, texture: null, mesh, leader, anchor: new THREE.Vector3(), signature: '', lift: 1, priority: 2, point: false, onclick: c.onclick };
     return it;
   }
 
@@ -141,6 +152,17 @@ export class WorldCallouts {
     el.style.setProperty('--c', c.color);
     el.style.fontSize = `${11.5 * SUPERSAMPLE}px`;
     el.replaceChildren();
+    el.className = `wc wc-${c.kind}`;
+    el.removeAttribute('title');
+    if (c.level === 'minor') {
+      // green: a point with the hint's number
+      el.className = `wc wc-point wc-${c.kind}`;
+      el.title = pointText(c);
+      if (c.severity) el.style.setProperty('--s', c.severity);
+      el.textContent = c.badge ?? '';
+      this.canvas.requestPaint?.();
+      return;
+    }
     const head = document.createElement('div');
     head.className = 'wc-head';
     if (c.badge) {
@@ -154,8 +176,17 @@ export class WorldCallouts {
     title.className = 'wc-title';
     title.textContent = c.title;
     head.append(title);
+    if (c.severityLabel) {
+      const sev = document.createElement('span');
+      sev.className = 'wc-sev';
+      sev.textContent = c.severityLabel;
+      if (c.severity) sev.style.color = c.severity;
+      head.append(sev);
+    }
     el.append(head);
-    for (const l of c.lines) {
+    // a source whose hints are shown: name, rating and far field only
+    const lines = c.brief ? [] : c.lines;
+    for (const l of lines) {
       const d = document.createElement('div');
       d.className = 'wc-line';
       d.textContent = l;
@@ -167,7 +198,7 @@ export class WorldCallouts {
       a.textContent = c.accent;
       el.append(a);
     }
-    if (c.spectrum) {
+    if (c.spectrum && !c.brief) {
       const chart = document.createElement('div');
       chart.className = 'wc-chart';
       chart.innerHTML = c.spectrum; // our own SVG markup (spectrumSvg.ts), labels escaped there
@@ -187,7 +218,8 @@ export class WorldCallouts {
 
   /**
    * Face the viewer and step aside like the overlay does: above-right of the anchor on a
-   * leader, else higher, else to the left; a bubble that finds no free spot on screen hides.
+   * leader, else higher, else to the left. Red and yellow go first and stay even without a
+   * free spot (the least covered one); others without a free spot hide. Points sit on the spot.
    */
   update(camera: THREE.Camera = this.camera) {
     const q = camera.getWorldQuaternion(new THREE.Quaternion());
@@ -202,10 +234,22 @@ export class WorldCallouts {
     const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
     // XR: no screen to lay out on, keep the first choice
     const declutter = !this.renderer.xr.isPresenting;
-    for (const it of this.items.values()) {
+    type Rect = { x0: number; y0: number; x1: number; y1: number };
+    const overlap = (r: Rect) => placed.reduce((sum, o) => sum + Math.max(0, Math.min(r.x1, o.x1) - Math.max(r.x0, o.x0)) * Math.max(0, Math.min(r.y1, o.y1) - Math.max(r.y0, o.y0)), 0);
+    const order = [...this.items.values()].sort((a, b) => a.priority - b.priority);
+    for (const it of order) {
       if (!it.texture) continue;
       const g = it.mesh.geometry.parameters;
+      if (it.point) {
+        it.mesh.position.copy(it.anchor).addScaledVector(up, g.height / 2);
+        it.mesh.quaternion.copy(q);
+        it.mesh.visible = true;
+        it.leader.visible = false;
+        it.mesh.updateMatrixWorld();
+        continue;
+      }
       let chosen: { corner: THREE.Vector3; side: number } | null = null;
+      let fallback: { corner: THREE.Vector3; side: number; cover: number; r: Rect } | null = null;
       const step = 28 * this.scale;
       search: for (let k = 0; k < (declutter ? 5 : 1); k++) {
         for (const side of [1, -1]) {
@@ -221,12 +265,20 @@ export class WorldCallouts {
           const b = screen(far);
           if (!a.front || !b.front) continue;
           const r = { x0: Math.min(a.x, b.x) - 2, y0: Math.min(a.y, b.y) - 2, x1: Math.max(a.x, b.x) + 2, y1: Math.max(a.y, b.y) + 2 };
-          if (r.x0 < 0 || r.y0 < 0 || r.x1 > W || r.y1 > H) continue;
-          if (placed.some((o) => r.x0 < o.x1 && r.x1 > o.x0 && r.y0 < o.y1 && r.y1 > o.y0)) continue;
+          const cover = overlap(r) + (r.x0 < 0 || r.y0 < 0 || r.x1 > W || r.y1 > H ? 1e9 : 0);
+          if (!fallback || cover < fallback.cover) fallback = { corner, side, cover, r };
+          if (cover > 0) continue;
           placed.push(r);
           chosen = { corner, side };
           break search;
         }
+      }
+      // red and yellow never give way: the least covered spot (or the first, when out of view)
+      if (!chosen && it.priority < 2) {
+        if (fallback) {
+          placed.push(fallback.r);
+          chosen = fallback;
+        } else chosen = { corner: it.anchor.clone().addScaledVector(up, it.lift).addScaledVector(right, it.lift * 0.4), side: 1 };
       }
       it.mesh.visible = !!chosen;
       it.leader.visible = !!chosen;

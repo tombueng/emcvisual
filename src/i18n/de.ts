@@ -357,7 +357,7 @@ export const de = {
     chart: (std: string) => `3 m · ${std}`,
     chartFixed: '3 m · gestrichelt: behoben',
     inWorld: 'Im Raum statt als Einblendung (HTML-in-Canvas)',
-    inWorldHint: 'Die Blasen sind echte HTML-Elemente in der 3D-Szene: verdeckt von Bauteilen davor, kleiner in der Ferne, auch in VR. Experimentell.',
+    inWorldHint: 'Die Blasen sind echte HTML-Elemente in der 3D-Szene: kleiner in der Ferne, auch in VR; grüne Punkte verdecken Bauteile davor, rote und gelbe Blasen nie. Experimentell.',
     inWorldMissing: 'Im Raum braucht HTML-in-Canvas: Chrome oder Edge mit Origin Trial oder mit chrome://flags/#canvas-draw-element. Hier werden die Blasen eingeblendet.',
     maxHints: 'Hinweise',
     top: (n: number) => `die ersten ${n}`,
@@ -371,6 +371,7 @@ export const de = {
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
     far: (m: string) => `3 m: ${m}`,
+    pointHint: 'Klick: genauer ansehen',
   },
   parts: {
     export: 'Bauteildaten für KI exportieren',

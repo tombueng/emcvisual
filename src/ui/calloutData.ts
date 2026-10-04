@@ -1,7 +1,9 @@
 /**
  * What the speech bubbles say (shared by the overlay in Callouts.svelte and the in-world
  * bubbles in render/worldCallouts.ts): the ranked layout hints as numbered pins, the sources
- * with near-field peak and far-field margin, and optionally the hotspots.
+ * with near-field peak and far-field margin, and optionally the hotspots. Red and yellow ones
+ * (critical, check) are bubbles that always stay in view; green ones (minor) are only points
+ * until clicked.
  */
 import type { Viewer } from '../render/viewer';
 import { app } from '../state/app.svelte';
@@ -9,7 +11,7 @@ import { engine } from '../state/engine.svelte';
 import { t } from '../i18n';
 import { toWorld } from '../model/world';
 import { farMargins, gainText, rankedDiagnostics, diagnosticText, sourceName, sourceColor, sourceSeverityOf, standardShort } from '../report/texts';
-import { severityColor } from '../physics/severity';
+import { severityColor, type SeverityLevel } from '../physics/severity';
 import type { Diagnostic } from '../physics/diagnostics';
 import { limitsFor } from '../physics/standards';
 import { MAX_GAIN_DB } from '../physics/attribution';
@@ -33,7 +35,21 @@ export interface Callout {
   /** Severity colour (badge of a hint, dot of a source). */
   severity?: string;
   severityLabel?: string;
+  /** critical and check: always a bubble in view; minor: a point. */
+  level?: SeverityLevel;
+  /** The source a hint belongs to. */
+  sourceId?: string;
+  /** Start compact (title, rating, far field; the rest on hover): a source whose hints are shown. */
+  brief?: boolean;
   onclick: () => void;
+}
+
+/** Layout order: red first, then yellow, then those without a rating, green last. */
+export const calloutPriority = (c: Callout) => (c.level === 'critical' ? 0 : c.level === 'check' ? 1 : c.level === 'minor' ? 3 : 2);
+
+/** Tooltip of a point: what the bubble would say. */
+export function pointText(c: Callout): string {
+  return [`${c.badge ? `${c.badge}. ` : ''}${c.title}`, ...c.lines, ...(c.accent ? [c.accent] : []), `${c.severityLabel ?? ''}. ${t.callouts.pointHint}`].join('\n');
 }
 
 const shortText = (d: Diagnostic) => {
@@ -89,17 +105,21 @@ export function buildCallouts(viewer: Viewer): Callout[] {
           spectrum: chart(d.sourceId, sourceColor(d.sourceId), d.gain?.db),
           severity: severityColor(severity.score),
           severityLabel: t.severity[severity.level],
+          level: severity.level,
+          sourceId: d.sourceId,
           onclick: () => (app.focusKey = diagKey(d)),
         });
       });
   }
   if (c.sources) {
     const margins = new Map(farMargins().map((f) => [f.id, f]));
+    const hinted = new Set(out.filter((o) => o.kind === 'hint').map((o) => o.sourceId));
     for (const s of app.sources) {
       const m = app.models[s.id];
       if (!s.enabled || !m) continue;
       const f = margins.get(s.id);
       const peak = app.hotspots.find((h) => h.sourceId === s.id);
+      const sev = sourceSeverityOf(s.id);
       out.push({
         key: `s${s.id}`,
         kind: 'source',
@@ -109,8 +129,10 @@ export function buildCallouts(viewer: Viewer): Callout[] {
         lines: peak ? [t.callouts.peak(peak.db.toFixed(0))] : [],
         accent: f ? t.callouts.far(t.diag.margin(f.worst)) : undefined,
         spectrum: chart(s.id, s.color),
-        severity: severityColor(sourceSeverityOf(s.id).score),
-        severityLabel: t.severity[sourceSeverityOf(s.id).level],
+        severity: severityColor(sev.score),
+        severityLabel: t.severity[sev.level],
+        level: sev.level,
+        brief: hinted.has(s.id),
         onclick: () => (app.selectedId = s.id),
       });
     }

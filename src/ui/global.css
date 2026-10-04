@@ -214,6 +214,24 @@ input[type='checkbox'] {
   font-weight: 600;
   white-space: nowrap;
 }
+.wc-sev {
+  margin-left: auto;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+/* green: a point with the hint's number */
+.wc.wc-point {
+  min-width: 1.4em;
+  height: 1.4em;
+  padding: 0 0.35em;
+  border: 0.18em solid var(--c);
+  border-radius: 0.8em;
+  background: var(--s);
+  color: #0b0f14;
+  font-weight: 700;
+  line-height: 1.05em;
+  text-align: center;
+}
 .wc-line {
   color: var(--muted);
 }

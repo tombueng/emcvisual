@@ -16,11 +16,19 @@ test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
   await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('.list li')).toHaveCount(8);
 
-  // hover over the bad buck converter: the probe spectrum gets a peak line
+  // hover over the board where no bubble covers it: the probe spectrum gets a peak line
   const canvas = page.locator('.canvas canvas');
   const box = (await canvas.boundingBox())!;
-  const points: [number, number][] = [[0.3, 0.6], [0.32, 0.62], [0.35, 0.6]];
-  for (const [fx, fy] of points) await page.mouse.move(box.x + box.width * fx, box.y + box.height * fy);
+  const spot = await page.evaluate((b) => {
+    for (const [fx, fy] of [[0.3, 0.6], [0.6, 0.75], [0.7, 0.6], [0.45, 0.85], [0.8, 0.8], [0.25, 0.45]]) {
+      const x = b.x + b.width * fx!;
+      const y = b.y + b.height * fy!;
+      if (document.elementFromPoint(x, y)?.tagName === 'CANVAS') return [x, y];
+    }
+    return null;
+  }, box);
+  expect(spot).not.toBeNull();
+  for (const d of [0, 6, 12]) await page.mouse.move(spot![0]! + d, spot![1]! + d);
   await expect(page.getByText(/Höchste Linie/)).toBeVisible();
 
   // diagnostics list the built-in mistakes
@@ -323,5 +331,39 @@ test('real 3D models: KiCad library, a chosen folder, parts without a model', as
   await kicad.check();
   await expect(status).toHaveText('16 von 16 Bauteilen mit Modell (GLB-Export 11, Ordner 2, KiCad-Bibliothek 3)');
   await page.screenshot({ path: 'e2e/output/models.png' });
+  expect(errors).toEqual([]);
+});
+
+test('speech bubbles: red and yellow always stay in view, green ones are points', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?demo');
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+  const canvas = page.locator('.canvas canvas');
+  const view = (await canvas.boundingBox())!;
+  const important = page.locator('.bubble.important');
+  const n = await important.count();
+  expect(n).toBeGreaterThanOrEqual(3);
+  // green findings and sources are only points, with the text as tooltip
+  const points = page.locator('.callouts .point');
+  expect(await points.count()).toBeGreaterThanOrEqual(1);
+  await expect(points.first()).toHaveAttribute('title', /unauffällig\. Klick: genauer ansehen/);
+  await page.screenshot({ path: 'e2e/output/bubbles-overview.png' });
+
+  // zoom far into a corner: the spots leave the view, the important bubbles stay at the edge
+  await page.mouse.move(view.x + view.width * 0.92, view.y + view.height * 0.12);
+  for (let k = 0; k < 12; k++) await page.mouse.wheel(0, -400);
+  await page.waitForTimeout(400);
+  for (let i = 0; i < n; i++) {
+    const b = (await important.nth(i).boundingBox())!;
+    await expect(important.nth(i)).toBeVisible();
+    expect(b.x).toBeGreaterThanOrEqual(view.x - 1);
+    expect(b.y).toBeGreaterThanOrEqual(view.y - 1);
+    expect(b.x + b.width).toBeLessThanOrEqual(view.x + view.width + 1);
+    expect(b.y + b.height).toBeLessThanOrEqual(view.y + view.height + 1);
+  }
+  // arrows at the edge point to where they belong
+  expect(await page.locator('.callouts svg polygon').count()).toBeGreaterThanOrEqual(1);
+  await page.screenshot({ path: 'e2e/output/bubbles-zoomed.png' });
   expect(errors).toEqual([]);
 });
