@@ -216,6 +216,8 @@ export const de = {
     off: 'Ton aus',
     volume: 'Lautstärke',
     pitch: 'Tonhöhe für 25 MHz',
+    mode: 'Klang',
+    modes: { tones: 'Töne je Quelle', geiger: 'Geigerzähler' },
     hint: 'Takte klingen als Ton, Schaltregler schnarren. Laut, wo das Feld stark ist.',
   },
   scan: {

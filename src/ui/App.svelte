@@ -306,7 +306,7 @@
   // update itself runs untracked, otherwise reading app.readout inside the effect that writes
   // it re-triggers the effect over and over (that froze the UI for seconds per mouse move).
   $effect(() => {
-    void [app.readout, app.audio.volume, app.audio.pitchAt25MHz, app.audio.enabled, app.view.dbLow, app.view.dbHigh];
+    void [app.readout, app.audio.volume, app.audio.pitchAt25MHz, app.audio.enabled, app.audio.mode, app.view.dbLow, app.view.dbHigh];
     untrack(() => scheduleAudio());
   });
 
@@ -342,6 +342,7 @@
     const fwd = cam.getWorldDirection(cam.position.clone().set(0, 0, 0));
     sonifier.update(voices, {
       volume: app.audio.volume,
+      mode: app.audio.mode,
       pitchAt25MHz: app.audio.pitchAt25MHz,
       dbLow: app.view.dbLow,
       dbHigh: app.view.dbHigh,

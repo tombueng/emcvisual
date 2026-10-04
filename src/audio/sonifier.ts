@@ -18,6 +18,8 @@ export interface Voice {
 
 export interface SonifyParams {
   volume: number;
+  /** 'tones': one voice per source; 'geiger': clicks whose rate follows the total field (W3). */
+  mode?: 'tones' | 'geiger';
   /** Audio frequency for a 25 MHz fundamental; the mapping is linear. */
   pitchAt25MHz: number;
   /** Field window: dbLow maps to silence, dbHigh to full scale. */
@@ -42,6 +44,11 @@ export class Sonifier {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private voices = new Map<string, Live>();
+  /** Geiger mode: clicks per second, a short noise burst and the look-ahead scheduler. */
+  private clickRate = 0;
+  private clickBuffer: AudioBuffer | null = null;
+  private clickTimer: ReturnType<typeof setInterval> | null = null;
+  private nextClick = 0;
 
   get running() {
     return this.ctx?.state === 'running';
@@ -64,7 +71,42 @@ export class Sonifier {
   }
 
   async stop() {
+    this.stopClicks();
     await this.ctx?.suspend();
+  }
+
+  /** Clicks like a Geiger counter: a Poisson process at `clickRate`, scheduled 100 ms ahead. */
+  private startClicks() {
+    const ctx = this.ctx;
+    if (!ctx || this.clickTimer) return;
+    if (!this.clickBuffer) {
+      const n = Math.round(ctx.sampleRate * 0.004);
+      const b = ctx.createBuffer(1, n, ctx.sampleRate);
+      const d = b.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (n / 6));
+      this.clickBuffer = b;
+    }
+    this.nextClick = ctx.currentTime;
+    this.clickTimer = setInterval(() => {
+      const c = this.ctx;
+      if (!c || !this.master || !this.clickBuffer) return;
+      const horizon = c.currentTime + 0.1;
+      if (this.nextClick < c.currentTime) this.nextClick = c.currentTime;
+      while (this.clickRate > 0 && this.nextClick < horizon) {
+        const src = c.createBufferSource();
+        src.buffer = this.clickBuffer;
+        src.connect(this.master);
+        src.start(this.nextClick);
+        this.nextClick += -Math.log(1 - Math.random()) / this.clickRate;
+      }
+      if (this.clickRate <= 0) this.nextClick = horizon;
+    }, 25);
+  }
+
+  private stopClicks() {
+    if (this.clickTimer) clearInterval(this.clickTimer);
+    this.clickTimer = null;
+    this.clickRate = 0;
   }
 
   update(voices: Voice[], p: SonifyParams) {
@@ -82,6 +124,18 @@ export class Sonifier {
       L.upY.setTargetAtTime(p.listenerUp[1], now, 0.05);
       L.upZ.setTargetAtTime(p.listenerUp[2], now, 0.05);
     }
+
+    if (p.mode === 'geiger') {
+      // total field at the probe sets the rate: 0.5 clicks/s at the bottom of the window,
+      // 100 per second at the top (logarithmic, like the dB scale)
+      let pw = 0;
+      for (const v of voices) pw += 10 ** (v.db / 10);
+      const db = pw > 0 ? 10 * Math.log10(pw) : -Infinity;
+      const x = (db - p.dbLow) / Math.max(1, p.dbHigh - p.dbLow);
+      this.clickRate = x < 0 ? 0 : 0.5 * 200 ** Math.min(1, x);
+      this.startClicks();
+      voices = [];
+    } else this.stopClicks();
 
     const seen = new Set<string>();
     const kappa = p.pitchAt25MHz / 25e6;
@@ -133,6 +187,7 @@ export class Sonifier {
   }
 
   dispose() {
+    this.stopClicks();
     for (const l of this.voices.values()) l.osc.stop();
     this.voices.clear();
     void this.ctx?.close();

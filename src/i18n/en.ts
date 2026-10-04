@@ -216,6 +216,8 @@ export const en: Strings = {
     off: 'Sound off',
     volume: 'Volume',
     pitch: 'Pitch for 25 MHz',
+    mode: 'Style',
+    modes: { tones: 'Tones per source', geiger: 'Geiger counter' },
     hint: 'Clocks sound like tones, switchers buzz. Loud where the field is strong.',
   },
   scan: {

@@ -82,7 +82,7 @@ class AppState {
   view = $state<ViewSettings>({ ...DEFAULT_VIEW });
   layerVisible = $state<boolean[]>([]);
   probe = $state<ProbeState>({ x: 0, z: 0, height: 2, radius: 1, follow: true, visible: false, component: 'abs', asVoltage: false });
-  audio = $state({ enabled: false, volume: 0.5, pitchAt25MHz: 220 });
+  audio = $state<{ enabled: boolean; volume: number; pitchAt25MHz: number; mode: 'tones' | 'geiger' }>({ enabled: false, volume: 0.5, pitchAt25MHz: 220, mode: 'tones' });
   compute = $state<ComputeState>({ busy: false, progress: 0, message: '', lastMs: 0 });
   models = $state.raw<Record<string, SourceModel>>({});
   sourceErrors = $state<Record<string, string>>({});

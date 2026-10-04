@@ -23,7 +23,9 @@ Stufe und können parallel wachsen.
 - **Linear/harmonisch** (Stufe 1): Takte als Töne, Schaltregler als Schnarren.
 - **Logarithmisch:** ganzer HF-Bereich auf wenige Oktaven gestaucht (Oberwellen nicht mehr
   harmonisch, dafür alles hörbar). Eigene Oszillatoren je Linie.
-- **Geigerzähler:** Klickrate ∝ Feldstärke; intuitiv beim Suchen.
+- **Geigerzähler** (umgesetzt 2026-10-04): Klicks als Poisson-Prozess, Rate logarithmisch über
+  das Anzeigefenster, 0,5 Klicks/s am unteren und 100/s am oberen Ende; Auswahl „Klang“ im
+  Ton-Bereich. Intuitiv beim Suchen.
 - **Echter Klang:** AM-demodulierte Aufnahmen an Hotspots (Stufe 4/5).
 - **Klanglandschaft:** Kamera als Hörer, alle Quellen räumlich (HRTF), Lautheit nach Abstand
   und Feld.

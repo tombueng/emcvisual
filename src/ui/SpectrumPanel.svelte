@@ -285,12 +285,21 @@
         <input id="a-v" type="range" min="0" max="1" step="0.01" bind:value={app.audio.volume} />
       </div>
       <div class="field">
-        <label for="a-p">{t.audio.pitch}</label>
-        <div class="slider">
-          <input id="a-p" type="range" min="55" max="880" step="1" bind:value={app.audio.pitchAt25MHz} />
-          <span class="value">{app.audio.pitchAt25MHz} Hz</span>
-        </div>
+        <label for="a-m">{t.audio.mode}</label>
+        <select id="a-m" bind:value={app.audio.mode}>
+          <option value="tones">{t.audio.modes.tones}</option>
+          <option value="geiger">{t.audio.modes.geiger}</option>
+        </select>
       </div>
+      {#if app.audio.mode === 'tones'}
+        <div class="field">
+          <label for="a-p">{t.audio.pitch}</label>
+          <div class="slider">
+            <input id="a-p" type="range" min="55" max="880" step="1" bind:value={app.audio.pitchAt25MHz} />
+            <span class="value">{app.audio.pitchAt25MHz} Hz</span>
+          </div>
+        </div>
+      {/if}
     </div>
   </div>
 </section>
