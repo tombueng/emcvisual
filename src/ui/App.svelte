@@ -26,6 +26,8 @@
   onMount(() => {
     viewer = new Viewer(viewEl);
     engine.attach(viewer);
+    // VR button only where a headset can be used (WebXR immersive-vr)
+    void viewer.enableXR();
     viewer.controls.addEventListener('change', () => scheduleAudio());
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') app.pickMode = null;

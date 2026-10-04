@@ -297,7 +297,7 @@ export function buildJob(
     freqs: jobFrequencies(opts.fMin, opts.fMax, opts.nFreqs),
     grid,
     mesh: { res: opts.res, maxRes: 4, airXY: 20, airAbove: 25, airBelow: 20 },
-    endCriteriaDb: -40,
+    endCriteriaDb: -30,
     maxSteps: 400_000,
   };
 }

@@ -146,6 +146,7 @@ export const de = {
     colormap: 'Farbskala',
     colormaps: { inferno: 'Glut', turbo: 'Regenbogen' },
     volume: 'Feld als Leuchten',
+    iso: 'Isoflächen (Blasen bei 35, 60 und 85 % des Bereichs)',
     slice: 'Schnittebene',
     sliceHeight: 'Höhe über F.Cu',
     layers: 'Lagen',

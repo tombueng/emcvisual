@@ -11,6 +11,8 @@ import type { Grid } from '../compute/grid';
 import { buildBoardMeshes, highlightNets, type BoardMeshes } from './boardMesh';
 import { disposeObject, type ComponentModels } from './componentModels';
 import { colormapLut, type ColormapId } from './colormaps';
+import { buildIsosurfaces } from './isosurface';
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { sliceFragment, sliceVertex, volumeFragment, volumeVertex } from './volumeShader';
 
 export interface VolumeParams {
@@ -59,6 +61,11 @@ export class Viewer {
   private fieldLines: THREE.LineSegments | null = null;
   private stopLinesAnim: (() => void) | null = null;
   private markers: THREE.InstancedMesh | null = null;
+  /** Isosurfaces: last volume bytes, a version that changes with them, and the shells. */
+  private volumeBytes: Uint8Array | null = null;
+  private volumeVersion = 0;
+  private iso: { group: THREE.Group; key: string } | null = null;
+  private isoParams: { enabled: boolean; window: [number, number]; colormap: ColormapId } = { enabled: false, window: [0, 1], colormap: 'inferno' };
   private time = 0;
   onFrame?: (dt: number) => void;
 
@@ -156,6 +163,12 @@ export class Viewer {
     this.renderer.setAnimationLoop((now) => {
       const dt = (now - last) / 1000;
       last = now;
+      // in a headset three.js renders both eyes; the ray-marched glow needs the depth pass of
+      // a flat screen, so VR shows the isosurfaces instead (see enableXR)
+      if (this.renderer.xr.isPresenting) {
+        this.renderer.render(this.scene, this.camera);
+        return;
+      }
       const moving = this.controls.update();
       if (this.animating > 0) {
         this.time += dt;
@@ -262,9 +275,12 @@ export class Viewer {
 
   setVolume(bytes: Uint8Array | null, grid: Grid | null) {
     const u = this.volumeMat.uniforms;
+    this.volumeBytes = bytes;
+    this.volumeVersion++;
     if (!bytes || !grid) {
       u.volumeOn!.value = false;
       this.slice.visible = false;
+      this.updateIsosurfaces();
       this.requestRender();
       return;
     }
@@ -308,6 +324,77 @@ export class Viewer {
     u.gammaA!.value = p.gamma;
     this.lut.image.data = colormapLut(p.colormap);
     this.lut.needsUpdate = true;
+    this.requestRender();
+  }
+
+  /** In VR the isosurfaces stand in for the glow. */
+  private xrIso = false;
+
+  /**
+   * WebXR (W1): a button for headsets that support immersive VR. In the headset the board
+   * lies on a table in front of the viewer, enlarged 5 times (1 mm becomes 5 mm).
+   */
+  async enableXR(): Promise<HTMLElement | null> {
+    const xr = (navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } }).xr;
+    if (!xr || !(await xr.isSessionSupported('immersive-vr').catch(() => false))) return null;
+    this.renderer.xr.enabled = true;
+    const saved = { scale: this.scene.scale.clone(), position: this.scene.position.clone() };
+    this.renderer.xr.addEventListener('sessionstart', () => {
+      this.scene.scale.setScalar(0.005);
+      this.scene.position.set(0, 0.85, -0.45);
+      this.xrIso = true;
+      this.updateIsosurfaces();
+    });
+    this.renderer.xr.addEventListener('sessionend', () => {
+      this.scene.scale.copy(saved.scale);
+      this.scene.position.copy(saved.position);
+      this.xrIso = false;
+      this.updateIsosurfaces();
+      this.resize();
+    });
+    const button = VRButton.createButton(this.renderer);
+    this.container.appendChild(button);
+    return button;
+  }
+
+  /** Three translucent shells at 35, 60 and 85 % of the display window, coloured like the glow. */
+  setIsosurfaces(p: { enabled: boolean; window: [number, number]; colormap: ColormapId }) {
+    this.isoParams = p;
+    this.updateIsosurfaces();
+  }
+
+  private updateIsosurfaces() {
+    const p = this.isoParams;
+    const on = (p.enabled || this.xrIso) && !!this.volumeBytes && !!this.grid;
+    const key = on ? `${this.volumeVersion}|${p.window[0].toFixed(4)}|${p.window[1].toFixed(4)}|${p.colormap}` : '';
+    if (this.iso?.key === key) return;
+    if (this.iso) {
+      this.scene.remove(this.iso.group);
+      this.iso.group.traverse((o) => {
+        const m = o as THREE.Mesh;
+        m.geometry?.dispose();
+        (m.material as THREE.Material | undefined)?.dispose();
+      });
+      this.iso = null;
+    }
+    if (on) {
+      const lut = colormapLut(p.colormap);
+      const levels = [
+        { f: 0.35, opacity: 0.16 },
+        { f: 0.6, opacity: 0.28 },
+        { f: 0.85, opacity: 0.5 },
+      ].map(({ f, opacity }) => {
+        const k = Math.round(f * 255) * 4;
+        return {
+          level: Math.max(1, Math.min(254, (p.window[0] + f * (p.window[1] - p.window[0])) * 255)),
+          color: new THREE.Color().setRGB(lut[k]! / 255, lut[k + 1]! / 255, lut[k + 2]! / 255, THREE.SRGBColorSpace),
+          opacity,
+        };
+      });
+      const group = buildIsosurfaces(this.volumeBytes!, this.grid!, levels);
+      this.scene.add(group);
+      this.iso = { group, key };
+    }
     this.requestRender();
   }
 

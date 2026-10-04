@@ -6,12 +6,20 @@ Stufe und können parallel wachsen.
 ## W1 Immersion
 - **WebXR:** dieselbe Szene auf einer VR-Brille (Quest-Browser), Platine im Raum,
   Maßstab frei („Ameisengröße“: 1 mm wird 1 m). Handcontroller = Sonde.
+  **Umgesetzt (2026-10-04), experimentell:** Wo der Browser „immersive-vr“ kann, erscheint
+  in der 3D-Ansicht der Knopf „ENTER VR“. In der Brille liegt die Platine fünffach vergrößert auf
+  Tischhöhe vor einem; statt des Leuchtens (braucht den Tiefenpass des flachen Bildschirms)
+  zeigt sie die Isoflächen. Noch nicht an einer Brille geprüft; Controller als Sonde und der
+  Ameisenmaßstab fehlen noch.
 - **Ameisen-Modus am Bildschirm** (Stufe 1, M7): Ego-Perspektive knapp über der Platine.
 - **Geführte Touren:** Lernpfade über die Demo-Platine („Warum ist diese Schleife laut?“),
   mit Kamerafahrten, Text und Klangbeispielen.
 
 ## W2 Visuelle Effekte
 - Isoflächen (Marching Cubes / Surface Nets) als „Blasen“ bei wählbaren dB-Schwellen.
+  **Umgesetzt (2026-10-04):** Surface Nets, drei durchscheinende Schalen bei 35, 60 und 85 %
+  des Anzeigebereichs in den Farben der Farbskala; Schalter „Isoflächen“ in der Ansicht
+  (`src/render/isosurface.ts`).
 - Partikel, die entlang der Feldlinien fließen (Geschwindigkeit ∝ |H|).
 - Hitzeflimmern-Shader über Hotspots, Bloom/Glühen, Nebel-Volumen.
 - Farbe nach Frequenzband (z. B. rot = Taktoberwellen < 100 MHz, blau = GHz).

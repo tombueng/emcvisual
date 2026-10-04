@@ -148,6 +148,7 @@ export const en: Strings = {
     colormap: 'Colour map',
     colormaps: { inferno: 'Ember', turbo: 'Rainbow' },
     volume: 'Field as glow',
+    iso: 'Isosurfaces (shells at 35, 60 and 85 % of the range)',
     slice: 'Slice plane',
     sliceHeight: 'Height above F.Cu',
     layers: 'Layers',

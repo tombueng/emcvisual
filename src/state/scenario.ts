@@ -23,6 +23,8 @@ export interface ViewSettings {
   density: number;
   colormap: ColormapId;
   showVolume: boolean;
+  /** Isosurfaces ("bubbles") at three levels of the display window. */
+  showIso: boolean;
   showSlice: boolean;
   /** Slice height above F.Cu, mm. */
   sliceHeight: number;
@@ -61,6 +63,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   density: 0.5,
   colormap: 'inferno',
   showVolume: true,
+  showIso: false,
   showSlice: false,
   sliceHeight: 2,
   substrateOpacity: 1,

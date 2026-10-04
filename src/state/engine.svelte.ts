@@ -575,6 +575,7 @@ class Engine {
       gamma: 2.2,
       colormap: app.view.colormap,
     });
+    v.setIsosurfaces({ enabled: app.view.showIso, window: [toNorm(app.view.dbLow), toNorm(app.view.dbHigh)], colormap: app.view.colormap });
     v.setSlice({ enabled: app.view.showSlice, height: app.view.sliceHeight, opacity: 0.9 });
     v.setSubstrateOpacity(app.view.substrateOpacity);
     v.setComponentsVisible(app.view.showComponents);

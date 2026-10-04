@@ -146,6 +146,7 @@
 
     <div class="section-title">{t.view.volume}</div>
     <label class="check"><input type="checkbox" bind:checked={app.view.showVolume} onchange={restyle} /> {t.view.volume}</label>
+    <label class="check"><input type="checkbox" bind:checked={app.view.showIso} onchange={restyle} /> {t.view.iso}</label>
     <div class="field">
       <label for="v-dens">{t.view.density}</label>
       <input id="v-dens" type="range" min="0.05" max="3" step="0.05" bind:value={app.view.density} oninput={restyle} />
