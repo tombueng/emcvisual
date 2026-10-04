@@ -3,6 +3,8 @@
 > Arbeitstitel. Der Name steht nur in `branding.config.json` und lässt sich mit einem Skript
 > ändern, siehe [docs/RENAMING.md](docs/RENAMING.md).
 
+**Im Browser ausprobieren / try it:** https://tombueng.github.io/emcvisual/
+
 **In English:** a browser tool that computes the quasi-static magnetic near field of a KiCad
 board and turns it into a 3D world you can look at and listen to: glowing field volumes,
 field lines, a virtual near-field probe with a spectrum-analyzer view, a far-field estimate
