@@ -1,10 +1,10 @@
 <script lang="ts">
+  import { sourceSummary } from '../report/texts';
   import { app } from '../state/app.svelte';
   import { engine } from '../state/engine.svelte';
   import { t } from '../i18n';
   import { suggestSources } from '../physics/suggest';
   import { SOURCE_COLORS, type Source } from '../physics/sources';
-  import { formatEng } from '../physics/units';
   import SourceEditor from './SourceEditor.svelte';
 
   const suggestions = $derived(app.board ? suggestSources(app.board) : []);
@@ -45,11 +45,7 @@
     engine.addSources(open.map((sg, i) => ({ ...sg.source, color: SOURCE_COLORS[(start + i) % SOURCE_COLORS.length]! })));
   }
 
-  function summary(s: Source): string {
-    const f = (s.type === 'signal' || s.type === 'diffpair') && s.kind === 'data' ? formatEng(s.waveform.f0 * 2, 'bit/s') : formatEng(s.waveform.f0, 'Hz');
-    if (s.type === 'inductor') return `${t.sources.types.inductor}, ${f}, ${formatEng(s.waveform.amplitude, 'A')}`;
-    return `${t.sources.types[s.type]}, ${f}, ${formatEng(s.waveform.tr, 's')}`;
-  }
+  const summary = sourceSummary;
 </script>
 
 <section class="panel">

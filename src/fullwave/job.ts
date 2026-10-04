@@ -268,7 +268,9 @@ export function buildJob(
         const isCap = ([a]: [number, number]) => /^C/i.test(board.pads[a]!.ref);
         const drive = inside.find((s) => !isCap(s)) ?? inside[0];
         if (!drive) throw new Error('loop-without-part');
-        const port: JobPort = { ...between(drive[0], drive[1]), r: 1, excite: 1 };
+        // 10 Ω: the field is normalised to the port current anyway, and a low resistance would
+        // let the loop current (L/R) ring for a long time before the run may stop
+        const port: JobPort = { ...between(drive[0], drive[1]), r: 10, excite: 1 };
         const shorts = inside.filter((s) => s !== drive).map(([a, b]) => between(a, b));
         out.push({ id: src.id, name: src.name, type: src.type, ports: [port], lumped: [], shorts });
       } else {

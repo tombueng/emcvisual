@@ -48,7 +48,9 @@ cd tools/openems/src
     eine Terminierung ist ein Widerstand. Serienwiderstände werden mit ihrem Wert eingesetzt.
   - Differenzpaare: zwei Ports mit entgegengesetzter Polarität.
   - Stromschleifen (Schaltregler): Port über dem Schalter, also zwischen den beiden Pads des
-    ICs. Kondensatoren in der Schleife sind Kurzschlüsse.
+    ICs, mit 10 Ω. Das Feld wird ohnehin auf den Port-Strom bezogen; mit weniger Widerstand
+    klingt der Schleifenstrom (L/R) so lange nach, dass der Lauf ein Vielfaches dauert.
+    Kondensatoren in der Schleife sind Kurzschlüsse.
   - Spulen: nicht in der Vollwelle; sie bleiben aus dem schnellen Modell.
 - **Ausgabe:** H im Frequenzbereich bei 12 Frequenzen (20 MHz bis f_max, logarithmisch), geteilt
   durch den Port-Strom und auf das Gitter der App umgerechnet. Die App multipliziert das mit

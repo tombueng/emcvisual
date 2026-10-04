@@ -4,25 +4,18 @@
   import { t } from '../i18n';
   import { formatEng } from '../physics/units';
   import { toWorld } from '../model/world';
-  import type { Diagnostic } from '../physics/diagnostics';
-  import { limitAt } from '../physics/farfield';
+  import { diagnosticText, farMargins } from '../report/texts';
+  import { buildReport } from '../report/report';
+  import { downloadText } from '../state/persist';
+
+  function saveReport() {
+    const html = buildReport(engine.viewer?.snapshot() ?? null);
+    const name = (app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+    downloadText(`${name}-${t.report.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.html`, html, 'text/html');
+  }
 
   const colorOf = (id: string) => app.sources.find((s) => s.id === id)?.color ?? 'var(--muted)';
   const nameOf = (id: string) => app.sources.find((s) => s.id === id)?.name ?? '';
-
-  function text(d: Diagnostic): string {
-    const k = t.diag.kinds;
-    switch (d.kind) {
-      case 'return-gap':
-        return k['return-gap'](d);
-      case 'ref-change':
-        return k['ref-change'](d);
-      case 'no-stitching':
-        return k['no-stitching'](d);
-      case 'long-line':
-        return k['long-line'](d, (v) => formatEng(v, 'Hz', 2));
-    }
-  }
 
   function goToBoard(x: number, y: number) {
     const w = toWorld(engine.frame, { x, y }, app.probe.height);
@@ -45,28 +38,15 @@
   const far = $derived.by(() => {
     void app.models;
     void app.sources.map((s) => s.enabled);
-    const r = engine.farReadout(3);
-    if (!r) return [];
-    return r.sources
-      .map((s) => {
-        let worst = -Infinity;
-        let at = 0;
-        for (const l of s.lines) {
-          const lim = limitAt(r.limits, l.f);
-          if (lim === null) continue;
-          if (l.db - lim > worst) {
-            worst = l.db - lim;
-            at = l.f;
-          }
-        }
-        return { ...s, worst, at };
-      })
-      .filter((s) => Number.isFinite(s.worst))
-      .sort((a, b) => b.worst - a.worst);
+    void app.fieldOrigin;
+    return farMargins();
   });
 </script>
 
 <div class="diag">
+  <div class="report">
+    <button class="btn small" onclick={saveReport} disabled={!app.board} title={t.report.buttonHint}>{t.report.button}</button>
+  </div>
   <div class="section-title">{t.diag.warnings}</div>
   {#if app.diagnostics.length === 0}
     <p class="hint">{t.diag.none}</p>
@@ -76,7 +56,7 @@
       <li style:--c={colorOf(d.sourceId)}>
         <button onclick={() => goToBoard(d.at.x, d.at.y)} title={t.diag.goTo}>
           <span class="src">{nameOf(d.sourceId)}</span>
-          <span class:warn={d.kind !== 'long-line'}>{text(d)}{d.detour ? t.diag.detour(d.detour) : ''}</span>
+          <span class:warn={d.kind !== 'long-line'}>{diagnosticText(d)}</span>
         </button>
       </li>
     {/each}
@@ -114,6 +94,11 @@
 </div>
 
 <style>
+  .report {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+  }
   ul {
     list-style: none;
     margin: 0;

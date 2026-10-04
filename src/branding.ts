@@ -6,6 +6,7 @@ export const branding = {
   displayName: config.displayName,
   tagline: config.tagline,
   repo: config.repo,
+  siteUrl: config.siteUrl,
   /** Stable prefix for browser storage keys; must not change on a rename. */
   storageNamespace: config.storageNamespace,
 } as const;

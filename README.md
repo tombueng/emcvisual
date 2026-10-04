@@ -38,7 +38,7 @@ Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 - Diagnose: unterbrochene Rückstrompfade, Bezugswechsel an Vias, fehlende Stitching-Vias,
   Hotspots mit den Netzen und Bauteilen in der Nähe
 - echte 3D-Bauteilmodelle aus KiCads GLB-Export (`.glb` zusätzlich auf das Fenster ziehen)
-- Szenario als JSON speichern, PNG- und CSV-Export
+- Szenario als JSON speichern, PNG- und CSV-Export, EMV-Bericht als HTML (druckbar als PDF)
 - Oberfläche auf Deutsch und Englisch (Auswahl oben rechts, Standard nach Browsersprache)
 
 Plan, Abnahmekriterien und Umsetzungsnotizen: [docs/stufe-1/PLAN.md](docs/stufe-1/PLAN.md).

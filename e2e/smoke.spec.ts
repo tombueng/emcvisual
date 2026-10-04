@@ -169,3 +169,19 @@ test('full wave: the openEMS job export holds the simulated sources', async ({ p
   expect(job.sources).toHaveLength(6);
   expect(job.skipped).toHaveLength(2);
 });
+
+test('report: one HTML file with picture, hints, hotspots, far field and sources', async ({ page }) => {
+  await page.goto('/?demo');
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('tab', { name: /Diagnose/ }).click();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Bericht speichern' }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe('demo-board-emv-bericht.html');
+  await file.saveAs('e2e/output/report.html');
+  const html = await (await import('node:fs/promises')).readFile('e2e/output/report.html', 'utf8');
+  expect(html).toContain('<img class="view" src="data:image/png;base64,');
+  expect(html).toContain('Rückstrompfad unterbrochen');
+  expect(html).toContain('Buck schlecht (U3)');
+  expect(html).toContain('CISPR 32');
+});

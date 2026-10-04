@@ -51,6 +51,13 @@ Safari öffnen die Datei wie bisher einmalig.
   Taktfrequenz aus Feldern) für bessere Quellenparameter.
 
 ## W5 Vergleiche und Berichte
+
+**Umgesetzt (2026-10-04): Bericht.** „Bericht speichern“ im Reiter Diagnose schreibt eine
+HTML-Datei ohne externe Abhängigkeiten: Bild der 3D-Ansicht, Kennzahlen, Hinweise zum Layout,
+Hotspots mit Ort und Nachbarschaft, Fernfeld-Abstand je Quelle gegen CISPR 32 B, Quellen und
+Einstellungen (einschließlich der Feldquelle: schnell oder openEMS). Hell und druckbar, im
+Browser als PDF speicherbar; Sprache wie die Oberfläche. Code: `src/report/`.
+
 - **Varianten:** zwei Platinenstände oder zwei Szenarien laden, Differenzvolumen in dB.
 - **Sim ↔ Messung:** gleiche Darstellung, Differenz, Kalibrierfaktor.
 - **Bericht:** HTML/PDF mit Hotspots, Spektren, Warnungen, Fernfeld-Abschätzung, Bildern.
