@@ -1,44 +1,162 @@
 {
   "kind": "pcb-field-scenario",
   "version": 1,
-  "board": { "fileName": "demo-board.kicad_pcb", "hash": "" },
-  "settings": { "quality": "normal", "fMax": 1000000000, "planeOverrides": {} },
+  "board": {
+    "fileName": "demo-board.kicad_pcb",
+    "hash": ""
+  },
+  "settings": {
+    "quality": "normal",
+    "fMax": 1000000000,
+    "planeOverrides": {}
+  },
   "sources": [
     {
-      "id": "buck-good", "type": "loop", "name": "Buck gut (U1)", "enabled": true, "color": "#38bdf8",
-      "pads": ["C1.1", "U1.1", "U1.2", "C1.2"],
-      "waveform": { "f0": 500000, "duty": 0.28, "tr": 5e-9, "amplitude": 2 }
+      "id": "buck-good",
+      "type": "loop",
+      "name": "Buck gut (U1)",
+      "enabled": true,
+      "color": "#38bdf8",
+      "pads": [
+        "C1.1",
+        "U1.1",
+        "U1.2",
+        "C1.2"
+      ],
+      "waveform": {
+        "f0": 500000,
+        "duty": 0.28,
+        "tr": 5e-09,
+        "amplitude": 2
+      },
+      "node": {
+        "net": "SW1",
+        "voltage": 12
+      }
     },
     {
-      "id": "buck-bad", "type": "loop", "name": "Buck schlecht (U3)", "enabled": true, "color": "#f472b6",
-      "pads": ["C3.1", "U3.1", "U3.2", "C3.2"],
-      "waveform": { "f0": 500000, "duty": 0.28, "tr": 5e-9, "amplitude": 2 }
+      "id": "buck-bad",
+      "type": "loop",
+      "name": "Buck schlecht (U3)",
+      "enabled": true,
+      "color": "#f472b6",
+      "pads": [
+        "C3.1",
+        "U3.1",
+        "U3.2",
+        "C3.2"
+      ],
+      "waveform": {
+        "f0": 500000,
+        "duty": 0.28,
+        "tr": 5e-09,
+        "amplitude": 2
+      },
+      "node": {
+        "net": "SW3",
+        "voltage": 12
+      }
     },
     {
-      "id": "clk-good", "type": "signal", "kind": "clock", "name": "Takt gut 25 MHz", "enabled": true, "color": "#a3e635",
-      "nets": ["CLK_GOOD_SRC", "CLK_GOOD"], "driver": "Y1.3",
-      "waveform": { "f0": 25000000, "duty": 0.5, "tr": 1e-9, "amplitude": 3.3 },
-      "load": { "model": "capacitive", "cLoad": 5e-12 }
+      "id": "clk-good",
+      "type": "signal",
+      "kind": "clock",
+      "name": "Takt gut 25 MHz",
+      "enabled": true,
+      "color": "#a3e635",
+      "nets": [
+        "CLK_GOOD_SRC",
+        "CLK_GOOD"
+      ],
+      "driver": "Y1.3",
+      "waveform": {
+        "f0": 25000000,
+        "duty": 0.5,
+        "tr": 1e-09,
+        "amplitude": 3.3
+      },
+      "load": {
+        "model": "capacitive",
+        "cLoad": 5e-12
+      }
     },
     {
-      "id": "clk-bad", "type": "signal", "kind": "clock", "name": "Takt schlecht 33,3 MHz", "enabled": true, "color": "#f59e0b",
-      "nets": ["CLK_BAD"], "driver": "Y2.3",
-      "waveform": { "f0": 33333333, "duty": 0.5, "tr": 1e-9, "amplitude": 3.3 },
-      "load": { "model": "capacitive", "cLoad": 5e-12 }
+      "id": "clk-bad",
+      "type": "signal",
+      "kind": "clock",
+      "name": "Takt schlecht 33,3 MHz",
+      "enabled": true,
+      "color": "#f59e0b",
+      "nets": [
+        "CLK_BAD"
+      ],
+      "driver": "Y2.3",
+      "waveform": {
+        "f0": 33333333,
+        "duty": 0.5,
+        "tr": 1e-09,
+        "amplitude": 3.3
+      },
+      "load": {
+        "model": "capacitive",
+        "cLoad": 5e-12
+      }
     },
     {
-      "id": "usb", "type": "diffpair", "kind": "data", "name": "USB Full Speed", "enabled": true, "color": "#c084fc",
-      "netP": "USB_DP", "netN": "USB_DN", "driverP": "U2.33", "driverN": "U2.32",
-      "waveform": { "f0": 6000000, "duty": 0.5, "tr": 4e-9, "amplitude": 3.3 },
-      "load": { "model": "capacitive", "cLoad": 10e-12 },
+      "id": "usb",
+      "type": "diffpair",
+      "kind": "data",
+      "name": "USB Full Speed",
+      "enabled": true,
+      "color": "#c084fc",
+      "netP": "USB_DP",
+      "netN": "USB_DN",
+      "driverP": "U2.33",
+      "driverN": "U2.32",
+      "waveform": {
+        "f0": 6000000,
+        "duty": 0.5,
+        "tr": 4e-09,
+        "amplitude": 3.3
+      },
+      "load": {
+        "model": "capacitive",
+        "cLoad": 1e-11
+      },
       "imbalance": 0.05
     },
     {
-      "id": "led", "type": "signal", "kind": "clock", "name": "LED 1 kHz (langsam)", "enabled": true, "color": "#2dd4bf",
-      "nets": ["LED", "LED_A"], "driver": "U2.20",
-      "waveform": { "f0": 1000, "duty": 0.5, "tr": 5e-8, "amplitude": 3.3 },
-      "load": { "model": "capacitive", "cLoad": 5e-12 }
+      "id": "led",
+      "type": "signal",
+      "kind": "clock",
+      "name": "LED 1 kHz (langsam)",
+      "enabled": true,
+      "color": "#2dd4bf",
+      "nets": [
+        "LED",
+        "LED_A"
+      ],
+      "driver": "U2.20",
+      "waveform": {
+        "f0": 1000,
+        "duty": 0.5,
+        "tr": 5e-08,
+        "amplitude": 3.3
+      },
+      "load": {
+        "model": "capacitive",
+        "cLoad": 5e-12
+      }
     }
   ],
-  "view": { "mode": "band", "bandId": "cispr-low", "autoWindow": true, "showVolume": true, "showSlice": false, "sliceHeight": 2, "density": 0.5, "colormap": "inferno" }
+  "view": {
+    "mode": "band",
+    "bandId": "cispr-low",
+    "autoWindow": true,
+    "showVolume": true,
+    "showSlice": false,
+    "sliceHeight": 2,
+    "density": 0.5,
+    "colormap": "inferno"
+  }
 }

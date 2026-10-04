@@ -1,6 +1,6 @@
 # Stufe 2: Rückströme in Flächen, Leitungseffekte, E-Feld
 
-Stand: 2026-10-04 · Status: **2a umgesetzt** (geometrisches Umwegmodell, siehe unten); 2b–2e offen
+Stand: 2026-10-04 · Status: **2a umgesetzt** (Umwegmodell), **2b E-Feld umgesetzt**; Flächenlöser, Leitungseffekte, Spulen-Streufeld offen
 
 ## Ziel
 
@@ -45,6 +45,20 @@ nicht berücksichtigt (bei hohen Frequenzen übernimmt sie einen Teil des Sprung
 Am Demo-Board: Der Rückstrom des schlechten Takts läuft 15 mm um das Schlitzende (etwa 13 mm²
 zusätzliche Schleifenfläche) und springt an beiden Vias über C2 (35 und 52 mm Umweg, 18 und
 31 mm²); der Hotspot wandert dadurch vom Schlitz in die Schleife zum Kondensator.
+
+## Umgesetzt: 2b Quasistatisches E-Feld (2026-10-04)
+
+`src/physics/charges.ts`, `efield.ts`; Umschalter „Feldgröße: Magnetisch (H) / Elektrisch (E)“.
+
+- Ladung je Volt: Leiterbahnen als Linienladungen q = C'·L (C' aus dem Leitungsmodell), Pads auf
+  den Außenlagen als Punktladungen q = ε0·εr·A/h, Zonen eines Knotens als Punktgitter.
+- Spiegelladungen mit umgekehrtem Vorzeichen in den Flächen, die an der Stelle Kupfer haben
+  (Linienladungen in Stücke ≤ 1 mm geteilt), Abschirmung über dieselben Fächer wie beim H-Feld.
+- Feld einer endlichen Linienladung geschlossen integriert, Kernradius gegen Singularitäten;
+  Tests gegen Punktladung und unendliche Linienladung.
+- Spannungsspektrum: Trapez des Signals; bei Stromschleifen optional ein Schaltknoten
+  (SW-Netz und Spannungshub, Standard 12 V in Vorschlägen), weil das E-Feld dort sitzt.
+- Anzeige in dBµV/m; Sonde, Linienliste, Hotspots und Feldlinien folgen der Feldgröße.
 
 ## Methode (Ausbau, offen)
 

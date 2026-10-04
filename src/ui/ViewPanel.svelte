@@ -55,6 +55,14 @@
     <div class="scroll body"><DiagnosticsPanel /></div>
   {:else}
   <div class="scroll body">
+    <div class="section-title">{t.view.fieldKind}</div>
+    <div class="seg two" role="radiogroup" aria-label={t.view.fieldKind}>
+      {#each ['H', 'E'] as const as k (k)}
+        <button role="radio" aria-checked={app.view.fieldKind === k} class:active={app.view.fieldKind === k} onclick={() => engine.setFieldKind(k)}>{t.view.fieldKinds[k]}</button>
+      {/each}
+    </div>
+    {#if app.view.fieldKind === 'E'}<p class="hint">{t.view.fieldKindHint}</p>{/if}
+
     <div class="section-title">{t.view.frequency}</div>
     <div class="seg" role="radiogroup" aria-label={t.view.frequency}>
       {#each modes as m (m)}
@@ -103,7 +111,7 @@
         <span class="value">{app.view.dbLow}</span>
       </div>
     </div>
-    <p class="hint">{t.units.dBuAm}</p>
+    <p class="hint">{app.view.fieldKind === 'E' ? t.units.dBuVm : t.units.dBuAm}</p>
 
     <div class="section-title">{t.view.volume}</div>
     <label class="check"><input type="checkbox" bind:checked={app.view.showVolume} onchange={restyle} /> {t.view.volume}</label>
@@ -240,6 +248,9 @@
     border: 1px solid var(--line);
     border-radius: var(--radius-s);
     overflow: hidden;
+  }
+  .seg.two {
+    grid-template-columns: repeat(2, 1fr);
   }
   .seg button {
     border: 0;

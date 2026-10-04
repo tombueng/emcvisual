@@ -28,6 +28,10 @@
         "duty": 0.28,
         "tr": 5e-09,
         "amplitude": 2
+      },
+      "node": {
+        "net": "SW1",
+        "voltage": 12
       }
     },
     {
@@ -47,6 +51,10 @@
         "duty": 0.28,
         "tr": 5e-09,
         "amplitude": 2
+      },
+      "node": {
+        "net": "SW3",
+        "voltage": 12
       }
     },
     {

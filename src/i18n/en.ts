@@ -82,6 +82,8 @@ export const en: Strings = {
     driverP: 'Driver P',
     driverN: 'Driver N',
     imbalance: 'Imbalance',
+    node: 'Switching node net (E field)',
+    nodeVoltage: 'Voltage swing at the node',
     pads: 'Loop pads (in order)',
     padsHint: 'Between pads of one net the current follows the copper; inside a part it goes straight through.',
     addPad: 'Add pad',
@@ -117,6 +119,9 @@ export const en: Strings = {
   },
   view: {
     title: 'View',
+    fieldKind: 'Field',
+    fieldKinds: { H: 'Magnetic (H)', E: 'Electric (E)' },
+    fieldKindHint: 'E field (stage 2): charges on traces and pads, for switching regulators on the switching node.',
     frequency: 'Frequencies',
     modes: { all: 'All', band: 'Band', line: 'Single line' },
     bands: {
@@ -220,5 +225,6 @@ export const en: Strings = {
   units: {
     dBuAm: 'dBµA/m',
     dBuV: 'dBµV',
+    dBuVm: 'dBµV/m',
   },
 };

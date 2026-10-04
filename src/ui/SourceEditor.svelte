@@ -123,6 +123,16 @@
       </div>
       <p class="hint">{t.editor.padsHint}</p>
     </div>
+    <div class="field">
+      <label for="src-node">{t.editor.node}</label>
+      <NetInput id="src-node" value={source.node?.net ?? ''} options={nets} onchange={(v) => { if (source.type === 'loop') { source.node = v ? { net: v, voltage: source.node?.voltage ?? 12 } : undefined; changed(); } }} />
+    </div>
+    {#if source.node}
+      <div class="field">
+        <label for="src-nodev">{t.editor.nodeVoltage}</label>
+        <EngInput id="src-nodev" value={source.node.voltage} unit="V" min={0} onchange={(v) => { if (source.type === 'loop' && source.node) { source.node.voltage = v; changed(); } }} />
+      </div>
+    {/if}
   {/if}
 
   <div class="field">

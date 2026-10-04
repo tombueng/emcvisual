@@ -30,6 +30,8 @@ export interface ViewSettings {
   showComponents: boolean;
   showFieldLines: boolean;
   showReturnPaths: boolean;
+  /** Which field the volume, slice, probe and lines show. */
+  fieldKind: 'H' | 'E';
 }
 
 export interface ScenarioSettings {
@@ -65,6 +67,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   showComponents: true,
   showFieldLines: false,
   showReturnPaths: true,
+  fieldKind: 'H',
 };
 
 export const DEFAULT_SETTINGS: ScenarioSettings = { quality: 'normal', fMax: 1e9, planeOverrides: {}, returnModel: 'detour' };

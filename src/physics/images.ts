@@ -9,6 +9,7 @@
 import { coveredNear, referenceCopper, type PlaneLayer } from '../model/planes';
 import { toBoard, type Vec3, type WorldFrame } from '../model/world';
 import type { CurrentElement } from './currents';
+import type { ChargeElement } from './charges';
 
 export const STRIDE = 8;
 
@@ -176,6 +177,10 @@ export function packWithImages(
     }
   }
 
+  return finishPack(out, planeY);
+}
+
+function finishPack(out: Raw[], planeY: Float64Array): ElementPack {
   const slots = planeY.length + 1;
   out.sort((p, q) => p.slot - q.slot);
   const data = new Float64Array(out.length * STRIDE);
@@ -198,4 +203,47 @@ export function packWithImages(
   }
   slotStart[slots] = out.length;
   return { data, slotStart, planeY, count: out.length };
+}
+
+/**
+ * Pack charges with mirror charges (opposite sign) in the planes that have copper there.
+ * Line charges are cut into pieces of at most 1 mm so gaps in the planes count locally.
+ * Same layout as current packs: (ax, ay, az, bx, by, bz, q, r), grouped by slot; a point
+ * charge has a = b.
+ */
+export function packCharges(charges: ChargeElement[], planes: PlaneLayer[], frame: WorldFrame): ElementPack {
+  const sorted = [...planes].sort((p, q) => q.y - p.y);
+  const planeY = Float64Array.from(sorted.map((p) => p.y));
+  const out: Raw[] = [];
+  const mirrorsAt = (x: number, z: number, y: number): PlaneLayer[] => {
+    const b = toBoard(frame, x, z);
+    let up: PlaneLayer | undefined;
+    let dn: PlaneLayer | undefined;
+    for (const p of sorted) {
+      if (!referenceCopper(p.raster, b.x, b.y)) continue;
+      if (p.y > y + 1e-9 && (!up || p.y < up.y)) up = p;
+      if (p.y < y - 1e-9 && (!dn || p.y > dn.y)) dn = p;
+    }
+    return [up, dn].filter((p): p is PlaneLayer => !!p);
+  };
+  for (const c of charges) {
+    if (c.q === 0) continue;
+    const len = Math.hypot(c.b[0] - c.a[0], c.b[1] - c.a[1], c.b[2] - c.a[2]);
+    const n = len > 0 ? Math.max(1, Math.ceil(len / 1)) : 1;
+    for (let k = 0; k < n; k++) {
+      const t0 = k / n;
+      const t1 = (k + 1) / n;
+      const a: Vec3 = len > 0 ? [c.a[0] + (c.b[0] - c.a[0]) * t0, c.a[1], c.a[2] + (c.b[2] - c.a[2]) * t0] : c.a;
+      const b: Vec3 = len > 0 ? [c.a[0] + (c.b[0] - c.a[0]) * t1, c.a[1], c.a[2] + (c.b[2] - c.a[2]) * t1] : c.b;
+      const q = c.q / n;
+      const slot = slotOf(planeY, a[1]);
+      out.push({ a, b, w: q, r: c.r, slot });
+      const mx = (a[0] + b[0]) / 2;
+      const mz = (a[2] + b[2]) / 2;
+      for (const p of mirrorsAt(mx, mz, a[1])) {
+        out.push({ a: [a[0], 2 * p.y - a[1], a[2]], b: [b[0], 2 * p.y - b[1], b[2]], w: -q, r: c.r, slot });
+      }
+    }
+  }
+  return finishPack(out, planeY);
 }

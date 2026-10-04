@@ -124,6 +124,8 @@ export function suggestSources(board: BoardModel): Suggestion[] {
         color: nextColor(),
         pads: [best.a, padName(vin), padName(gnd), best.b],
         waveform: { f0: 500e3, duty: 0.3, tr: 5e-9, amplitude: 1 },
+        // switching node for the E field; the input voltage is unknown here, 12 V is a guess
+        node: sw.net > 0 ? { net: board.nets[sw.net]!, voltage: 12 } : undefined,
       },
     });
   }

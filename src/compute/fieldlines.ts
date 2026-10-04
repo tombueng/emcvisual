@@ -3,6 +3,7 @@
  * shielding. Pure, so it runs in a worker and in tests.
  */
 import { fieldAt, slotMaskTable } from '../physics/biotsavart';
+import { eFieldAt } from '../physics/efield';
 import type { ElementPack } from '../physics/images';
 import type { CoverageRaster } from '../model/planes';
 import type { Vec3, WorldFrame } from '../model/world';
@@ -17,6 +18,8 @@ export interface LineTraceInput {
   max: Vec3;
   step: number;
   maxSteps: number;
+  /** H (default) or E field lines. */
+  kind?: 'H' | 'E';
 }
 
 export interface TracedLines {
@@ -46,8 +49,9 @@ function coverBits(rasters: CoverageRaster[], frame: WorldFrame, x: number, z: n
 export function traceFieldLines(inp: LineTraceInput): TracedLines {
   const masks = slotMaskTable(inp.pack.planeY.length);
   const h = new Float64Array(3);
+  const at = inp.kind === 'E' ? eFieldAt : fieldAt;
   const field = (x: number, y: number, z: number): [number, number, number, number] => {
-    fieldAt(inp.pack, masks, x, y, z, coverBits(inp.rasters, inp.frame, x, z), h);
+    at(inp.pack, masks, x, y, z, coverBits(inp.rasters, inp.frame, x, z), h);
     const m = Math.hypot(h[0]!, h[1]!, h[2]!);
     return [h[0]!, h[1]!, h[2]!, m];
   };
@@ -145,7 +149,8 @@ export function seedsFor(pack: ElementPack, count = 6, heights = [0.35, 0.9, 1.8
     if (w <= 0) continue; // images carry the negative weights of horizontal elements
     if (Math.abs(d[o + 1]! - d[o + 4]!) > 1e-6) continue;
     const len = Math.hypot(d[o + 3]! - d[o]!, d[o + 5]! - d[o + 2]!);
-    items.push({ score: w * len, mid: [(d[o]! + d[o + 3]!) / 2, d[o + 1]!, (d[o + 2]! + d[o + 5]!) / 2] });
+    // point charges (E packs) have no length: rank them by their charge
+    items.push({ score: len > 0 ? w * len : w, mid: [(d[o]! + d[o + 3]!) / 2, d[o + 1]!, (d[o + 2]! + d[o + 5]!) / 2] });
   }
   items.sort((a, b) => b.score - a.score);
   const picked: Vec3[] = [];

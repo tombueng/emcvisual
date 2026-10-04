@@ -20,6 +20,11 @@ import { buildFieldLines } from '../render/fieldLinesMesh';
 import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fieldlines';
 import { diagnoseSource } from '../physics/diagnostics';
 import { applyReturnModel, type Detour } from '../physics/returnPaths';
+import { buildCharges } from '../physics/charges';
+import { eFieldAt } from '../physics/efield';
+import { packCharges } from '../physics/images';
+import { trapezoidLines, type Line } from '../physics/spectrum';
+import type { FieldKind } from '../compute/fieldKernel';
 import { cispr32ClassB, dipoleMoment, farField, type LimitSegment } from '../physics/farfield';
 import { distPointSegment } from '../model/geometry';
 import { PickIndex } from '../model/pickIndex';
@@ -44,7 +49,7 @@ export interface ProbeReadout {
   sources: { id: string; name: string; color: string; lines: ProbeLine[]; h: number; db: number }[];
   /** Power sum per frequency over all sources. */
   total: ProbeLine[];
-  unit: 'dBµA/m' | 'dBµV';
+  unit: 'dBµA/m' | 'dBµV' | 'dBµV/m';
 }
 
 export interface FarReadout {
@@ -61,7 +66,7 @@ export function geometryKey(s: Source): string {
     case 'diffpair':
       return JSON.stringify(['diff', s.netP, s.netN, s.driverP, s.driverN, s.load, s.imbalance]);
     case 'loop':
-      return JSON.stringify(['loop', s.pads]);
+      return JSON.stringify(['loop', s.pads, s.node?.net ?? '']);
   }
 }
 
@@ -83,6 +88,7 @@ class Engine {
   private cover: Uint32Array | null = null;
   private ctx: PhysicsContext | null = null;
   readonly packs = new Map<string, ElementPack>();
+  readonly ePacks = new Map<string, ElementPack>();
   private volumes = new Map<string, VolumeEntry>();
   private jobs = new Map<string, { key: string; job: VolumeJob; progress: number }>();
   private composite: Composite | null = null;
@@ -119,6 +125,7 @@ class Engine {
       this.cancelAll();
       this.volumes.clear();
       this.packs.clear();
+      this.ePacks.clear();
       this.composite = null;
       this.boardText = text;
       this.boardName = fileName;
@@ -190,6 +197,7 @@ class Engine {
     this.cancelAll();
     this.volumes.clear();
     this.packs.clear();
+    this.ePacks.clear();
     this.preparePlanes();
     this.refreshAll();
   }
@@ -199,11 +207,13 @@ class Engine {
   /** Rebuild every source model; start volume jobs where the geometry changed. */
   refreshAll() {
     const ids = new Set(app.sources.map((s) => s.id));
-    for (const id of [...this.volumes.keys()]) if (!ids.has(id)) this.volumes.delete(id);
-    for (const [id, j] of this.jobs) if (!ids.has(id)) {
-      j.job.cancel();
-      this.jobs.delete(id);
-    }
+    const idOf = (k: string) => k.slice(0, k.lastIndexOf('|'));
+    for (const k of [...this.volumes.keys()]) if (!ids.has(idOf(k))) this.volumes.delete(k);
+    for (const [k, j] of this.jobs)
+      if (!ids.has(idOf(k))) {
+        j.job.cancel();
+        this.jobs.delete(k);
+      }
     const models: Record<string, SourceModel> = {};
     const errors: Record<string, string> = {};
     for (const s of app.sources) {
@@ -235,7 +245,10 @@ class Engine {
     else delete errs[id];
     app.sourceErrors = errs;
     if (r.model) this.ensureVolume(s, r.model);
-    else this.volumes.delete(id);
+    else {
+      this.volumes.delete(`${id}|H`);
+      this.volumes.delete(`${id}|E`);
+    }
     this.updateDiagnostics();
     this.queueRecompose();
     this.scheduleSave();
@@ -257,10 +270,13 @@ class Engine {
 
   removeSource(id: string) {
     app.sources = app.sources.filter((s) => s.id !== id);
-    this.jobs.get(id)?.job.cancel();
-    this.jobs.delete(id);
-    this.volumes.delete(id);
+    for (const k of ['H', 'E']) {
+      this.jobs.get(`${id}|${k}`)?.job.cancel();
+      this.jobs.delete(`${id}|${k}`);
+      this.volumes.delete(`${id}|${k}`);
+    }
     this.packs.delete(id);
+    this.ePacks.delete(id);
     if (app.selectedId === id) app.selectedId = app.sources[0]?.id ?? null;
     this.refreshAll();
   }
@@ -277,6 +293,9 @@ class Engine {
         detours = r.detours;
       }
       this.detourCache.set(s.id, detours);
+      model.charges = buildCharges(this.ctx, src);
+      const vw = src.type === 'loop' ? (src.node ? { ...src.waveform, amplitude: src.node.voltage } : null) : src.waveform;
+      model.vLines = vw ? trapezoidLines(vw, this.ctx.fMax) : [];
       return { model };
     } catch (e) {
       return { error: e instanceof SourceError ? e.message : (e as Error).message || String(e) };
@@ -284,40 +303,80 @@ class Engine {
   }
 
   private ensureVolume(s: Source, model: SourceModel) {
-    const key = `${geometryKey(s)}|${app.quality}|${app.returnModel}`;
-    const pack = packWithImages(model.elements, app.planes, this.frame);
-    this.packs.set(s.id, pack);
-    if (this.volumes.get(s.id)?.key === key) return;
-    const running = this.jobs.get(s.id);
+    this.ensureKind(s, model, 'H');
+    if (model.charges?.length) {
+      this.ePacks.set(s.id, packCharges(model.charges, app.planes, this.frame));
+      if (app.view.fieldKind === 'E') this.ensureKind(s, model, 'E');
+    } else this.ePacks.delete(s.id);
+  }
+
+  /** Volume of a source for the active field kind (undefined while it computes). */
+  private volumeOf(id: string, kind: FieldKind = app.view.fieldKind): VolumeEntry | undefined {
+    return this.volumes.get(`${id}|${kind}`);
+  }
+
+  private linesOf(m: SourceModel, kind: FieldKind = app.view.fieldKind): Line[] {
+    return kind === 'E' ? (m.vLines ?? []) : m.lines;
+  }
+
+  private ensureKind(s: Source, model: SourceModel, kind: FieldKind) {
+    const key = `${geometryKey(s)}|${app.quality}|${app.returnModel}|${kind}`;
+    const vkey = `${s.id}|${kind}`;
+    let pack: ElementPack;
+    if (kind === 'H') {
+      pack = packWithImages(model.elements, app.planes, this.frame);
+      this.packs.set(s.id, pack);
+    } else {
+      pack = this.ePacks.get(s.id)!;
+    }
+    if (this.volumes.get(vkey)?.key === key) return;
+    const running = this.jobs.get(vkey);
     if (running?.key === key) return;
     running?.job.cancel();
     if (!this.pool || !this.grid || !this.cover) return;
     const t0 = performance.now();
-    const job = this.pool.computeVolume(pack, this.grid, this.cover, (f) => {
-      const j = this.jobs.get(s.id);
-      if (j) j.progress = f;
-      this.updateProgress();
-    });
-    this.jobs.set(s.id, { key, job, progress: 0 });
+    const job = this.pool.computeVolume(
+      pack,
+      this.grid,
+      this.cover,
+      (f) => {
+        const j = this.jobs.get(vkey);
+        if (j) j.progress = f;
+        this.updateProgress();
+      },
+      kind,
+    );
+    this.jobs.set(vkey, { key, job, progress: 0 });
     this.updateProgress();
     job.promise.then(
       (data) => {
         let max = 0;
         for (let i = 0; i < data.length; i++) if (data[i]! > max) max = data[i]!;
-        this.volumes.set(s.id, { key, data, max });
-        this.jobs.delete(s.id);
+        this.volumes.set(vkey, { key, data, max });
+        this.jobs.delete(vkey);
         app.compute.lastMs = performance.now() - t0;
         this.updateProgress();
         this.queueRecompose();
       },
       (e) => {
         if (!(e instanceof CancelledError)) {
-          this.jobs.delete(s.id);
+          this.jobs.delete(vkey);
           app.sourceErrors = { ...app.sourceErrors, [s.id]: (e as Error).message };
           this.updateProgress();
         }
       },
     );
+  }
+
+  setFieldKind(kind: FieldKind) {
+    app.view.fieldKind = kind;
+    for (const s of app.sources) {
+      const m = app.models[s.id];
+      if (m) this.ensureVolume(s, m);
+    }
+    this.queueRecompose();
+    this.updateFieldLines();
+    this.scheduleSave();
   }
 
   private cancelAll() {
@@ -365,11 +424,11 @@ class Engine {
     const vols: Float32Array[] = [];
     const weights: number[] = [];
     for (const s of app.sources) {
-      const v = this.volumes.get(s.id);
+      const v = this.volumeOf(s.id);
       const m = app.models[s.id];
       if (!v || !m || !s.enabled) continue;
       vols.push(v.data);
-      weights.push(selectionWeight(m.lines, sel));
+      weights.push(selectionWeight(this.linesOf(m), sel));
     }
     this.lineRanking();
     if (vols.length === 0) {
@@ -400,10 +459,10 @@ class Engine {
   private lineRanking() {
     const byF = new Map<number, LineInfo>();
     for (const s of app.sources) {
-      const v = this.volumes.get(s.id);
+      const v = this.volumeOf(s.id);
       const m = app.models[s.id];
       if (!v || !m || !s.enabled) continue;
-      for (const l of m.lines) {
+      for (const l of this.linesOf(m)) {
         const p = l.amp * l.amp * v.max;
         if (!(p > 0)) continue;
         const db = 10 * Math.log10(p) + 120;
@@ -456,16 +515,17 @@ class Engine {
     const totals = new Map<number, number>();
     for (const s of app.sources) {
       const m = app.models[s.id];
-      const pack = this.packs.get(s.id);
+      const isE = app.view.fieldKind === 'E';
+      const pack = isE ? this.ePacks.get(s.id) : this.packs.get(s.id);
       if (!m || !pack || !s.enabled) continue;
-      fieldAt(pack, slotMaskTable(pack.planeY.length), P[0], P[1], P[2], bits, h);
+      (isE ? eFieldAt : fieldAt)(pack, slotMaskTable(pack.planeY.length), P[0], P[1], P[2], bits, h);
       const comp = app.probe.component;
       const hv = comp === 'x' ? Math.abs(h[0]!) : comp === 'y' ? Math.abs(h[1]!) : comp === 'z' ? Math.abs(h[2]!) : Math.hypot(h[0]!, h[1]!, h[2]!);
       const lines: ProbeLine[] = [];
       let power = 0;
-      for (const l of m.lines) {
+      for (const l of this.linesOf(m)) {
         let a = l.amp * hv;
-        if (asV) a *= 2 * Math.PI * l.f * MU0 * area;
+        if (asV && !isE) a *= 2 * Math.PI * l.f * MU0 * area;
         if (!(a > 0)) continue;
         lines.push({ f: l.f, db: 20 * Math.log10(a) + 120 });
         power += a * a;
@@ -475,7 +535,7 @@ class Engine {
       sources.push({ id: s.id, name: s.name, color: s.color, lines, h: hv, db: power > 0 ? 10 * Math.log10(power) + 120 : -200 });
     }
     const total = [...totals.entries()].sort((a, b) => a[0] - b[0]).map(([f, p]) => ({ f, db: 10 * Math.log10(p) + 120 }));
-    return { sources, total, unit: asV ? 'dBµV' : 'dBµA/m' };
+    return { sources, total, unit: app.view.fieldKind === 'E' ? 'dBµV/m' : asV ? 'dBµV' : 'dBµA/m' };
   }
 
   /** |h| of each source at the probe (for the sound). */
@@ -559,7 +619,7 @@ class Engine {
       }
     }
     found.sort((a, b) => b.p - a.p);
-    const enabled = app.sources.filter((s) => this.volumes.has(s.id) && app.models[s.id] && s.enabled);
+    const enabled = app.sources.filter((s) => this.volumeOf(s.id) && app.models[s.id] && s.enabled);
     const describe = ({ ix, iz, p }: { ix: number; iz: number; p: number }): Hotspot => {
       const x = g.x0 + ix * g.dx;
       const z = g.z0 + iz * g.dz;
@@ -620,7 +680,8 @@ class Engine {
     const v = this.viewer;
     if (!v) return;
     const s = app.selected;
-    const pack = s ? this.packs.get(s.id) : undefined;
+    const kind = app.view.fieldKind;
+    const pack = s ? (kind === 'E' ? this.ePacks.get(s.id) : this.packs.get(s.id)) : undefined;
     if (!app.view.showFieldLines || !s || !pack || !this.grid) {
       v.setFieldLines(null);
       app.fieldLinesBusy = false;
@@ -646,6 +707,7 @@ class Engine {
       max: [g.x0 + (g.nx - 1) * g.dx, g.y0 + (g.ny - 1) * g.dy, g.z0 + (g.nz - 1) * g.dz],
       step: 0.2,
       maxSteps: 900,
+      kind,
     };
     app.fieldLinesBusy = true;
     this.linesWorker.postMessage({ id: ++this.linesJob, input });

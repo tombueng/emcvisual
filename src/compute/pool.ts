@@ -4,6 +4,7 @@
  */
 import type { ElementPack } from '../physics/images';
 import type { Grid } from './grid';
+import type { FieldKind } from './fieldKernel';
 import type { WorkerIn, WorkerOut } from './field.worker';
 
 export interface VolumeJob {
@@ -50,7 +51,7 @@ export class FieldPool {
     return this.workers.length;
   }
 
-  computeVolume(pack: ElementPack, grid: Grid, cover: Uint32Array, onProgress?: (f: number) => void): VolumeJob {
+  computeVolume(pack: ElementPack, grid: Grid, cover: Uint32Array, onProgress?: (f: number) => void, kind: FieldKind = 'H'): VolumeJob {
     const job = this.nextJob++;
     // aim for blocks of roughly 50k points so cancelling stays responsive
     const rows = Math.max(1, Math.floor(50_000 / (grid.nx * grid.ny)));
@@ -72,7 +73,7 @@ export class FieldPool {
       };
     });
     this.jobs.push(running);
-    for (const w of this.workers) w.postMessage({ type: 'job', job, pack, grid, cover } satisfies WorkerIn);
+    for (const w of this.workers) w.postMessage({ type: 'job', job, pack, grid, cover, kind } satisfies WorkerIn);
     this.pump();
     return {
       promise,

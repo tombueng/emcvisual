@@ -43,6 +43,8 @@ export interface LoopSource extends SourceBase {
   pads: string[];
   /** Current waveform; amplitude in amperes. */
   waveform: Waveform;
+  /** Switching node for the electric field (stage 2b): its net and voltage swing (e.g. VIN). */
+  node?: { net: string; voltage: number };
 }
 
 export type Source = SignalSource | DiffPairSource | LoopSource;

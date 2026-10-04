@@ -80,6 +80,8 @@ export const de = {
     driverP: 'Treiber P',
     driverN: 'Treiber N',
     imbalance: 'Unsymmetrie',
+    node: 'Schaltknoten-Netz (E-Feld)',
+    nodeVoltage: 'Spannungshub am Knoten',
     pads: 'Pads der Schleife (in Reihenfolge)',
     padsHint: 'Zwischen Pads eines Netzes folgt der Strom dem Kupfer, innerhalb eines Bauteils geht er gerade durch.',
     addPad: 'Pad hinzufügen',
@@ -115,6 +117,9 @@ export const de = {
   },
   view: {
     title: 'Ansicht',
+    fieldKind: 'Feldgröße',
+    fieldKinds: { H: 'Magnetisch (H)', E: 'Elektrisch (E)' },
+    fieldKindHint: 'E-Feld (Stufe 2): Ladungen auf Leitungen und Pads, bei Schaltreglern auf dem Schaltknoten.',
     frequency: 'Frequenzauswahl',
     modes: { all: 'Gesamt', band: 'Band', line: 'Einzellinie' },
     bands: {
@@ -220,6 +225,7 @@ export const de = {
   units: {
     dBuAm: 'dBµA/m',
     dBuV: 'dBµV',
+    dBuVm: 'dBµV/m',
   },
 };
 

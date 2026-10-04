@@ -49,6 +49,9 @@ export interface SourceModel {
   info: SourceInfo;
   /** Weighted centre of the current path, world mm (used to place the sound). */
   centre: Vec3;
+  /** Stage 2b: charges per volt for the electric field, and the voltage spectrum (V RMS). */
+  charges?: import('./charges').ChargeElement[];
+  vLines?: Line[];
 }
 
 export interface PhysicsContext {
