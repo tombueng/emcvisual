@@ -9,6 +9,7 @@ import { formatEng } from '../physics/units';
 import { limitAt } from '../physics/farfield';
 import type { Diagnostic } from '../physics/diagnostics';
 import { MAX_GAIN_DB, rankFindings } from '../physics/attribution';
+import { findingSeverity, sourceSeverity, type Severity } from '../physics/severity';
 import type { Source } from '../physics/sources';
 
 export function diagnosticText(d: Diagnostic): string {
@@ -70,11 +71,16 @@ export const sourceName = (id: string) => app.sources.find((s) => s.id === id)?.
 export const sourceColor = (id: string) => app.sources.find((s) => s.id === id)?.color ?? '#888';
 
 /** Layout hints in the order to work on them (attribution.ts): worst source first, biggest fix first. */
-export function rankedDiagnostics(): { d: Diagnostic; margin: number | null }[] {
+export function rankedDiagnostics(): { d: Diagnostic; margin: number | null; severity: Severity }[] {
   const margins = new Map(farMargins().map((f) => [f.id, f.worst]));
   return rankFindings(
     app.diagnostics.map((d) => ({ item: d, sourceMargin: margins.get(d.sourceId) ?? null, gainDb: d.gain?.db ?? null })),
-  ).map((r) => ({ d: r.item, margin: r.sourceMargin }));
+  ).map((r) => ({ d: r.item, margin: r.sourceMargin, severity: findingSeverity(r.sourceMargin, r.item.gain?.db ?? null, r.item.kind) }));
+}
+
+/** Severity of a source from its far-field margin. */
+export function sourceSeverityOf(id: string): Severity {
+  return sourceSeverity(farMargins().find((f) => f.id === id)?.worst ?? null);
 }
 
 /** "fixing this: 11 dB quieter at 3 m" and the like. */

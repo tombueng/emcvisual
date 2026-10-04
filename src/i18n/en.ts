@@ -432,6 +432,9 @@ export const en: Strings = {
   },
   explain: {
     sections: {
+      avoid: 'Avoid here, and why',
+      calc: 'The calculation behind it',
+      doubts: 'Scepticism: what can distort the result here',
       what: 'What is it?',
       why: 'Why does it radiate?',
       detected: 'How the app spots it',
@@ -441,6 +444,7 @@ export const en: Strings = {
       refs: 'Further reading',
     },
     fig: {
+      gainShort: (g: string) => `${g} quieter when fixed`,
       gap: (mm: string, net: string, plane: string) => `${mm} mm of the line run over a gap in ${net} (${plane}).`,
       detour: (mm: string, area: string) => `The return current takes ${mm} mm around it, adding about ${area} mm² of loop area.`,
       transfer: (mm: string, area: string, via: string) => `The return current changes planes through ${via}: ${mm} mm detour, about ${area} mm² extra loop area.`,
@@ -449,6 +453,31 @@ export const en: Strings = {
       longLine: (mm: string, eeff: string, f: string) => `Line length ${mm} mm, effective permittivity ${eeff}: λ/10 is reached at ${f}.`,
       gain: (g: string) => `Fixed, the source gets ${g} quieter at 3 m (every spectral line alike).`,
       gainSource: (g: string) => `All gaps under this source together cost ${g} at 3 m.`,
+    },
+    fieldNames: { 'waveform.f0': 'Frequency', 'waveform.tr': 'Rise time', 'waveform.amplitude': 'Amplitude' },
+    calc: {
+      path: (mm: string, plane: string) => `Current path of the source: ${mm} mm, reference plane ${plane}.`,
+      moment: (mm2: string) => `Magnetic dipole moment per ampere of reference current (the effective loop area, with image currents and detours): |m| = ${mm2} mm².`,
+      formula: 'Every spectral line I radiates at 3 m with E = 2 · η0 · k² · |m| · I / (4π · r), k = 2π f / c, r = 3 m, factor 2 for the reflection off the test-site floor (Ott, eq. 12-2).',
+      worst: (f: string, db: string, lim: string, margin: string) => `Strongest line against the limit (CISPR 32 B, 3 m): ${f} at ${db} dBµV/m against ${lim} dBµV/m, i.e. ${margin}.`,
+      fixed: (mm2: string, g: string, db: string, margin: string) => `Fixed: |m| ≈ ${mm2} mm², every line ${g} lower; the strongest line would be at ${db} dBµV/m, i.e. ${margin}.`,
+      fixedSolid: (mm2: string, g: string, db: string, margin: string) => `Over continuous planes: |m| = ${mm2} mm², every line ${g} lower; the strongest line would be at ${db} dBµV/m, i.e. ${margin}.`,
+    },
+    doubt: {
+      inputs: (list: string, fEdge: string) =>
+        `${list} ${list.includes(',') ? 'are' : 'is'} not backed by a datasheet (default or assumption). Every line scales with the amplitude; ${fEdge ? `the rise time decides where the harmonics start falling at 40 dB/decade (here from about ${fEdge}): halved, it raises the lines above by up to 6 dB.` : 'for the ripple current the value counts directly.'}`,
+      aboveValidity: (f: string, fs: string) => `The strongest line (${f}) is above the limit up to which the line is electrically short (${fs}). Delays and reflections are not computed there; deviations of 10 dB either way are possible.`,
+      boardSize: (mm: string, f: string) => `The board is ${mm} mm across and reaches half a wavelength from about ${f}. From there resonances of the board and the planes can raise single lines a lot; the model has no resonances.`,
+      cables: (n: number) =>
+        n > 0
+          ? `Attached cables are not in the calculation (the board has ${n} connectors). Common-mode currents on cables often radiate 10–20 dB more than the board itself; the result is then too optimistic.`
+          : 'Cables are not in the calculation. Once cables are attached, their common-mode currents often dominate.',
+      cavity: (a: string, b: string, f: string) => `The cavity between ${a} and ${b} has its first resonance at about ${f}. There the layer change can radiate far more than computed.`,
+      shortestPath: 'The return detour follows the shortest way through the copper. Real current spreads wider, so the extra area is rather overstated and the gain of the fix a bit smaller.',
+      idealMirror: 'Over an ideal, infinite plane current and image almost cancel, so the gain of a continuous plane looks very large. Real gains are more like 10–20 dB.',
+      trapezoid: 'The spectrum comes from an ideal trapezoid. Overshoot and ringing of real edges raise single harmonics; a spread-spectrum clock lowers them by several dB (neither is computed).',
+      detector: 'The test measures with a quasi-peak detector, turns the device and scans the antenna height; the calculation takes the strongest direction with full floor reflection. For the board alone that is rather an upper estimate.',
+      planesDetected: 'The reference planes are detected automatically, not confirmed. If an assignment is wrong (View → Layers), the finding is wrong.',
     },
     refs: {
       ott: 'H. W. Ott: Electromagnetic Compatibility Engineering. Wiley, 2009 (ch. 12 digital circuit radiation, ch. 16 PCB layout and stack-up).',
@@ -470,6 +499,11 @@ export const en: Strings = {
           'If the line has to cross: a stitching capacitor (e.g. 100 nF, 0402) across the gap, right next to the crossing, between the two plane parts.',
           'Change to a layer with a continuous reference plane, with a stitching via right next to the layer change.',
           'Slow the edges (longer rise time): that lowers every harmonic above about 1/(π·tr).',
+        ],
+        avoid: () => [
+          'Do not route fast lines over slots, cut-outs or plane splits: the return current has to go around and the loop grows.',
+          'Do not cut the reference layer later to route lines in it: every line in the plane is a slot.',
+          'Do not rely on a distant bridge: the return path stays long unless the connection sits right at the crossing.',
         ],
         limits: () =>
           'The calculation is quasi-static: the slot as an antenna (resonant when its length approaches λ/2) and cable common mode are not included. The detour follows the shortest path; real current spreads wider, so the extra area is somewhat smaller. The full wave (stage 3, openEMS) is more accurate.',
@@ -493,6 +527,14 @@ export const en: Strings = {
                 'Slow the switching edges if the regulator allows it (bootstrap resistor, slew-rate setting).',
               ]
             : ['Make the plane continuous under the line.', 'Reroute the line over continuous plane.', 'Change to a layer with a reference plane (with a stitching via).'],
+        avoid: (p: P) =>
+          p.loop
+            ? [
+                'No cut-out in the plane under the hot loop: without the plane there is no image and the loop radiates with its full area.',
+                'Do not put the input capacitor on the other layer or far away: vias and long ways make the loop large and inductive.',
+                'Do not make the switch-node copper larger than needed: it radiates through the electric field.',
+              ]
+            : ['Do not route fast lines over areas without a reference plane.', 'Do not clear reference planes for parts that lines run over.'],
         limits: () =>
           'The display stops at "more than 30 dB": the ideal mirror model almost cancels the vertical moment of a flat loop and so overstates the gain. In practice a continuous plane under the hot loop gains more like 10–20 dB.',
         refs: ['ott', 'an1149'] as const,
@@ -510,6 +552,11 @@ export const en: Strings = {
           'Avoid the layer change, or put it where a decoupling capacitor sits anyway.',
           'Slow the edges if the signal allows it.',
         ],
+        avoid: (p: P) => [
+          `Do not let fast signals change between layers with different references (${p.planeNet}, ${p.otherNet}): the return current has no direct way at the via.`,
+          'Do not rely on the capacitance between the planes alone: at high frequencies it is a resonator, not a connection.',
+          'Do not put the bridging capacitor far away: every millimetre lengthens the loop.',
+        ],
         limits: () =>
           'Cavity resonances between the planes are not captured quasi-statically. The extra loop follows the shortest way to the capacitor. The full wave (stage 3) shows both more accurately.',
         refs: ['archambeault', 'bogatin', 'ott'] as const,
@@ -521,6 +568,10 @@ export const en: Strings = {
           'The return current has to run to the nearest connection between the planes and back under the line. The farther that connection, the bigger the extra loop and the more the cavity between the planes is excited.',
         detected: (p: P) => `Around every signal via with a layer change the app looks for vias or plated pads of the plane net within ${p.radius} mm.`,
         fixes: (p: P) => [`Put a ${p.planeNet} stitching via right next to every signal via that changes layers (1–2 mm away).`, 'For differential pairs one stitching via per pair, symmetric.'],
+        avoid: () => [
+          'Avoid layer changes of fast signals without a stitching via next to them: the return current otherwise finds its own way between the planes.',
+          'Do not share one distant via for many signals: the loops get large and couple to each other.',
+        ],
         limits: () => 'Whether a farther via is enough depends on the frequency; the app only reports the distance here. The actual detour, if there is one, is given with the effect.',
         refs: ['archambeault', 'bogatin'] as const,
       },
@@ -535,10 +586,23 @@ export const en: Strings = {
           'Slow the edges as far as the timing allows: above about 1/(π·tr) the harmonics fall at 40 dB per decade.',
           'For solid numbers run the full wave (stage 3, openEMS).',
         ],
+        avoid: () => [
+          'Do not leave long fast lines unterminated: reflections make standing waves and resonances.',
+          'No stubs on clocks: they act as resonators.',
+          'No faster edges than needed: reduce drive strength or slew rate where the timing allows.',
+        ],
         limits: () => 'This is a note on the validity of the model; how much more the line radiates above the limit cannot be quantified without the full wave.',
         refs: ['johnson', 'bogatin'] as const,
       },
     },
+  },
+  severity: {
+    critical: 'critical',
+    check: 'check',
+    minor: 'minor',
+    scale: 'Severity: red decides the test (the source is near or over the limit at 3 m and this finding contributes a lot), yellow is worth a look, green radiates but does not stand out.',
+    reason: (margin: string, gain: string) => `${margin}; ${gain}`,
+    noGain: 'effect not quantified',
   },
   live: {
     badge: 'live',

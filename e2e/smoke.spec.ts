@@ -262,6 +262,10 @@ test('problem view: a click on a hint shows only what matters, with labels and e
   await expect(card).toContainText('Warum strahlt das ab?');
   await expect(card.locator('ol.fixes li').first()).toContainText('Bezugsnetz');
   await expect(card).toContainText('Zum Nachlesen');
+  // severity, the calculation with this case's numbers, and the doubts
+  await expect(card.locator('.severity .chip')).toHaveText('kritisch');
+  await expect(card.locator('ol.calc')).toContainText('Dipolmoment');
+  await expect(card.locator('ul.doubts')).toContainText('Kabel');
   // labels in the scene: the net with its values, the planes, the capacitor that carries the return
   await expect(page.locator('.labels .label.net')).toContainText('CLK_BAD');
   await expect(page.locator('.labels')).toContainText('GND · In1.Cu');

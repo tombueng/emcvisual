@@ -8,7 +8,8 @@ import { app } from '../state/app.svelte';
 import { engine } from '../state/engine.svelte';
 import { t } from '../i18n';
 import { toWorld } from '../model/world';
-import { farMargins, gainText, rankedDiagnostics, diagnosticText, sourceName, sourceColor } from '../report/texts';
+import { farMargins, gainText, rankedDiagnostics, diagnosticText, sourceName, sourceColor, sourceSeverityOf } from '../report/texts';
+import { severityColor } from '../physics/severity';
 import type { Diagnostic } from '../physics/diagnostics';
 import { cispr32ClassB } from '../physics/farfield';
 import { MAX_GAIN_DB } from '../physics/attribution';
@@ -29,6 +30,9 @@ export interface Callout {
   more?: string;
   /** Small 3 m far-field spectrum (SVG markup). */
   spectrum?: string;
+  /** Severity colour (badge of a hint, dot of a source). */
+  severity?: string;
+  severityLabel?: string;
   onclick: () => void;
 }
 
@@ -70,7 +74,7 @@ export function buildCallouts(viewer: Viewer): Callout[] {
   if (c.hints) {
     rankedDiagnostics()
       .slice(0, c.maxHints > 0 ? c.maxHints : undefined)
-      .forEach(({ d, margin }, i) => {
+      .forEach(({ d, margin, severity }, i) => {
         const w = toWorld(engine.frame, d.at, surface + 0.3);
         out.push({
           key: `h${i}`,
@@ -83,6 +87,8 @@ export function buildCallouts(viewer: Viewer): Callout[] {
           accent: d.gain ? gainText(d) : margin !== null ? t.diag.margin(margin) : undefined,
           more: diagnosticText(d),
           spectrum: chart(d.sourceId, sourceColor(d.sourceId), d.gain?.db),
+          severity: severityColor(severity.score),
+          severityLabel: t.severity[severity.level],
           onclick: () => (app.focusKey = diagKey(d)),
         });
       });
@@ -103,6 +109,8 @@ export function buildCallouts(viewer: Viewer): Callout[] {
         lines: peak ? [t.callouts.peak(peak.db.toFixed(0))] : [],
         accent: f ? t.callouts.far(t.diag.margin(f.worst)) : undefined,
         spectrum: chart(s.id, s.color),
+        severity: severityColor(sourceSeverityOf(s.id).score),
+        severityLabel: t.severity[sourceSeverityOf(s.id).level],
         onclick: () => (app.selectedId = s.id),
       });
     }

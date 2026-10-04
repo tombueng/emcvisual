@@ -91,7 +91,7 @@ export class WorldCallouts {
     const seen = new Set<string>();
     list.forEach((c, i) => {
       seen.add(c.key);
-      const signature = JSON.stringify([c.badge, c.title, c.lines, c.accent, c.color, c.kind, c.spectrum]);
+      const signature = JSON.stringify([c.badge, c.title, c.lines, c.accent, c.color, c.kind, c.spectrum, c.severity]);
       let it = this.items.get(c.key);
       if (!it) {
         it = this.create(c);
@@ -147,6 +147,7 @@ export class WorldCallouts {
       const b = document.createElement('span');
       b.className = 'wc-badge';
       b.textContent = c.badge;
+      if (c.severity) b.style.background = c.severity;
       head.append(b);
     }
     const title = document.createElement('span');

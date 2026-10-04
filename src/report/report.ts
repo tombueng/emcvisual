@@ -11,6 +11,7 @@ import { formatEng } from '../physics/units';
 import { BANDS } from '../physics/spectrum';
 import { diagnosticText, farMargins, gainText, rankedDiagnostics, sourceColor, sourceName, sourceSummary } from './texts';
 import { explain } from './explain';
+import { severityColor } from '../physics/severity';
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
@@ -27,8 +28,12 @@ function explainHtml(d: Parameters<typeof explain>[0]): string {
   const x = explain(d);
   const S = t.explain.sections;
   return `<div class="explain">
+<p><span class="sev" style="background:${severityColor(x.severity.score)}">${esc(t.severity[x.severity.level])}</span> ${esc(x.reason)}</p>
 <p><b>${esc(S.why)}</b> ${esc(x.why)}</p>
 <p><b>${esc(S.fixes)}</b></p><ol>${x.fixes.map((f) => `<li>${esc(f)}</li>`).join('')}</ol>
+<p><b>${esc(S.avoid)}</b></p><ul>${x.avoid.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
+<p><b>${esc(S.calc)}</b></p><ol>${x.calc.map((f) => `<li>${esc(f)}</li>`).join('')}</ol>
+<p class="note"><b>${esc(S.doubts)}</b></p><ul class="note">${x.doubts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
 <p class="note"><b>${esc(S.limits)}</b> ${esc(x.limits)}</p>
 <p class="note"><b>${esc(S.refs)}</b> ${x.refs.map(esc).join(' ')}</p>
 </div>`;
@@ -153,7 +158,8 @@ export function buildReport(image: string | null): string {
   .gain { color: var(--amber); font-size: 13px; font-weight: 600; }
   .explain { margin: 6px 0 14px; padding-left: 12px; border-left: 2px solid var(--line); font-size: 13px; }
   .explain p { margin: 4px 0; }
-  .explain ol { margin: 2px 0 6px; padding-left: 20px; }
+  .explain ol, .explain ul { margin: 2px 0 6px; padding-left: 20px; }
+  .sev { display: inline-block; color: #0b0f14; font-weight: 700; font-size: 12px; border-radius: 9px; padding: 0 8px; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: 13px; }
   dt { color: var(--muted); }
   dd { margin: 0; }

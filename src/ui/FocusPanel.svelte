@@ -16,6 +16,7 @@
   import type { FocusSpec } from './focusData';
   import { diagKey } from './focusData';
   import { explain } from '../report/explain';
+  import { severityColor } from '../physics/severity';
 
   interface Props {
     spec: FocusSpec;
@@ -71,6 +72,11 @@
     <button class="btn small" onclick={onclose}>{t.focus.back}</button>
   </header>
 
+  <div class="severity" style:--s={severityColor(ex.severity.score)}>
+    <span class="chip">{t.severity[ex.severity.level]}</span>
+    <span class="reason">{ex.reason}</span>
+  </div>
+
   <div class="section-title">{t.focus.why}</div>
   <p class="text">{diagnosticText(spec.diag)}</p>
   {#if spec.diag.gain}<p class="gain value">{gainText(spec.diag)}</p>{/if}
@@ -86,6 +92,12 @@
   {/if}
   <div class="section-title">{t.explain.sections.fixes}</div>
   <ol class="fixes">{#each ex.fixes as f, i (i)}<li>{f}</li>{/each}</ol>
+  <div class="section-title">{t.explain.sections.avoid}</div>
+  <ul class="fixes avoid">{#each ex.avoid as f, i (i)}<li>{f}</li>{/each}</ul>
+  <div class="section-title">{t.explain.sections.calc}</div>
+  <ol class="calc">{#each ex.calc as f, i (i)}<li>{f}</li>{/each}</ol>
+  <div class="section-title">{t.explain.sections.doubts}</div>
+  <ul class="doubts">{#each ex.doubts as f, i (i)}<li>{f}</li>{/each}</ul>
 
   {#if chart}
     <div class="section-title">{t.focus.spectrum}</div>
@@ -198,6 +210,46 @@
   }
   .chart {
     line-height: 0;
+  }
+  .severity {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 8px 0 2px;
+    padding: 6px 8px;
+    border-left: 4px solid var(--s);
+    background: color-mix(in srgb, var(--s) 12%, transparent);
+    border-radius: 4px;
+  }
+  .severity .chip {
+    flex: none;
+    font-weight: 700;
+    font-size: 12px;
+    color: #0b0f14;
+    background: var(--s);
+    border-radius: 9px;
+    padding: 0 8px;
+  }
+  .severity .reason {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .calc,
+  .doubts {
+    margin: 4px 0;
+    padding-left: 18px;
+    line-height: 1.45;
+    font-size: 12px;
+  }
+  .calc li,
+  .doubts li {
+    margin-bottom: 4px;
+  }
+  .doubts li::marker {
+    color: var(--warn);
+  }
+  .avoid li::marker {
+    color: var(--warn);
   }
   .figs,
   .fixes,

@@ -31,6 +31,10 @@ export interface SourceAttribution {
   returnPathsDb: number;
   /** Gaps and cut-outs in the reference planes under the source: louder than over solid planes, dB. */
   planeGapsDb: number;
+  /** |m| per ampere (A·m² per A): as computed, with ideal returns, over solid planes. */
+  momentNow: number;
+  momentIdeal: number;
+  momentSolid: number;
 }
 
 /** The same planes without gaps (every raster cell covered). */
@@ -49,7 +53,7 @@ export function attributeSource(elements: CurrentElement[], base: CurrentElement
   const solid = moment(base, solidPlanes(planes));
   const planeGapsDb = nNow > 0 ? Math.max(0, db(nNow, norm(solid))) : 0;
   const fixes = detours.filter((d) => d.fix);
-  if (fixes.length === 0 || !(nNow > 0)) return { returnPathsDb: 0, planeGapsDb };
+  if (fixes.length === 0 || !(nNow > 0)) return { returnPathsDb: 0, planeGapsDb, momentNow: nNow, momentIdeal: nNow, momentSolid: norm(solid) };
 
   // all fixed at once: indices refer to the original list, so drop, restore and add in one pass
   const remove = new Set(fixes.flatMap((d) => d.fix!.remove));
@@ -61,7 +65,7 @@ export function attributeSource(elements: CurrentElement[], base: CurrentElement
     const share = sub(now, moment(withFixed(elements, d)));
     d.gainDb = Math.max(0, db(norm(add(ideal, share)), nIdeal));
   }
-  return { returnPathsDb: Math.max(0, db(nNow, nIdeal)), planeGapsDb };
+  return { returnPathsDb: Math.max(0, db(nNow, nIdeal)), planeGapsDb, momentNow: nNow, momentIdeal: nIdeal, momentSolid: norm(solid) };
 }
 
 export interface RankedFinding<T> {

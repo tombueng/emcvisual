@@ -432,6 +432,9 @@ export const de = {
   },
   explain: {
     sections: {
+      avoid: 'Hier vermeiden, und warum',
+      calc: 'Die Rechnung dahinter',
+      doubts: 'Skepsis: was das Ergebnis hier verfälschen kann',
       what: 'Was ist das?',
       why: 'Warum strahlt das ab?',
       detected: 'Wie die App das erkennt',
@@ -441,6 +444,7 @@ export const de = {
       refs: 'Zum Nachlesen',
     },
     fig: {
+      gainShort: (g: string) => `behoben ${g} leiser`,
       gap: (mm: string, net: string, plane: string) => `${mm} mm der Leitung liegen über einer Lücke in ${net} (${plane}).`,
       detour: (mm: string, area: string) => `Der Rückstrom läuft ${mm} mm außen herum; das spannt etwa ${area} mm² zusätzliche Schleifenfläche auf.`,
       transfer: (mm: string, area: string, via: string) => `Der Rückstrom wechselt über ${via} die Fläche: ${mm} mm Umweg, etwa ${area} mm² zusätzliche Schleifenfläche.`,
@@ -449,6 +453,31 @@ export const de = {
       longLine: (mm: string, eeff: string, f: string) => `Leitungslänge ${mm} mm, effektive Permittivität ${eeff}: λ/10 wird bei ${f} erreicht.`,
       gain: (g: string) => `Behoben wird die Quelle in 3 m um ${g} leiser (jede Spektrallinie gleich viel).`,
       gainSource: (g: string) => `Alle Lücken unter dieser Quelle zusammen kosten in 3 m ${g}.`,
+    },
+    fieldNames: { 'waveform.f0': 'Frequenz', 'waveform.tr': 'Anstiegszeit', 'waveform.amplitude': 'Amplitude' },
+    calc: {
+      path: (mm: string, plane: string) => `Strompfad der Quelle: ${mm} mm, Bezugsfläche ${plane}.`,
+      moment: (mm2: string) => `Magnetisches Dipolmoment je Ampere Referenzstrom (die wirksame Schleifenfläche, mit Spiegelströmen und Umwegen): |m| = ${mm2} mm².`,
+      formula: 'Jede Spektrallinie I strahlt in 3 m mit E = 2 · η0 · k² · |m| · I / (4π · r), k = 2π f / c, r = 3 m, Faktor 2 für die Reflexion am Boden des Messplatzes (Ott, Gl. 12-2).',
+      worst: (f: string, db: string, lim: string, margin: string) => `Stärkste Linie gegen den Grenzwert (CISPR 32 B, 3 m): ${f} mit ${db} dBµV/m bei ${lim} dBµV/m Grenzwert, also ${margin}.`,
+      fixed: (mm2: string, g: string, db: string, margin: string) => `Mit Behebung: |m| ≈ ${mm2} mm², alle Linien ${g} tiefer; die stärkste Linie läge bei ${db} dBµV/m, also ${margin}.`,
+      fixedSolid: (mm2: string, g: string, db: string, margin: string) => `Über lückenloser Fläche: |m| = ${mm2} mm², alle Linien ${g} tiefer; die stärkste Linie läge bei ${db} dBµV/m, also ${margin}.`,
+    },
+    doubt: {
+      inputs: (list: string, fEdge: string) =>
+        `${list} ${list.includes(',') ? 'sind' : 'ist'} nicht durch ein Datenblatt belegt (Vorgabe oder Annahme). Jede Linie ist proportional zur Amplitude; ${fEdge ? `die Anstiegszeit bestimmt, wo die Oberwellen mit 40 dB/Dekade abfallen (hier ab etwa ${fEdge}): Halbiert hebt sie die Linien darüber um bis zu 6 dB.` : 'beim Rippelstrom zählt der Wert direkt.'}`,
+      aboveValidity: (f: string, fs: string) => `Die stärkste Linie (${f}) liegt oberhalb der Grenze, bis zu der die Leitung elektrisch kurz ist (${fs}). Laufzeiten und Reflexionen sind dort nicht gerechnet; Abweichungen um 10 dB nach oben oder unten sind möglich.`,
+      boardSize: (mm: string, f: string) => `Die Platine misst diagonal ${mm} mm und erreicht ab etwa ${f} eine halbe Wellenlänge. Ab da können Resonanzen der Platine und der Flächen einzelne Linien deutlich anheben; das Modell enthält keine Resonanzen.`,
+      cables: (n: number) =>
+        n > 0
+          ? `Angeschlossene Kabel fehlen in der Rechnung (die Platine hat ${n} Steckverbinder). Gleichtaktströme auf Kabeln strahlen in der Praxis oft 10–20 dB stärker als die Platine selbst; das Ergebnis ist dann zu günstig.`
+          : 'Kabel fehlen in der Rechnung. Sobald Kabel angeschlossen sind, dominieren oft deren Gleichtaktströme.',
+      cavity: (a: string, b: string, f: string) => `Der Hohlraum zwischen ${a} und ${b} hat seine erste Resonanz bei etwa ${f}. Dort kann der Lagenwechsel weit stärker abstrahlen als gerechnet.`,
+      shortestPath: 'Der Rückstrom-Umweg folgt dem kürzesten Weg durchs Kupfer. Real verteilt sich der Strom breiter, die zusätzliche Fläche ist eher überschätzt, der Gewinn der Behebung eher etwas kleiner.',
+      idealMirror: 'Über einer idealen, unendlichen Fläche heben sich Strom und Spiegelstrom fast auf; deshalb erscheint der Gewinn einer durchgehenden Fläche sehr groß. Real eher 10–20 dB.',
+      trapezoid: 'Das Spektrum stammt aus einem idealen Trapez. Überschwingen und Klingeln echter Flanken heben einzelne Oberwellen an; ein Takt mit Spread-Spectrum senkt sie um mehrere dB (beides nicht gerechnet).',
+      detector: 'Die Prüfung misst mit Quasi-Peak-Detektor, dreht den Prüfling und fährt die Antenne in der Höhe; die Rechnung nimmt die stärkste Richtung mit voller Bodenreflexion. Für die Platine allein ist das eher eine obere Abschätzung.',
+      planesDetected: 'Die Bezugsflächen sind automatisch erkannt, nicht bestätigt. Stimmt eine Zuordnung nicht (Ansicht → Lagen), ist der Befund falsch.',
     },
     refs: {
       ott: 'H. W. Ott: Electromagnetic Compatibility Engineering. Wiley, 2009 (Kap. 12 Abstrahlung digitaler Schaltungen, Kap. 16 Leiterplatten-Layout und Lagenaufbau).',
@@ -470,6 +499,11 @@ export const de = {
           'Wenn die Leitung kreuzen muss: Brückenkondensator (z. B. 100 nF, 0402) über die Lücke, direkt neben der Kreuzung, zwischen beiden Flächenteilen.',
           'Auf eine Lage mit durchgehender Bezugsfläche wechseln, mit einer Stitching-Via direkt neben dem Lagenwechsel.',
           'Flanken verlangsamen (größere Anstiegszeit): Das senkt alle Oberwellen oberhalb von etwa 1/(π·tr).',
+        ],
+        avoid: () => [
+          'Keine schnellen Leitungen über Schlitze, Aussparungen oder Flächentrennungen führen: Der Rückstrom muss sonst außen herum, die Schleife wächst.',
+          'Die Bezugslage nicht nachträglich für Leitungen aufschneiden: Jede Leitung in der Fläche ist ein Schlitz.',
+          'Sich nicht auf eine weit entfernte Brücke verlassen: Der Rückweg bleibt lang, solange die Verbindung nicht direkt an der Kreuzung sitzt.',
         ],
         limits: () =>
           'Gerechnet wird quasistatisch: Der Schlitz als Antenne (Resonanz, wenn die Schlitzlänge etwa λ/2 erreicht) und Gleichtakt auf Kabeln sind nicht enthalten. Der Umweg folgt dem kürzesten Weg; real verteilt sich der Strom breiter, die zusätzliche Fläche ist dann etwas kleiner. Genauer wird es mit der Vollwelle (Stufe 3, openEMS).',
@@ -493,6 +527,14 @@ export const de = {
                 'Schaltflanken verlangsamen, wenn der Regler das erlaubt (Bootstrap-Widerstand, Slew-Rate-Einstellung).',
               ]
             : ['Fläche unter der Leitung durchgehend machen.', 'Leitung über durchgehende Fläche umlegen.', 'Auf eine Lage mit Bezugsfläche wechseln (mit Stitching-Via).'],
+        avoid: (p: P) =>
+          p.loop
+            ? [
+                'Keine Aussparung in der Fläche unter der heißen Schleife: Ohne Fläche fehlt das Spiegelbild, die Schleife strahlt mit voller Fläche.',
+                'Den Eingangskondensator nicht auf die andere Lage oder weit weg setzen: Vias und lange Wege machen die Schleife groß und induktiv.',
+                'Die Kupferfläche des Schaltknotens nicht größer als nötig machen: Sie strahlt über das elektrische Feld.',
+              ]
+            : ['Keine schnellen Leitungen über Bereiche ohne Bezugsfläche führen.', 'Bezugsflächen nicht für Bauteile freistellen, über die Leitungen laufen.'],
         limits: () =>
           'Die Anzeige ist bei „mehr als 30 dB“ begrenzt: Das ideale Spiegelmodell löscht das senkrechte Moment einer flachen Schleife fast ganz aus und überschätzt deshalb den Gewinn. In der Praxis bringt eine durchgehende Fläche unter der heißen Schleife eher 10–20 dB.',
         refs: ['ott', 'an1149'] as const,
@@ -510,6 +552,11 @@ export const de = {
           'Den Lagenwechsel vermeiden oder an eine Stelle legen, an der ein Entkoppelkondensator ohnehin sitzt.',
           'Flanken verlangsamen, wenn das Signal es erlaubt.',
         ],
+        avoid: (p: P) => [
+          `Schnelle Signale nicht zwischen Lagen mit unterschiedlichem Bezug (${p.planeNet}, ${p.otherNet}) wechseln lassen: Der Rückstrom findet an der Via keinen direkten Weg.`,
+          'Sich nicht auf die Kapazität zwischen den Flächen allein verlassen: Bei hohen Frequenzen ist sie ein Resonator, keine Verbindung.',
+          'Den Brückenkondensator nicht weit weg setzen: Jeder Millimeter verlängert die Schleife.',
+        ],
         limits: () =>
           'Die Resonanzen des Hohlraums zwischen den Flächen sind quasistatisch nicht erfasst. Die zusätzliche Schleife wird entlang des kürzesten Wegs zum Kondensator gerechnet. Die Vollwelle (Stufe 3) zeigt beides genauer.',
         refs: ['archambeault', 'bogatin', 'ott'] as const,
@@ -521,6 +568,10 @@ export const de = {
           'Der Rückstrom muss zur nächsten Verbindung der beiden Flächen laufen und dann zurück unter die Leitung. Je weiter diese Verbindung entfernt ist, desto größer wird die zusätzliche Schleife, und desto mehr wird der Hohlraum zwischen den Flächen angeregt.',
         detected: (p: P) => `Die App sucht um jede Signal-Via mit Lagenwechsel nach Vias oder durchkontaktierten Pads des Flächennetzes im Umkreis von ${p.radius} mm.`,
         fixes: (p: P) => [`Eine ${p.planeNet}-Stitching-Via direkt neben jede Signal-Via setzen, die die Lage wechselt (Abstand 1–2 mm).`, 'Bei Differenzpaaren eine Stitching-Via je Paar, symmetrisch.'],
+        avoid: () => [
+          'Lagenwechsel schneller Signale ohne Stitching-Via daneben vermeiden: Der Rückstrom sucht sich sonst den nächsten Weg zwischen den Flächen.',
+          'Nicht eine weit entfernte Via für viele Signale teilen: Die Schleifen werden groß und koppeln untereinander.',
+        ],
         limits: () => 'Ob eine weiter entfernte Via ausreicht, hängt von der Frequenz ab; die App meldet hier nur den Abstand. Der tatsächliche Umweg steht, wenn vorhanden, bei der Wirkung.',
         refs: ['archambeault', 'bogatin'] as const,
       },
@@ -535,10 +586,23 @@ export const de = {
           'Flanken verlangsamen, soweit das Timing es erlaubt: Oberhalb von etwa 1/(π·tr) fallen die Oberwellen mit 40 dB pro Dekade.',
           'Für belastbare Zahlen die Vollwelle (Stufe 3, openEMS) rechnen.',
         ],
+        avoid: () => [
+          'Lange schnelle Leitungen nicht ohne Terminierung lassen: Reflexionen erzeugen stehende Wellen und Resonanzen.',
+          'Keine Stichleitungen (Stubs) an Takten: Sie wirken als Resonatoren.',
+          'Flanken nicht schneller als nötig: Treiberstärke oder Slew-Rate reduzieren, wo das Timing es erlaubt.',
+        ],
         limits: () => 'Das ist ein Hinweis auf die Gültigkeit des Modells; um wie viel die Abstrahlung oberhalb der Grenze steigt, lässt sich ohne Vollwelle nicht beziffern.',
         refs: ['johnson', 'bogatin'] as const,
       },
     },
+  },
+  severity: {
+    critical: 'kritisch',
+    check: 'ansehen',
+    minor: 'unauffällig',
+    scale: 'Schweregrad: rot entscheidet über die Prüfung (Quelle nahe am oder über dem Grenzwert in 3 m und dieser Hinweis trägt viel dazu bei), gelb sollte man ansehen, grün strahlt, fällt aber nicht auf.',
+    reason: (margin: string, gain: string) => `${margin}; ${gain}`,
+    noGain: 'Wirkung nicht beziffert',
   },
   live: {
     badge: 'live',

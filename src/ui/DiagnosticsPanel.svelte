@@ -7,6 +7,7 @@
   import { diagnosticText, farMargins, gainText, rankedDiagnostics } from '../report/texts';
   import { MAX_GAIN_DB } from '../physics/attribution';
   import { diagKey } from './focusData';
+  import { severityColor } from '../physics/severity';
   import { buildReport } from '../report/report';
   import { buildAiRequest } from '../ai/request';
   import { suggestSources } from '../physics/suggest';
@@ -118,13 +119,14 @@
   {#if app.diagnostics.length === 0}
     <p class="hint">{t.diag.none}</p>
   {:else}
-    <p class="hint">{t.diag.rankHint}</p>
+    <p class="hint">{t.diag.rankHint} {t.severity.scale}</p>
   {/if}
   <ol class="ranked">
-    {#each ranked as { d, margin }, i (i)}
-      <li style:--c={colorOf(d.sourceId)}>
+    {#each ranked as { d, margin, severity }, i (i)}
+      <li style:--c={severityColor(severity.score)}>
         <button onclick={() => (app.focusKey = diagKey(d))} title={t.focus.open}>
-          <span class="row"><span class="src">{nameOf(d.sourceId)}</span>{#if margin !== null}<span class="value" class:over={margin >= 0}>{t.diag.margin(margin)}</span>{/if}</span>
+          <span class="row"><span class="src"><span class="dot" style:background={colorOf(d.sourceId)}></span>{nameOf(d.sourceId)}</span><span class="sev" style:--s={severityColor(severity.score)}>{t.severity[severity.level]}</span></span>
+          {#if margin !== null}<span class="value hint" class:over={margin >= 0}>{t.diag.margin(margin)}</span>{/if}
           <span class:warn={d.kind !== 'long-line'}>{diagnosticText(d)}</span>
           {#if d.gain}<span class="gain value">{gainText(d)}</span>{/if}
         </button>
@@ -189,6 +191,22 @@
   .gain {
     color: var(--field);
     font-size: 12px;
+  }
+  .sev {
+    flex: none;
+    font-size: 11px;
+    font-weight: 600;
+    color: #0b0f14;
+    background: var(--s);
+    border-radius: 9px;
+    padding: 0 7px;
+  }
+  .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
   }
   .report {
     display: flex;

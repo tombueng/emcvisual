@@ -90,8 +90,9 @@
   {#each callouts as c, i (c.key)}
     <button class="bubble {c.kind}" style:--c={c.color} bind:this={els[i]} onclick={c.onclick}>
       <span class="head">
-        {#if c.badge}<span class="badge">{c.badge}</span>{/if}
+        {#if c.badge}<span class="badge" style:background={c.severity}>{c.badge}</span>{:else if c.severity}<span class="sevdot" style:background={c.severity}></span>{/if}
         <span class="title">{c.title}</span>
+        {#if c.severityLabel}<span class="sevlabel" style:color={c.severity}>{c.severityLabel}</span>{/if}
       </span>
       {#each c.lines as l, k (k)}<span class="line">{l}</span>{/each}
       {#if c.accent}<span class="accent value">{c.accent}</span>{/if}
@@ -162,6 +163,21 @@
     text-align: center;
     line-height: 17px;
     font-variant-numeric: tabular-nums;
+  }
+  .sevdot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
+  .sevlabel {
+    flex: none;
+    margin-left: auto;
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+  .bubble:global(.pin) .sevlabel {
+    display: none;
   }
   .title {
     font-weight: 600;
