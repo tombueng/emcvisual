@@ -15,6 +15,7 @@ import { buildIsosurfaces } from './isosurface';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { WorldCallouts, htmlInCanvasSupported } from './worldCallouts';
 import type { FocusScene } from './focusScene';
+import type { LibraryModels } from './modelLibrary';
 import type { Callout } from '../ui/calloutData';
 import { sliceFragment, sliceVertex, volumeFragment, volumeVertex } from './volumeShader';
 
@@ -384,6 +385,7 @@ export class Viewer {
   setBoard(board: BoardModel, frame: WorldFrame, keepCamera = false) {
     this.frame = frame;
     this.setComponentModels(null);
+    this.setLibraryModels(null);
     if (this.board) {
       this.scene.remove(this.board.group);
       this.board.dispose();
@@ -573,7 +575,54 @@ export class Viewer {
     this.componentsVisible = v;
     if (this.board?.components) this.board.components.visible = v;
     if (this.models) this.models.root.visible = v;
+    if (this.library) this.library.group.visible = v;
     this.requestRender();
+  }
+
+  private library: LibraryModels | null = null;
+
+  /** Models found in the user's folders, repositories or KiCad's library (modelLibrary.ts). */
+  setLibraryModels(lib: LibraryModels | null) {
+    // the geometry stays with the library's cache (modelLibrary.ts)
+    if (this.library) this.scene.remove(this.library.group);
+    this.library = lib;
+    if (lib) {
+      lib.group.visible = this.componentsVisible;
+      this.scene.add(lib.group);
+    }
+    this.updateBoxes();
+    this.requestRender();
+  }
+
+  /** Parts covered by a KiCad GLB export. */
+  get glbMatched(): Set<string> {
+    return this.models?.matched ?? new Set();
+  }
+
+  /** The model of a part (GLB export first, then the library), for the problem view. */
+  modelFor(ref: string): THREE.Object3D | undefined {
+    return this.models?.root.getObjectByName(ref) ?? this.library?.group.getObjectByName(ref);
+  }
+
+  /** Part boxes stay only where no real model covers the part. */
+  private updateBoxes() {
+    const boxes = this.board?.components;
+    if (!boxes) return;
+    const bodies = boxes.userData.footprints as { ref: string }[];
+    if (!boxes.userData.baseMatrices) {
+      const saved: THREE.Matrix4[] = [];
+      for (let i = 0; i < boxes.count; i++) {
+        const m = new THREE.Matrix4();
+        boxes.getMatrixAt(i, m);
+        saved.push(m);
+      }
+      boxes.userData.baseMatrices = saved;
+    }
+    const matrices = boxes.userData.baseMatrices as THREE.Matrix4[];
+    const hidden = new THREE.Matrix4().makeScale(0, 0, 0);
+    const covered = (ref: string) => !!this.models?.matched.has(ref) || !!this.library?.matched.has(ref);
+    bodies.forEach((f, i) => boxes.setMatrixAt(i, covered(f.ref) ? hidden : matrices[i]!));
+    boxes.instanceMatrix.needsUpdate = true;
   }
 
   /** Real component models (from a KiCad GLB) replace the boxes of the parts they cover. */
@@ -583,24 +632,7 @@ export class Viewer {
       disposeObject(this.models.root);
     }
     this.models = models;
-    const boxes = this.board?.components;
-    if (boxes) {
-      const bodies = boxes.userData.footprints as { ref: string }[];
-      const base = boxes.userData.baseMatrices as THREE.Matrix4[] | undefined;
-      if (!base) {
-        const saved: THREE.Matrix4[] = [];
-        for (let i = 0; i < boxes.count; i++) {
-          const m = new THREE.Matrix4();
-          boxes.getMatrixAt(i, m);
-          saved.push(m);
-        }
-        boxes.userData.baseMatrices = saved;
-      }
-      const matrices = boxes.userData.baseMatrices as THREE.Matrix4[];
-      const hidden = new THREE.Matrix4().makeScale(0, 0, 0);
-      bodies.forEach((f, i) => boxes.setMatrixAt(i, models?.matched.has(f.ref) ? hidden : matrices[i]!));
-      boxes.instanceMatrix.needsUpdate = true;
-    }
+    this.updateBoxes();
     if (models) {
       models.root.visible = this.componentsVisible;
       this.scene.add(models.root);

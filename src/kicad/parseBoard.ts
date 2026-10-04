@@ -12,7 +12,7 @@ import {
   signedArea,
 } from '../model/geometry';
 import { buildStackup, sortCopperNames, type StackupEntry } from '../model/stackup';
-import type {
+import type { FootprintModel,
   BoardModel,
   Footprint,
   LayerKind,
@@ -222,9 +222,26 @@ export function parseBoard(text: string, fileName = 'board.kicad_pcb'): BoardMod
         }
       : { center: fpAt, size: { x: 1, y: 1 }, angle: fpAngle };
 
+    // 3D model references: (model "path" (offset (xyz …)) (scale (xyz …)) (rotate (xyz …)) [hide])
+    const models: FootprintModel[] = [];
+    for (const m of children(fpNode, 'model')) {
+      const xyz = (name: string, def: number): [number, number, number] => {
+        const outer = child(m, name);
+        const n = outer ? child(outer, 'xyz') : undefined;
+        return n ? [num(n, 1, def), num(n, 2, def), num(n, 3, def)] : [def, def, def];
+      };
+      // KiCad 5 wrote the offset as (at (xyz …)) in inches
+      const at = child(m, 'at');
+      const offset = at ? (xyz('at', 0).map((v) => v * 25.4) as [number, number, number]) : xyz('offset', 0);
+      const hideNode = child(m, 'hide');
+      const hidden = m.some((x) => x === 'hide') || (!!hideNode && str(hideNode, 1) !== 'no');
+      const path = str(m, 1);
+      if (path) models.push({ path, offset, scale: xyz('scale', 1), rotate: xyz('rotate', 0), hidden });
+    }
     footprints.push({
       ref,
       value,
+      models,
       lib: str(fpNode, 1),
       at: fpAt,
       angle: fpAngle,

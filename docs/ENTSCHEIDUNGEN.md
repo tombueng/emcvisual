@@ -88,3 +88,11 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
 32. **2026-10-05 · Sprechblasen im Raum nur als Zusatz.** HTML-in-Canvas ist ein Origin Trial
     mit wechselnder API und nur in Chromium. Die HTML-Einblendung bleibt der Standard; die
     Blasen im Raum gibt es, wo der Browser es kann, und automatisch in VR.
+33. **2026-10-05 · Echte 3D-Modelle über den Dateinamen finden, nicht über die Pfade.** Die
+    Pfade in der Platine hängen an Variablen und Ordnern auf dem Rechner des Entwicklers, die
+    der Browser nicht kennt. Der Dateiname ohne Endung ist in KiCad-Bibliotheken eindeutig
+    genug; bei Doppelten entscheidet der gleiche Bibliotheksordner, dann das Format (STEP
+    zuerst, weil KiCad seit Version 9 nur noch STEP liefert und es die Farben je Fläche trägt).
+    KiCads GLB-Export hat Vorrang, weil KiCad ihn selbst platziert hat. STEP wird im Browser
+    gelesen (OpenCascade als WebAssembly) statt auf einem Server: Die Modelle bleiben beim
+    Nutzer, und es braucht keinen Dienst.

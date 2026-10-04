@@ -660,6 +660,24 @@ export const de = {
       },
     },
   },
+  library: {
+    title: 'Echte 3D-Bauteilmodelle',
+    hint: 'Die Platinendatei nennt zu jedem Bauteil nur den Pfad seines 3D-Modells; die Dateien liegen in deinen Bibliotheken. Die App sucht sie nach Dateinamen in einem Ordner auf deinem Rechner, in einem GitHub-Repository und in KiCads öffentlicher Standardbibliothek (STEP, WRL, GLB, STL). Die Dateien bleiben in deinem Browser.',
+    kicad: 'KiCad-Standardbibliothek aus dem Netz laden (gitlab.com)',
+    folder: 'Ordner mit Modellen wählen …',
+    folderLabel: 'gewählt',
+    repo: 'GitHub-Repository mit Modellen',
+    repoAdd: 'Hinzufügen',
+    repoFailed: (e: string) => `Repository ließ sich nicht lesen (${e}).`,
+    loading: (done: number, total: number) => `Modelle werden geladen … ${done} von ${total}`,
+    status: (matched: number, total: number, by: Record<'glb' | 'folder' | 'repo' | 'kicad', number>) => {
+      const names = { glb: 'GLB-Export', folder: 'Ordner', repo: 'Repository', kicad: 'KiCad-Bibliothek' };
+      const parts = (Object.keys(names) as (keyof typeof names)[]).filter((k) => by[k] > 0).map((k) => `${names[k]} ${by[k]}`);
+      return `${matched} von ${total} Bauteilen mit Modell${parts.length ? ` (${parts.join(', ')})` : ''}`;
+    },
+    source: (kind: 'folder' | 'repo', label: string, files: number) => `${kind === 'folder' ? 'Ordner' : 'Repository'} ${label}: ${files} Modelldatei${files === 1 ? '' : 'en'}`,
+    missing: (n: number) => `${n} Bauteil${n === 1 ? '' : 'e'} ohne gefundenes Modell`,
+  },
   live: {
     badge: 'live',
     title: 'Folgt der Datei: Speichern in KiCad lädt die Platine neu, Quellen und Ansicht bleiben. Klick beendet das.',

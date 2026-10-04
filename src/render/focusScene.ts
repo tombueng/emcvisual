@@ -32,7 +32,7 @@ export interface FocusScene {
 const GREY = new THREE.Color('#8a97a6');
 const PLANE_COLORS = ['#5aa0d6', '#b97ad1', '#7cc28a', '#c9b458', '#d07a7a'];
 
-export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: FocusSpec, models?: THREE.Object3D | null): FocusScene {
+export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: FocusSpec, modelFor?: (ref: string) => THREE.Object3D | undefined): FocusScene {
   const group = new THREE.Group();
   group.name = 'focus';
   const anchors: FocusAnchor[] = [];
@@ -140,7 +140,7 @@ export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: Focu
   const bodyEdge = mat(new THREE.LineBasicMaterial({ color: '#9fb0c2', transparent: true, opacity: 0.7 }));
   for (const fi of spec.parts) {
     const f = board.footprints[fi]!;
-    const node = models?.getObjectByName(f.ref);
+    const node = modelFor?.(f.ref);
     if (node && f.side === 'top') {
       const copy = node.clone(true);
       node.updateWorldMatrix(true, false);

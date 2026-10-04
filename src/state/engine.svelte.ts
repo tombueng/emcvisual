@@ -19,6 +19,7 @@ import { footprintPoses, loadComponentModels, type FootprintPose } from '../rend
 import { frequencyWeights, fullwaveVolume, parseFullwave, resampleBlocks, sampleAt, valueAtFrequency, type FullwaveResult } from '../fullwave/result';
 import { buildJob, DEFAULT_JOB_OPTIONS, type JobOptions } from '../fullwave/job';
 import { attributeSource, type SourceAttribution } from '../physics/attribution';
+import { buildLibraryModels, ModelLibrary, type FileSystemDirectoryHandleLike } from '../render/modelLibrary';
 import { buildFieldLines } from '../render/fieldLinesMesh';
 import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fieldlines';
 import { diagnoseSource } from '../physics/diagnostics';
@@ -119,7 +120,7 @@ class Engine {
     if (app.board) {
       viewer.setBoard(app.board, this.frame);
       this.pushVolume();
-      if (this.modelData) void this.attachModels();
+      void this.placeModels();
     }
   }
 
@@ -127,9 +128,10 @@ class Engine {
 
   /**
    * Load a board. With keep=true (the same file saved again in KiCad) the sources, settings,
-   * view, camera and component models stay; only the geometry is new.
+   * view, camera and component models stay; only the geometry is new. `models` is a KiCad GLB
+   * export that comes with the board (the demo); it is placed before the library is asked.
    */
-  async loadBoard(text: string, fileName: string, scenario?: Scenario | null, keep = false) {
+  async loadBoard(text: string, fileName: string, scenario?: Scenario | null, keep = false, models: ArrayBuffer | null = null) {
     if (keep && app.board) scenario = this.scenario();
     const selected = app.selectedId;
     const layerVisible = app.layerVisible;
@@ -153,8 +155,8 @@ class Engine {
       app.boardHash = hash;
       if (!keep) {
         app.models3d = null;
-        this.modelData = null;
-        this.modelPoses = null;
+        this.modelData = models;
+        this.modelPoses = models ? footprintPoses(board) : null;
         this.fullwave = null;
         this.fwBlocks = null;
         app.fullwave = null;
@@ -182,7 +184,7 @@ class Engine {
       this.preparePlanes();
       await yieldToUi();
       this.viewer?.setBoard(board, this.frame, keep);
-      if (keep && this.modelData) await this.attachModels().catch(() => undefined);
+      void this.placeModels();
       this.viewer?.setVolume(null, null);
       this.applyViewToViewer();
       this.refreshAll();
@@ -430,7 +432,15 @@ class Engine {
   async loadModels(data: ArrayBuffer): Promise<{ matched: number; total: number }> {
     this.modelData = data;
     this.modelPoses = app.board ? footprintPoses(app.board) : null;
-    return this.attachModels();
+    const res = await this.attachModels();
+    void this.loadLibraryModels();
+    return res;
+  }
+
+  /** The GLB export first (it is exact), then models from the library for the other parts. */
+  private async placeModels() {
+    if (this.modelData) await this.attachModels().catch(() => undefined);
+    await this.loadLibraryModels();
   }
 
   private async attachModels(): Promise<{ matched: number; total: number }> {
@@ -487,6 +497,51 @@ class Engine {
   setFieldOrigin(o: 'fast' | 'fullwave') {
     app.fieldOrigin = o;
     this.queueRecompose();
+  }
+
+  // --- real 3D models from folders, repositories and KiCad's library --------------------------------
+  readonly library = new ModelLibrary();
+  private libraryJob = 0;
+
+  /** Look up and place the models of all footprints (those not covered by a GLB export). */
+  async loadLibraryModels() {
+    const board = app.board;
+    const viewer = this.viewer;
+    if (!board || !viewer) return;
+    this.library.useKicad = loadLocal<boolean>('models.kicad') ?? true;
+    const withModels = board.footprints.filter((f) => f.models.some((m) => !m.hidden)).length;
+    // parts a KiCad GLB export already covers keep that model
+    const skip = new Set(viewer.glbMatched);
+    const job = ++this.libraryJob;
+    const base = { withModels, sources: [...this.library.sources], useKicad: this.library.useKicad };
+    const none = { glb: skip.size, folder: 0, repo: 0, kicad: 0 };
+    app.library = { ...base, busy: true, done: 0, total: 0, matched: skip.size, bySource: none, missing: [] };
+    try {
+      const res = await buildLibraryModels(this.library, board, this.frame, skip, (done, total) => {
+        if (job === this.libraryJob && app.library) app.library = { ...app.library, done, total };
+      });
+      if (job !== this.libraryJob || board !== app.board) return;
+      viewer.setLibraryModels(res);
+      app.library = { ...base, busy: false, done: res.matched.size, total: res.matched.size, matched: skip.size + res.matched.size, bySource: { ...res.bySource, glb: skip.size }, missing: res.missing };
+    } catch (e) {
+      app.library = { ...base, busy: false, done: 0, total: 0, matched: skip.size, bySource: none, missing: [], error: (e as Error).message };
+    }
+  }
+
+  async addModelFolder(dir: FileSystemDirectoryHandleLike | File[], label: string) {
+    if (Array.isArray(dir)) this.library.addFiles(dir, label);
+    else await this.library.addDirectory(dir, label);
+    await this.loadLibraryModels();
+  }
+
+  async addModelRepo(url: string) {
+    await this.library.addGithub(url);
+    await this.loadLibraryModels();
+  }
+
+  setUseKicadLibrary(on: boolean) {
+    saveLocal('models.kicad', on);
+    void this.loadLibraryModels();
   }
 
   // --- composition ------------------------------------------------------------------------------

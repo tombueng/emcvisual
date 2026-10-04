@@ -59,6 +59,9 @@ src/
     viewer.ts               Szene, Kamera, Steuerung, Render-Schleife, Picking
     boardMesh.ts            Platinen-Geometrie aus BoardModel
     componentModels.ts      Bauteilmodelle aus KiCads GLB-Export (Knoten = Referenz, Meter → mm)
+    modelLibrary.ts         Modelle aus Ordner, GitHub-Repo, Projektordner, KiCad-Bibliothek
+    modelPlacement.ts       Lage eines Modells wie in KiCads 3D-Ansicht (Versatz, Drehung, Maßstab)
+    step.worker.ts          STEP → Dreiecke mit OpenCascade (occt-import-js, WebAssembly)
     volumePass.ts           Vollbild-Pass: Szene + Raymarching mit Tiefentextur
     slicePlane.ts           Heatmap-Ebene
     fieldLinesMesh.ts       Linien mit Fluss-Animation

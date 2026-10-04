@@ -75,6 +75,20 @@ versucht. Das Abzeichen „live“ neben dem Dateinamen beendet das Folgen. Code
 `src/state/liveFile.svelte.ts`; E2E-Test mit einem nachgebildeten Datei-Handle. Firefox und
 Safari öffnen die Datei wie bisher einmalig.
 
+**Umgesetzt (2026-10-05): echte Bauteilmodelle aus den eigenen Bibliotheken.** Die
+Footprints nennen ihr Modell als Pfad mit Variablen (`${KIPRJMOD}`, `${KICAD10_3DMODEL_DIR}`,
+eigene). Die App sucht nach dem Dateinamen ohne Endung in einem gewählten Ordner (File System
+Access API oder `<input webkitdirectory>`), in GitHub-Repositories (eine Anfrage an die
+Trees-API, die Dateien von `raw.githubusercontent.com`), neben einer per Link geöffneten
+Platine und in KiCads Bibliothek auf gitlab.com (Datei-API mit CORS; die GitHub-Spiegelung
+`KiCad/kicad-packages3D` ist seit 2021 archiviert, und seit KiCad 9 gibt es nur noch STEP).
+Platziert wird wie in KiCads 3D-Ansicht: Footprint-Lage und -Drehung, Unterseite gespiegelt,
+dann Versatz, Drehung (als −z, −y, −x) und Maßstab des Modells; WRL in 0,1 Zoll. Gegen KiCads
+GLB-Export geprüft: bis auf 0,15 mm gleich (`tests/modelPlacement.test.ts`). STEP zerlegt
+OpenCascade als WebAssembly (7,6 MB, erst beim ersten STEP geladen) in einem Worker; Farben je
+Fläche werden zu Materialgruppen. Jede Datei wird einmal geladen und von allen Bauteilen und
+Platinen geteilt. Code: `src/render/modelLibrary.ts`, `modelPlacement.ts`, `step.worker.ts`.
+
 - **Live-Kopplung:** KiCad 9/10 hat eine IPC-API (Python-Bindings). Eine kleine lokale Brücke
   liest die offene Platine und streamt Änderungen an die Browser-App: Via verschieben in
   KiCad → Feld aktualisiert sich. Gleiche Brücke kann später openEMS starten (Stufe 3).

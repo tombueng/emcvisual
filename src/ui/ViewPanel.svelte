@@ -9,6 +9,7 @@
   import ScannerPanel from './ScannerPanel.svelte';
   import { downloadText, pickFile } from '../state/persist';
   import { htmlInCanvasSupported } from '../render/worldCallouts';
+  import type { FileSystemDirectoryHandleLike } from '../render/modelLibrary';
 
   const htmlInCanvas = htmlInCanvasSupported();
 
@@ -23,6 +24,39 @@
   }
 
   const modes: ViewMode[] = ['all', 'band', 'line'];
+
+  // --- real 3D models: a local folder or a GitHub repository ---------------------------------------
+  let repoUrl = $state('');
+  async function pickModelFolder() {
+    const w = window as Window & { showDirectoryPicker?: () => Promise<FileSystemDirectoryHandleLike> };
+    try {
+      if (w.showDirectoryPicker) {
+        const dir = await w.showDirectoryPicker();
+        await engine.addModelFolder(dir, dir.name);
+        return;
+      }
+    } catch (e) {
+      if ((e as DOMException).name === 'AbortError') return;
+    }
+    // other browsers: a folder upload field
+    const input = document.createElement('input');
+    input.type = 'file';
+    (input as HTMLInputElement & { webkitdirectory: boolean }).webkitdirectory = true;
+    input.onchange = () => {
+      const files = [...(input.files ?? [])];
+      const label = (files[0] as File & { webkitRelativePath?: string })?.webkitRelativePath?.split('/')[0] || t.library.folderLabel;
+      if (files.length) void engine.addModelFolder(files, label);
+    };
+    input.click();
+  }
+  async function addRepo() {
+    try {
+      await engine.addModelRepo(repoUrl);
+      repoUrl = '';
+    } catch (e) {
+      app.toast = t.library.repoFailed((e as Error).message);
+    }
+  }
 
   // --- stage 3: openEMS -------------------------------------------------------------------------
   const baseName = () => (app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
@@ -246,6 +280,35 @@
     <p class="hint">{t.models.hint}</p>
     <code class="cmd">kicad-cli pcb export glb --no-board-body --subst-models board.kicad_pcb</code>
 
+    <div class="section-title">{t.library.title}</div>
+    <p class="hint">{t.library.hint}</p>
+    <label class="check">
+      <input type="checkbox" checked={app.library?.useKicad ?? true} onchange={(e) => engine.setUseKicadLibrary((e.currentTarget as HTMLInputElement).checked)} />
+      {t.library.kicad}
+    </label>
+    <div class="models">
+      <button class="btn small" onclick={pickModelFolder} disabled={!app.board}>{t.library.folder}</button>
+    </div>
+    <div class="repo">
+      <input type="url" placeholder="https://github.com/…" bind:value={repoUrl} aria-label={t.library.repo} />
+      <button class="btn small" onclick={addRepo} disabled={!app.board || !repoUrl}>{t.library.repoAdd}</button>
+    </div>
+    {#if app.library}
+      {#if app.library.busy}
+        <p class="hint value">{t.library.loading(app.library.done, app.library.total)}</p>
+      {:else}
+        <p class="hint value">{t.library.status(app.library.matched, app.library.withModels, app.library.bySource)}</p>
+      {/if}
+      {#each app.library.sources as src, i (i)}<p class="hint value">{t.library.source(src.kind, src.label, src.files)}</p>{/each}
+      {#if app.library.error}<p class="warn-text">{app.library.error}</p>{/if}
+      {#if !app.library.busy && app.library.missing.length}
+        <details class="missing">
+          <summary>{t.library.missing(new Set(app.library.missing.map((m) => m.ref)).size)}</summary>
+          <ul>{#each app.library.missing as m, i (i)}<li><b>{m.ref}</b> <span class="value">{m.path}</span></li>{/each}</ul>
+        </details>
+      {/if}
+    {/if}
+
     <div class="section-title">{t.view.fMax}</div>
     <select value={String(app.fMax)} onchange={(e) => engine.setFMax(Number((e.currentTarget as HTMLSelectElement).value))} aria-label={t.view.fMax}>
       <option value="1000000000">1 GHz</option>
@@ -274,6 +337,27 @@
 </section>
 
 <style>
+  .repo {
+    display: flex;
+    gap: 6px;
+    margin: 6px 0;
+  }
+  .repo input {
+    flex: 1;
+    min-width: 0;
+  }
+  .missing summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .missing ul {
+    margin: 4px 0;
+    padding-left: 16px;
+    font-size: 11px;
+    color: var(--muted);
+    word-break: break-all;
+  }
   .check.disabled {
     opacity: 0.5;
   }

@@ -45,6 +45,21 @@ export interface Hotspot {
 
 export type SpectrumMode = 'probe' | 'far3' | 'far10';
 
+export interface LibraryState {
+  busy: boolean;
+  done: number;
+  total: number;
+  /** Footprints that refer to a model, and how many of them got one (GLB or library). */
+  withModels: number;
+  matched: number;
+  /** Parts with a model by where it came from (glb: the KiCad GLB export). */
+  bySource: Record<'glb' | 'folder' | 'repo' | 'kicad', number>;
+  missing: { ref: string; path: string }[];
+  sources: { kind: 'folder' | 'repo'; label: string; files: number }[];
+  useKicad: boolean;
+  error?: string;
+}
+
 /** A loaded openEMS result (stage 3), as shown in the view panel. */
 export interface FullwaveInfo {
   fileName: string;
@@ -99,6 +114,8 @@ class AppState {
   readout = $state.raw<ProbeReadout | null>(null);
   /** Component models from a GLB: how many footprints got one. */
   models3d = $state.raw<{ matched: number; total: number } | null>(null);
+  /** Models found in folders, repositories and KiCad's library (render/modelLibrary.ts). */
+  library = $state.raw<LibraryState | null>(null);
   diagnostics = $state.raw<Diagnostic[]>([]);
   hotspots = $state.raw<Hotspot[]>([]);
   /** Far-field share of return-path problems and plane gaps per source (attribution.ts). */

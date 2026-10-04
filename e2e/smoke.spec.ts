@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
   const errors: string[] = [];
@@ -287,5 +287,41 @@ test('problem view: a click on a hint shows only what matters, with labels and e
   await page.keyboard.press('Escape');
   await expect(card).toHaveCount(0);
   await expect(page.locator('.bubble').first()).toBeAttached();
+  expect(errors).toEqual([]);
+});
+
+test('real 3D models: KiCad library, a chosen folder, parts without a model', async ({ page, kicadModels }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // the folder dialog of other browsers (the upload field) instead of Chromium's folder picker
+  await page.addInitScript(() => delete (window as unknown as { showDirectoryPicker?: unknown }).showDirectoryPicker);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demo-Platine laden' }).click();
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+
+  // the demo's GLB export covers 11 parts; the others come from KiCad's library, as STEP
+  // (converted in a worker; here every request gets the same box)
+  const status = page.locator('aside.right .value').filter({ hasText: /Bauteilen mit Modell/ });
+  await expect(status).toHaveText('16 von 16 Bauteilen mit Modell (GLB-Export 11, KiCad-Bibliothek 5)', { timeout: 30_000 });
+  expect(kicadModels).toContain('Oscillator.3dshapes/Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm.step');
+  expect(new Set(kicadModels).size).toBe(3);
+
+  // without the library the rest is listed as missing
+  const kicad = page.getByLabel('KiCad-Standardbibliothek aus dem Netz laden (gitlab.com)');
+  await kicad.uncheck();
+  await expect(status).toHaveText('11 von 16 Bauteilen mit Modell (GLB-Export 11)');
+  await expect(page.locator('details.missing summary')).toHaveText('5 Bauteile ohne gefundenes Modell');
+
+  // a folder with own models: found by file name, wherever the board's path pointed
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Ordner mit Modellen wählen …' }).click();
+  await (await chooser).setFiles('e2e/fixtures/models');
+  await expect(status).toHaveText('13 von 16 Bauteilen mit Modell (GLB-Export 11, Ordner 2)');
+  await expect(page.getByText('Ordner models: 1 Modelldatei')).toBeVisible();
+  await expect(page.locator('details.missing summary')).toHaveText('3 Bauteile ohne gefundenes Modell');
+
+  await kicad.check();
+  await expect(status).toHaveText('16 von 16 Bauteilen mit Modell (GLB-Export 11, Ordner 2, KiCad-Bibliothek 3)');
+  await page.screenshot({ path: 'e2e/output/models.png' });
   expect(errors).toEqual([]);
 });

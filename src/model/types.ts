@@ -101,6 +101,19 @@ export interface Footprint {
   pads: number[];
   /** Further symbol fields on the footprint: Datasheet, MPN, Manufacturer, Description, … */
   fields: Record<string, string>;
+  /** 3D model references as KiCad stores them (files live in the user's libraries). */
+  models: FootprintModel[];
+}
+
+export interface FootprintModel {
+  /** As written, e.g. "${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-8.step". */
+  path: string;
+  /** mm, in the footprint's 3D frame (x right, y up = −board y, z out of the board). */
+  offset: [number, number, number];
+  scale: [number, number, number];
+  /** Degrees. */
+  rotate: [number, number, number];
+  hidden: boolean;
 }
 
 export interface Zone {

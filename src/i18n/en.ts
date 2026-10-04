@@ -660,6 +660,24 @@ export const en: Strings = {
       },
     },
   },
+  library: {
+    title: 'Real 3D part models',
+    hint: 'The board file only names the path of each part\'s 3D model; the files live in your libraries. The app looks them up by file name in a folder on your computer, in a GitHub repository and in KiCad\'s public standard library (STEP, WRL, GLB, STL). The files stay in your browser.',
+    kicad: 'Load KiCad\'s standard library from the web (gitlab.com)',
+    folder: 'Choose a folder with models …',
+    folderLabel: 'chosen',
+    repo: 'GitHub repository with models',
+    repoAdd: 'Add',
+    repoFailed: (e: string) => `Could not read the repository (${e}).`,
+    loading: (done: number, total: number) => `Loading models … ${done} of ${total}`,
+    status: (matched: number, total: number, by: Record<'glb' | 'folder' | 'repo' | 'kicad', number>) => {
+      const names = { glb: 'GLB export', folder: 'folder', repo: 'repository', kicad: 'KiCad library' };
+      const parts = (Object.keys(names) as (keyof typeof names)[]).filter((k) => by[k] > 0).map((k) => `${names[k]} ${by[k]}`);
+      return `${matched} of ${total} parts with a model${parts.length ? ` (${parts.join(', ')})` : ''}`;
+    },
+    source: (kind: 'folder' | 'repo', label: string, files: number) => `${kind === 'folder' ? 'Folder' : 'Repository'} ${label}: ${files} model file${files === 1 ? '' : 's'}`,
+    missing: (n: number) => `${n} part${n === 1 ? '' : 's'} without a model found`,
+  },
   live: {
     badge: 'live',
     title: 'Following the file: saving in KiCad reloads the board, sources and view stay. Click to stop.',

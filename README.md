@@ -40,7 +40,8 @@ Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 - Diagnose: unterbrochene Rückstrompfade, Bezugswechsel an Vias, fehlende Stitching-Vias,
   Hotspots mit den Netzen und Bauteilen in der Nähe; die Hinweise sind nach ihrer Wirkung auf
   das Fernfeld in 3 m geordnet („behoben 11 dB leiser“), die lauteste Quelle zuerst
-- echte 3D-Bauteilmodelle aus KiCads GLB-Export (`.glb` zusätzlich auf das Fenster ziehen)
+- echte 3D-Bauteilmodelle: aus deinem Modellordner oder GitHub-Repo (STEP, WRL, GLB, STL, nach
+  Dateinamen gefunden), Standardteile aus KiCads Bibliothek, oder aus KiCads GLB-Export
 - Szenario als JSON speichern, PNG- und CSV-Export, EMV-Bericht als HTML (druckbar als PDF)
 - Oberfläche auf Deutsch und Englisch (Auswahl oben rechts, Standard nach Browsersprache)
 
@@ -83,9 +84,27 @@ Dann im Browser „Demo-Platine“ wählen oder eine eigene `.kicad_pcb` (KiCad 
 Fenster ziehen. In Chrome und Edge folgt die App der geöffneten Datei: Jedes Speichern in KiCad
 lädt die Platine neu, Quellen und Ansicht bleiben (Abzeichen „live“ neben dem Dateinamen).
 
-Echte Bauteilmodelle: in KiCad „Datei → Exportieren → glTF/GLB“ (ohne Platinenkörper) oder
+Echte Bauteilmodelle (rechts unter „Echte 3D-Bauteilmodelle“): Die Platinendatei nennt zu jedem
+Bauteil nur den Pfad seines Modells, etwa `${KIPRJMOD}/3d/Relais.step` oder
+`${KICAD10_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-8_3.9x4.9mm_P1.27mm.step`. Die App sucht
+die Datei nach ihrem Namen:
+
+- in einem **Ordner** auf deinem Rechner („Ordner mit Modellen wählen …“, mit Unterordnern;
+  die Dateien bleiben im Browser),
+- in einem **GitHub-Repository** (`https://github.com/<owner>/<repo>` oder ein Unterordner
+  `…/tree/<branch>/<pfad>`),
+- im **Projektordner** einer Platine, die per Link geöffnet wurde (`${KIPRJMOD}/…` liegt neben
+  der `.kicad_pcb`),
+- in **KiCads Standardbibliothek** (von gitlab.com, STEP; abschaltbar).
+
+Gibt es ein Modell mehrfach, gewinnt der gleiche Bibliotheksordner, dann STEP vor GLB, WRL und
+STL. STEP wird im Browser mit OpenCascade (WebAssembly, im Hintergrund) in Dreiecke zerlegt,
+mit den Farben aus der Datei. Bauteile ohne gefundenes Modell stehen in einer Liste.
+
+Alternativ KiCads eigener Export: „Datei → Exportieren → glTF/GLB“ (ohne Platinenkörper) oder
 `kicad-cli pcb export glb --no-board-body --subst-models board.kicad_pcb`, dann die `.glb`
-zusätzlich auf das Fenster ziehen. Die Bauteile werden über ihre Referenz zugeordnet.
+zusätzlich auf das Fenster ziehen. Die Bauteile werden über ihre Referenz zugeordnet; das GLB
+hat Vorrang vor den Bibliotheken.
 
 ### Beispielplatinen zum Ausprobieren
 
@@ -138,7 +157,9 @@ Grenzen stehen in [docs/stufe-1/PHYSIK.md](docs/stufe-1/PHYSIK.md).
 
 [0BSD](LICENSE) (Zero-Clause BSD): Jeder darf den Code für jeden Zweck nutzen, ändern und
 weitergeben, auch kommerziell, ohne Namensnennung. openEMS (Stufe 3) steht unter GPL-3.0 und
-wird separat installiert; es ist nicht Teil dieses Repos.
+wird separat installiert; es ist nicht Teil dieses Repos. Zum Lesen von STEP-Modellen lädt die
+App [occt-import-js](https://github.com/kovacsv/occt-import-js) (OpenCascade als WebAssembly,
+LGPL-2.1) unverändert als eigenen Worker mit eigener `.wasm`-Datei; dafür gilt dessen Lizenz.
 
 **In English:** open source under the most permissive terms, [0BSD](LICENSE): use, change and
 share it for any purpose, no attribution required.

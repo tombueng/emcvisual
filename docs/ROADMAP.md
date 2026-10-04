@@ -19,7 +19,7 @@ mit günstiger Hardware, alles in derselben Welt.
 | **3** | Vollwelle mit openEMS, Fernfeld, Kabel | Software (+ lokale Rechnung) | **in Arbeit** (3a Offline-Workflow: Job-Export, Lauf, Import, Vergleich mit Stufe 1) | [zukunft/STUFE-3-VOLLWELLE.md](zukunft/STUFE-3-VOLLWELLE.md) |
 | **4** | Messung: 3D-Drucker als Nahfeld-Scanner | Hardware + Software | **in Arbeit** (Scanner-Kette virtuell geprüft, Treiber für OctoPrint, G-Code und tinySA ungetestet) | [zukunft/STUFE-4-MESSUNG-SCANNER.md](zukunft/STUFE-4-MESSUNG-SCANNER.md) |
 | **5** | Handsonde mit Ortung, Sonden-Array, Phase | Hardware + Software | **begonnen** (5.4 Quellen an die Messung anpassen) | [zukunft/STUFE-5-MESSUNG-ERWEITERT.md](zukunft/STUFE-5-MESSUNG-ERWEITERT.md) |
-| **W** | Querschnitt: VR, Effekte, Klang, KiCad-Kopplung, Berichte | Software | **teilweise** (KiCad-Live-Kopplung, Bericht, Geigerzähler, Isoflächen, VR experimentell, CI-Feldcheck) | [zukunft/QUERSCHNITT-WELT-UND-INTEGRATION.md](zukunft/QUERSCHNITT-WELT-UND-INTEGRATION.md) |
+| **W** | Querschnitt: VR, Effekte, Klang, KiCad-Kopplung, Berichte | Software | **teilweise** (KiCad-Live-Kopplung, echte 3D-Modelle aus eigenen Bibliotheken, Bericht, Geigerzähler, Isoflächen, VR experimentell, CI-Feldcheck) | [zukunft/QUERSCHNITT-WELT-UND-INTEGRATION.md](zukunft/QUERSCHNITT-WELT-UND-INTEGRATION.md) |
 
 ## Abhängigkeiten
 

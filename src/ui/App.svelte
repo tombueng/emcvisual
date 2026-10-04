@@ -84,6 +84,7 @@
       return;
     }
     try {
+      engine.library.projectBase = null;
       await engine.loadBoard(await file.text(), file.name);
       // follow the file when the browser lets us: saving in KiCad reloads the board
       if (handle) {
@@ -105,14 +106,14 @@
 
   async function loadDemo() {
     const base = import.meta.env.BASE_URL;
-    const [pcb, scenario] = await Promise.all([
+    const [pcb, scenario, glb] = await Promise.all([
       fetch(`${base}demo/demo-board.kicad_pcb`).then((r) => r.text()),
       fetch(`${base}demo/demo-board.scenario${i18n.lang === 'de' ? '' : `.${i18n.lang}`}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch(`${base}demo/demo-board.glb`).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null),
     ]);
     stopFollowing();
-    await engine.loadBoard(pcb, 'demo-board.kicad_pcb', scenario);
-    const glb = await fetch(`${base}demo/demo-board.glb`).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
-    if (glb) await engine.loadModels(glb).catch(() => undefined);
+    engine.library.projectBase = null;
+    await engine.loadBoard(pcb, 'demo-board.kicad_pcb', scenario, false, glb);
   }
 
   /**
@@ -137,17 +138,16 @@
       const res = await fetch(url);
       if (!res.ok) throw new Error(String(res.status));
       const name = decodeURIComponent(new URL(url).pathname.split('/').pop() || 'board.kicad_pcb');
-      await engine.loadBoard(await res.text(), name);
+      // models the board keeps in its own project folder come from the same address
+      engine.library.projectBase = new URL('.', res.url || url).href;
+      // optional component models: &models=<URL of a KiCad GLB export>
+      const glbUrl = models && /^https?:\/\//i.test(models) ? models : null;
+      const glb = glbUrl ? await fetch(glbUrl).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null) : null;
+      if (glbUrl && !glb) app.toast = t.errors.fetch(glbUrl);
+      await engine.loadBoard(await res.text(), name, null, false, glb);
     } catch {
       app.loading = false;
       app.toast = t.errors.fetch(url);
-      return;
-    }
-    // optional component models: &models=<URL of a KiCad GLB export>
-    if (models && /^https?:\/\//i.test(models)) {
-      const glb = await fetch(models).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
-      if (glb) await openModels(glb);
-      else app.toast = t.errors.fetch(models);
     }
   }
 
@@ -310,7 +310,7 @@
         if (key && !d) app.focusKey = null;
         return;
       }
-      const scene = buildFocusScene(app.board, engine.frame, spec, v.componentModelRoot);
+      const scene = buildFocusScene(app.board, engine.frame, spec, (ref) => v.modelFor(ref));
       v.enterFocus(scene, key !== shownFocusKey);
       shownFocusKey = key;
       focusSpec = spec;
