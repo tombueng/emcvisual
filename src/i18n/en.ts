@@ -2,7 +2,7 @@ import type { Strings } from './de';
 
 /** English UI strings. Must match the German dictionary key for key (checked by TypeScript). */
 /** Figures of a finding for the explanation texts (report/explain.ts). */
-type P = { layer: string; plane: string; planeNet: string; otherNet: string; gap: string; radius: string; detour: string; area: string; via: string; fShort: string; length: string; eeff: string; loop: boolean };
+type P = { layer: string; plane: string; planeNet: string; otherNet: string; gap: string; radius: string; detour: string; area: string; via: string; fShort: string; loopArea: string; run: string; length: string; eeff: string; loop: boolean };
 
 export const en: Strings = {
   app: {
@@ -184,8 +184,13 @@ export const en: Strings = {
       'ref-change': (d) =>
         `Reference change at a via (${d.layer}): from ${d.planeNet} to ${d.otherNet ?? '?'}. The return current has to jump through a capacitor.`,
       'no-stitching': (d) => `Layer change (${d.layer}) without a ${d.planeNet} via within ${d.value} mm.`,
-      'long-line': (d, f) => `The line is electrically long above ${f(d.value)}; stage 1 treats it as lumped.`,
+      'long-line': (d, f) => `Line without a series resistor at the driver: quarter-wave resonance at ${f(d.value)}, inside the measured range.`,
+      'hot-loop': (d) => `Hot loop of about ${d.value.toFixed(0)} mm²: larger than the parts need (compact: 10–20 mm²).`,
+      'no-reference': (d) => `No reference plane: the return current runs through the ground connections, the loop encloses about ${d.value.toFixed(0)} mm².`,
+      'edge-trace': (d) =>
+        `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
+    farCompensated: 'Far field not quantifiable here: the solid plane under the flat loop cancels its dipole moment in the model. The measure is the loop area (see the hint).',
     detour: (d: { length: number; extraArea: number; via?: string }) =>
       d.via && d.via !== 'via'
         ? ` Return through ${d.via}: ${d.length.toFixed(0)} mm detour, about ${d.extraArea.toFixed(0)} mm² extra loop area.`
@@ -366,7 +371,10 @@ export const en: Strings = {
       'return-gap': 'Trace over a gap in the plane',
       'ref-change': 'Reference change at a via',
       'no-stitching': 'Layer change without stitching via',
-      'long-line': 'Electrically long line',
+      'long-line': 'Unterminated line, resonance in band',
+      'hot-loop': 'Hot loop too large',
+      'no-reference': 'Line without a reference plane',
+      'edge-trace': 'Line at the edge of its plane',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -406,7 +414,7 @@ export const en: Strings = {
     extraArea: (mm2: string) => `+${mm2} mm² loop area`,
     noPlane: (mm: string) => `${mm} mm without a reference plane underneath`,
     noStitch: (net: string, mm: string) => `no ${net} via within ${mm} mm`,
-    longLine: (f: string) => `electrically long from ${f} (λ/10)`,
+    longLine: (f: string) => `resonance at ${f} (λ/4, unterminated)`,
     suggest: {
       capPlanes: (a: string, b: string) => `Suggestion: 100 nF between ${a} and ${b} here, less than 2 mm from the via`,
       stitchVia: (net: string) => `Suggestion: ${net} stitching via here`,
@@ -463,7 +471,11 @@ export const en: Strings = {
       transfer: (mm: string, area: string, via: string) => `The return current changes planes through ${via}: ${mm} mm detour, about ${area} mm² extra loop area.`,
       nearestVia: 'the nearest via',
       radius: (mm: string, net: string) => `No ${net} via within ${mm} mm of the signal via.`,
-      longLine: (mm: string, eeff: string, f: string) => `Line length ${mm} mm, effective permittivity ${eeff}: λ/10 is reached at ${f}.`,
+      longLine: (mm: string, eeff: string, f: string) => `Longest path ${mm} mm, effective permittivity ${eeff}: quarter-wave resonance (open end) at ${f}.`,
+      edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm of the line run ${d} mm beside the edge of the reference plane; height above the plane ${h} mm, guide value ${min} mm (5 × height, at least 1 mm).`,
+      noReference: (mm2: string) => `Signal and return (through the ground copper) enclose about ${mm2} mm².`,
+      hotLoop: (mm2: string) => `Area of the loop along the copper: about ${mm2} mm² (compact with SOT-23/0603: 10–20 mm²).`,
+      series: (list: string, tr: string, trEff: string) => `Series resistor ${list}: the edge at the load slows from ${tr} to about ${trEff} (RC of the resistor with line plus load capacitance, added in quadrature).`,
       gain: (g: string) => `Fixed, the source gets ${g} quieter at 3 m (every spectral line alike).`,
       gainSource: (g: string) => `All gaps under this source together cost ${g} at 3 m.`,
     },
@@ -486,6 +498,7 @@ export const en: Strings = {
           ? `Attached cables are not in the calculation (the board has ${n} connectors). Common-mode currents on cables often radiate 10–20 dB more than the board itself; the result is then too optimistic.`
           : 'Cables are not in the calculation. Once cables are attached, their common-mode currents often dominate.',
       cavity: (a: string, b: string, f: string) => `The cavity between ${a} and ${b} has its first resonance at about ${f}. There the layer change can radiate far more than computed.`,
+      slotCm: 'The "fixed … quieter" figure only counts the larger differential-mode loop. The return current also builds a voltage across the gap that drives both plane halves and attached cables against each other. In measurements this common-mode effect is often much larger (10 dB and more) and it is not computed here. That is why the finding is rated higher than the figure alone would give.',
       shortestPath: 'The return detour follows the shortest way through the copper. Real current spreads wider, so the extra area is rather overstated and the gain of the fix a bit smaller.',
       idealMirror: 'Over an ideal, infinite plane current and image almost cancel, so the gain of a continuous plane looks very large. Real gains are more like 10–20 dB.',
       trapezoid: 'The spectrum comes from an ideal trapezoid. Overshoot and ringing of real edges raise single harmonics; a spread-spectrum clock lowers them by several dB (neither is computed).',
@@ -497,6 +510,7 @@ export const en: Strings = {
       archambeault: 'B. Archambeault: PCB Design for Real-World EMI Control. Kluwer, 2002 (return current at reference changes, stitching capacitors).',
       bogatin: 'E. Bogatin: Signal and Power Integrity – Simplified. 3rd ed., Prentice Hall, 2018 (return paths, reference planes).',
       johnson: 'H. Johnson, M. Graham: High-Speed Digital Design. Prentice Hall, 1993 (electrically long lines, termination).',
+      slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (hot loop, input capacitor).',
     },
     kinds: {
@@ -589,23 +603,88 @@ export const en: Strings = {
         refs: ['archambeault', 'bogatin'] as const,
       },
       longLine: {
-        what: (p: P) => `The line is electrically long from ${p.fShort}: longer than a tenth of the wavelength on the board.`,
+        what: (p: P) =>
+          `The line has no series resistor at the driver and is long enough for its quarter-wave resonance to sit at ${p.fShort}, inside the measured range. The source's spectrum still has noticeable content there.`,
         why: () =>
-          'The fast calculation treats the line as lumped, with the same current everywhere. On electrically long lines waves travel back and forth; without a matching termination there are reflections and standing waves. The current then distributes differently, and at resonant frequencies the emission can be well above the computed value.',
-        detected: (p: P) => `From the length of the net (${p.length} mm) and the effective permittivity (${p.eeff}) follows the limit f = c / (10 · L · √εeff).`,
+          'A driver with a low output resistance and a high-impedance receiver at the end reflect the edge at both ends. The line rings at the frequency at which it is a quarter wave long; the overshoot lifts the harmonics near that frequency, often by several dB. Charging the line also takes larger currents than a short line.',
+        detected: (p: P) =>
+          `From the longest path in the net (${p.length} mm) and the effective permittivity (${p.eeff}) follows f = c / (4 · L · √εeff). Reported when that frequency is below the upper spectrum limit, the source still has at least 1 % of its strongest line there, and neither a series resistor (10 Ω or more, at most 15 mm from the driver) nor a termination is entered.`,
         fixes: () => [
-          'A series resistor at the driver (about Z0 minus the driver output resistance, typically 22–33 Ω), so reflections die out.',
-          'Route the line shorter.',
-          'Slow the edges as far as the timing allows: above about 1/(π·tr) the harmonics fall at 40 dB per decade.',
-          'For solid numbers run the full wave (stage 3, openEMS).',
+          'A series resistor right at the driver (about Z0 minus the driver output resistance, typically 22–33 Ω): the reflection from the open end is absorbed at the driver, and the edge gets a little slower.',
+          'Route the line shorter: the resonance moves up and out of the measured range.',
+          'Slow the edges as far as the timing allows (drive strength, slew rate): above about 1/(π·tr) the harmonics fall at 40 dB per decade.',
+          'For solid numbers on the resonance peak, run the full wave (stage 3, openEMS).',
         ],
         avoid: () => [
-          'Do not leave long fast lines unterminated: reflections make standing waves and resonances.',
-          'No stubs on clocks: they act as resonators.',
-          'No faster edges than needed: reduce drive strength or slew rate where the timing allows.',
+          'Do not leave long fast lines unterminated: reflections ring exactly at the line resonance.',
+          'No stubs on clocks: they are resonators of their own.',
+          'Do not put the series resistor at the far end: as a source termination it only works right at the driver.',
         ],
-        limits: () => 'This is a note on the validity of the model; how much more the line radiates above the limit cannot be quantified without the full wave.',
+        limits: () =>
+          'How much the line rings depends on the driver output resistance and the receivers\' input capacitance; the app only knows them when they are entered. The fast calculation treats the line as lumped: the resonance peak is not in the numbers, the hint is a warning, not a calculation. A few ohms of series resistance can be enough when the driver itself is weak.',
         refs: ['johnson', 'bogatin'] as const,
+      },
+      edgeTrace: {
+        what: (p: P) =>
+          `The line on ${p.layer} runs for ${p.run} mm only ${p.gap} mm beside the edge of its reference plane ${p.planeNet} (${p.plane}). The edge can be the board edge, a slot or the border to another plane.`,
+        why: () =>
+          'The return current spreads under the line over a width of a few heights h above the plane (current density roughly ∝ 1/(1 + (x/h)²)). If the edge is closer, part of it is pushed aside, the field reaches around the edge, and signal and return cancel less. At the board edge the line also couples into the gap between the planes, which radiates there like a slot antenna.',
+        detected: (p: P) =>
+          `For each piece of line the app looks in the plane raster for the nearest spot without copper, sideways to the line (a line heading straight for the edge, e.g. into a connector, does not count). Reported when over at least 3 mm the distance is less than 5 × h, at least 1 mm (here ${p.radius} mm).`,
+        fixes: () => [
+          'Move fast lines a few millimetres inwards, at least by the guide value from the plane edge.',
+          'If the line has to stay at the edge: put it on an inner layer between two planes (stripline), where the field hardly reaches beyond the edge.',
+          'Line the edge with closely spaced ground vias (via fence) so the planes are firmly connected there.',
+          'For a slot beside the line: make the slot smaller or route the line farther away.',
+        ],
+        avoid: () => ['Do not run clocks and fast interfaces along the board edge, not even "because there is room there".', 'Do not let the reference plane end just before the edge when lines run above it.'],
+        limits: () =>
+          'The model does not compute this effect: the image currents see a plane that is ideal up to its edge. The hint is based on geometry, the guide value is a rule of thumb. What it costs depends strongly on the build-up (in measurements a few dB to more than 10 dB); solid numbers need the full wave (stage 3).',
+        refs: ['ott', 'bogatin'] as const,
+      },
+      noReference: {
+        what: (p: P) =>
+          `There is no reference plane under this line on any layer. The return current flows through whatever ground connections exist; signal and return together enclose about ${p.loopArea} mm².`,
+        why: () =>
+          'Without a plane the return current cannot flow right under the line. It takes the ground tracks, often far away, and the loop gets large. A small loop radiates in proportion to its area (same current: twice the area, 6 dB more). Two-layer boards without a ground plane are therefore among the most common reasons for failed tests.',
+        detected: () =>
+          'The app finds no reference plane under any layer and routes the return through the ground net: from the ground pin of each receiver (or the nearest ground copper) along the shortest path to the driver\'s ground pin. The comparison is the same board with a solid ground plane on the opposite side.',
+        fixes: () => [
+          'A solid ground plane on a whole layer, on two layers usually the bottom; then route tracks on top wherever possible.',
+          'Where that is not possible: run ground right next to every fast line and connect driver and receiver ground on a short path.',
+          'Fill free areas on both layers with ground and stitch them with many vias.',
+          'Four layers with an inner ground plane when there are fast clocks or interfaces on the board.',
+        ],
+        avoid: () => [
+          'Do not run ground as a thin track along the edge: the return current then has to take the whole detour.',
+          'No "ground plane" made of leftovers between tracks that are hardly connected: it does not act as a reference.',
+          'Do not rely on a star ground for fast signals: at high frequencies the path right under the line counts, not the DC routing.',
+        ],
+        limits: () =>
+          'The return follows the shortest path through the ground copper. At high frequencies the current also spreads capacitively to other nearby conductors (supply, other tracks); the loop is then somewhat smaller. Without a plane common-mode currents on cables are especially strong; they are not computed, so the result tends to be too optimistic.',
+        refs: ['ott', 'bogatin'] as const,
+      },
+      hotLoop: {
+        what: (p: P) =>
+          `The current loop of this source encloses about ${p.loopArea} mm², measured along the copper the current really takes (including the path through the plane). With SOT-23/0603-size parts and the capacitor right at the pins, about 10–20 mm² are possible.`,
+        why: () =>
+          'In the hot loop of a switching regulator (input capacitor → high-side switch → low-side switch or diode → ground → capacitor) the current jumps by amperes within nanoseconds at every edge. The area sets its magnetic field and its inductance. More inductance means higher voltage spikes and ringing at the switch node (usually between 50 and 300 MHz, inside the measured range), and more magnetic field coupling into neighbouring circuits, cables and plane edges.',
+        detected: () =>
+          'The app follows the source current from pad to pad through the copper (tracks, vias, planes) and computes the area of the closed loop (½·∮ r × dl). Reported from 30 mm²; the severity follows the area (look from 40 mm², critical from 80 mm²). These thresholds are the app\'s rules of thumb, not values from a standard.',
+        fixes: () => [
+          'A small ceramic capacitor (100 nF to 1 µF, 0402/0603) right at VIN and PGND of the regulator, on the same layer, no vias in the loop. That is usually what the layout example in the datasheet shows.',
+          'A solid ground plane right under the loop on the next layer, with a thin dielectric in between: the image current in the plane largely cancels the loop field.',
+          'When the loop closes through the plane: ground vias right at the pads of the capacitor and PGND, several in parallel.',
+          'Only then: slow the switching edges (bootstrap resistor, selectable slew rate) or add an RC snubber at the switch node; both cost some efficiency.',
+        ],
+        avoid: () => [
+          'Do not put the big electrolytic far away as the only input capacitor: it is too inductive for the fast edges, and the loop then closes over long paths.',
+          'Do not route the loop through vias to the other layer: each via adds roughly 0.5–1 nH, and the plane does not compensate vertical pieces.',
+          'No cut-out in the plane under the loop: it removes the compensation by the image current.',
+        ],
+        limits: () =>
+          'The area is a good measure of inductance and magnetic field, but not a level at 3 m. How much it really radiates depends on things the model does not contain: ringing with the switch output capacitance, the electric field of the switch-node copper and above all common-mode currents on input and output cables. Over a solid plane the dipole moment of a flat loop cancels almost completely in the model; a far-field number would be false precision there and is not shown.',
+        refs: ['slyt682', 'an1149', 'ott'] as const,
       },
     },
   },

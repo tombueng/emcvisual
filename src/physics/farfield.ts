@@ -32,6 +32,18 @@ export function dipoleMoment(pack: ElementPack): [number, number, number] {
   return [mx * 1e-6, my * 1e-6, mz * 1e-6]; // mm² -> m²
 }
 
+/**
+ * A flat current loop right over a solid plane: the mirror current cancels the loop's dipole
+ * moment in the model (to below a tenth of the loop's own area). The far-field number is then
+ * false precision; real emission goes through mechanisms the model lacks (ringing, the switch
+ * node's electric field, cables, plane edges).
+ */
+export function dipoleCompensated(loopAreaMm2: readonly number[] | undefined, moment: readonly number[]): boolean {
+  if (!loopAreaMm2) return false;
+  const a = Math.hypot(...loopAreaMm2);
+  return a > 1 && Math.hypot(...moment) * 1e6 < 0.1 * a;
+}
+
 export interface FarLine {
   f: number;
   /** dBµV/m at the given distance. */

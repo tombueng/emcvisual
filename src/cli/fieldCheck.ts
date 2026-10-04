@@ -12,7 +12,7 @@ import { buildSource, SourceError, type PhysicsContext } from '../physics/curren
 import { applyReturnModel, type Detour } from '../physics/returnPaths';
 import { packWithImages } from '../physics/images';
 import { fieldAt, slotMaskTable } from '../physics/biotsavart';
-import { dipoleMoment, farField, limitAt } from '../physics/farfield';
+import { dipoleCompensated, dipoleMoment, farField, limitAt } from '../physics/farfield';
 import { limitsFor } from '../physics/standards';
 import { diagnoseSource } from '../physics/diagnostics';
 import { attributeSource } from '../physics/attribution';
@@ -50,10 +50,14 @@ export interface SourceCheck {
   error?: string;
   /** Strongest field in the plane per band, dBµA/m, and where (board mm). */
   near: Record<string, { db: number; x: number; y: number }>;
-  /** Worst far-field line minus the CISPR 32 B limit at 3 m, dB (null: no line in the limit range). */
+  /** Worst far-field line minus the limit at 3 m, dB (null: no line in the limit range, or not quantifiable). */
   far: { margin: number; f: number } | null;
+  /** 'compensated': a flat loop over a solid plane, the model cannot give a far-field number. */
+  farNote?: 'compensated';
+  /** Strongest near field over all bands, dBµA/m (also for sources whose far field is not quantifiable). */
+  nearMax?: number;
   /** Far-field gain when fixed, dB (scope 'source': all plane gaps under the source together). */
-  hints: { kind: string; x: number; y: number; layer: string; gainDb?: number; gainScope?: 'finding' | 'source' }[];
+  hints: { kind: string; x: number; y: number; layer: string; value?: number; gainDb?: number; gainScope?: 'finding' | 'source' }[];
   /** All return-path problems / all plane gaps of the source: louder at 3 m by this much, dB. */
   returnPathsDb: number;
   planeGapsDb: number;
@@ -130,7 +134,11 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
       }
       let worst = -Infinity;
       let fw = 0;
-      for (const l of farField(dipoleMoment(pack), model.lines, 3)) {
+      const moment = dipoleMoment(pack);
+      const compensated = dipoleCompensated(model.info.loopArea, moment);
+      if (compensated) res.farNote = 'compensated';
+      res.nearMax = res.near['all']?.db;
+      for (const l of compensated ? [] : farField(moment, model.lines, 3)) {
         const lim = limitAt(limits, l.f);
         if (lim !== null && l.db - lim > worst) {
           worst = l.db - lim;
@@ -144,6 +152,7 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
           x: round(d.at.x),
           y: round(d.at.y),
           layer: d.layer,
+          value: round(d.value, 3),
           ...(d.gain ? { gainDb: round(d.gain.db), gainScope: d.gain.scope } : {}),
         }))
         .sort((a, b) => (b.gainDb ?? -1) - (a.gainDb ?? -1));

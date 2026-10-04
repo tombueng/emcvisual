@@ -1,6 +1,6 @@
 /** German UI strings (source of truth; other languages must have the same shape). */
 /** Figures of a finding for the explanation texts (report/explain.ts). */
-type P = { layer: string; plane: string; planeNet: string; otherNet: string; gap: string; radius: string; detour: string; area: string; via: string; fShort: string; length: string; eeff: string; loop: boolean };
+type P = { layer: string; plane: string; planeNet: string; otherNet: string; gap: string; radius: string; detour: string; area: string; via: string; fShort: string; loopArea: string; run: string; length: string; eeff: string; loop: boolean };
 
 export const de = {
   app: {
@@ -184,8 +184,15 @@ export const de = {
       'no-stitching': (d: { layer: string; planeNet: string; value: number }) =>
         `Lagenwechsel (${d.layer}) ohne ${d.planeNet}-Via im Umkreis von ${d.value} mm.`,
       'long-line': (d: { value: number }, f: (v: number) => string) =>
-        `Leitung ist ab ${f(d.value)} elektrisch lang; Stufe 1 rechnet sie als konzentriert.`,
+        `Leitung ohne Serienwiderstand am Treiber: Viertelwellen-Resonanz bei ${f(d.value)}, im Messbereich.`,
+      'hot-loop': (d: { value: number }) =>
+        `Heiße Schleife von etwa ${d.value.toFixed(0)} mm²: größer als die Bauteile verlangen (kompakt: 10–20 mm²).`,
+      'no-reference': (d: { value: number }) =>
+        `Keine Bezugsfläche: Der Rückstrom läuft über die Masseverbindungen, die Schleife umschließt etwa ${d.value.toFixed(0)} mm².`,
+      'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
+        `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
+    farCompensated: 'Fernfeld hier nicht bezifferbar: Die durchgehende Fläche unter der flachen Schleife hebt ihr Dipolmoment im Modell auf. Maß ist die Schleifenfläche (siehe Hinweis).',
     detour: (d: { length: number; extraArea: number; via?: string }) =>
       d.via && d.via !== 'via'
         ? ` Rückweg über ${d.via}: ${d.length.toFixed(0)} mm Umweg, etwa ${d.extraArea.toFixed(0)} mm² zusätzliche Schleifenfläche.`
@@ -366,7 +373,10 @@ export const de = {
       'return-gap': 'Leitung über einer Lücke in der Fläche',
       'ref-change': 'Bezugswechsel an einer Via',
       'no-stitching': 'Lagenwechsel ohne Stitching-Via',
-      'long-line': 'Leitung elektrisch lang',
+      'long-line': 'Leitung ohne Abschluss, Resonanz im Messbereich',
+      'hot-loop': 'Heiße Schleife zu groß',
+      'no-reference': 'Leitung ohne Bezugsfläche',
+      'edge-trace': 'Leitung am Rand der Bezugsfläche',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -406,7 +416,7 @@ export const de = {
     extraArea: (mm2: string) => `+${mm2} mm² Schleifenfläche`,
     noPlane: (mm: string) => `${mm} mm ohne Bezugsfläche darunter`,
     noStitch: (net: string, mm: string) => `kein ${net}-Via im Umkreis von ${mm} mm`,
-    longLine: (f: string) => `ab ${f} elektrisch lang (λ/10)`,
+    longLine: (f: string) => `Resonanz bei ${f} (λ/4, ohne Abschluss)`,
     suggest: {
       capPlanes: (a: string, b: string) => `Vorschlag: 100 nF zwischen ${a} und ${b} hier, weniger als 2 mm von der Via`,
       stitchVia: (net: string) => `Vorschlag: ${net}-Stitching-Via hier`,
@@ -463,7 +473,11 @@ export const de = {
       transfer: (mm: string, area: string, via: string) => `Der Rückstrom wechselt über ${via} die Fläche: ${mm} mm Umweg, etwa ${area} mm² zusätzliche Schleifenfläche.`,
       nearestVia: 'die nächste Via',
       radius: (mm: string, net: string) => `Keine ${net}-Via im Umkreis von ${mm} mm um die Signal-Via.`,
-      longLine: (mm: string, eeff: string, f: string) => `Leitungslänge ${mm} mm, effektive Permittivität ${eeff}: λ/10 wird bei ${f} erreicht.`,
+      longLine: (mm: string, eeff: string, f: string) => `Längster Weg ${mm} mm, effektive Permittivität ${eeff}: Viertelwellen-Resonanz (offenes Ende) bei ${f}.`,
+      edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm der Leitung laufen ${d} mm neben dem Rand der Bezugsfläche; Abstand zur Fläche ${h} mm, Richtwert ${min} mm (5 × Abstand, mindestens 1 mm).`,
+      noReference: (mm2: string) => `Hin- und Rückweg (durch das Massekupfer) umschließen etwa ${mm2} mm².`,
+      hotLoop: (mm2: string) => `Fläche der Schleife entlang des Kupfers: etwa ${mm2} mm² (kompakt mit SOT-23/0603: 10–20 mm²).`,
+      series: (list: string, tr: string, trEff: string) => `Serienwiderstand ${list}: Die Flanke an der Last wird von ${tr} auf etwa ${trEff} langsamer (RC aus Widerstand und Leitungs- plus Lastkapazität, quadratisch addiert).`,
       gain: (g: string) => `Behoben wird die Quelle in 3 m um ${g} leiser (jede Spektrallinie gleich viel).`,
       gainSource: (g: string) => `Alle Lücken unter dieser Quelle zusammen kosten in 3 m ${g}.`,
     },
@@ -486,6 +500,7 @@ export const de = {
           ? `Angeschlossene Kabel fehlen in der Rechnung (die Platine hat ${n} Steckverbinder). Gleichtaktströme auf Kabeln strahlen in der Praxis oft 10–20 dB stärker als die Platine selbst; das Ergebnis ist dann zu günstig.`
           : 'Kabel fehlen in der Rechnung. Sobald Kabel angeschlossen sind, dominieren oft deren Gleichtaktströme.',
       cavity: (a: string, b: string, f: string) => `Der Hohlraum zwischen ${a} und ${b} hat seine erste Resonanz bei etwa ${f}. Dort kann der Lagenwechsel weit stärker abstrahlen als gerechnet.`,
+      slotCm: 'Die Zahl „behoben … leiser“ rechnet nur die größere Gegentakt-Schleife. Der Rückstrom erzeugt über der Lücke aber eine Spannung, die beide Flächenhälften und angeschlossene Kabel gegeneinander treibt. Dieser Gleichtakt-Effekt ist in Messungen oft deutlich größer (10 dB und mehr) und hier nicht gerechnet. Deshalb ist der Befund höher eingestuft, als die Zahl allein ergäbe.',
       shortestPath: 'Der Rückstrom-Umweg folgt dem kürzesten Weg durchs Kupfer. Real verteilt sich der Strom breiter, die zusätzliche Fläche ist eher überschätzt, der Gewinn der Behebung eher etwas kleiner.',
       idealMirror: 'Über einer idealen, unendlichen Fläche heben sich Strom und Spiegelstrom fast auf; deshalb erscheint der Gewinn einer durchgehenden Fläche sehr groß. Real eher 10–20 dB.',
       trapezoid: 'Das Spektrum stammt aus einem idealen Trapez. Überschwingen und Klingeln echter Flanken heben einzelne Oberwellen an; ein Takt mit Spread-Spectrum senkt sie um mehrere dB (beides nicht gerechnet).',
@@ -498,6 +513,7 @@ export const de = {
       bogatin: 'E. Bogatin: Signal and Power Integrity – Simplified. 3. Aufl., Prentice Hall, 2018 (Rückstrompfade, Bezugsflächen).',
       johnson: 'H. Johnson, M. Graham: High-Speed Digital Design. Prentice Hall, 1993 (elektrisch lange Leitungen, Terminierung).',
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (heiße Schleife, Eingangskondensator).',
+      slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
     },
     kinds: {
       gapDetour: {
@@ -589,23 +605,91 @@ export const de = {
         refs: ['archambeault', 'bogatin'] as const,
       },
       longLine: {
-        what: (p: P) => `Die Leitung ist ab ${p.fShort} elektrisch lang: länger als ein Zehntel der Wellenlänge auf der Platine.`,
+        what: (p: P) =>
+          `Die Leitung hat keinen Serienwiderstand am Treiber und ist so lang, dass ihre Viertelwellen-Resonanz bei ${p.fShort} liegt, also im gemessenen Bereich. Das Spektrum der Quelle hat dort noch nennenswerte Anteile.`,
         why: () =>
-          'Die schnelle Rechnung behandelt die Leitung als konzentriert, mit überall gleichem Strom. Bei elektrisch langen Leitungen laufen Wellen hin und her; ohne passende Terminierung entstehen Reflexionen und stehende Wellen. Der Strom verteilt sich dann anders, und bei Resonanzfrequenzen kann die Abstrahlung deutlich höher sein als berechnet.',
-        detected: (p: P) => `Aus der Länge des Netzes (${p.length} mm) und der effektiven Permittivität (${p.eeff}) folgt die Grenze f = c / (10 · L · √εeff).`,
+          'Ein Treiber mit kleinem Ausgangswiderstand und ein hochohmiger Empfänger am Ende reflektieren die Flanke an beiden Enden. Die Leitung klingelt bei der Frequenz, bei der sie eine Viertelwelle lang ist; Überschwingen hebt die Oberwellen in der Nähe dieser Frequenz an, oft um mehrere dB. Außerdem fließen beim Umladen der Leitung größere Ströme als bei einer kurzen Leitung.',
+        detected: (p: P) =>
+          `Aus dem längsten Weg im Netz (${p.length} mm) und der effektiven Permittivität (${p.eeff}) folgt f = c / (4 · L · √εeff). Gemeldet wird, wenn diese Frequenz unter der oberen Spektrumsgrenze liegt, die Quelle dort noch mindestens 1 % der stärksten Linie hat und weder ein Serienwiderstand (ab 10 Ω, höchstens 15 mm vom Treiber) noch eine Terminierung eingetragen ist.`,
         fixes: () => [
-          'Serienwiderstand am Treiber (Wert etwa Z0 minus Ausgangswiderstand des Treibers, typisch 22–33 Ω), damit Reflexionen abklingen.',
-          'Leitung kürzer führen.',
-          'Flanken verlangsamen, soweit das Timing es erlaubt: Oberhalb von etwa 1/(π·tr) fallen die Oberwellen mit 40 dB pro Dekade.',
-          'Für belastbare Zahlen die Vollwelle (Stufe 3, openEMS) rechnen.',
+          'Serienwiderstand direkt am Treiber (Wert etwa Z0 minus Ausgangswiderstand des Treibers, typisch 22–33 Ω): Die Reflexion vom offenen Ende wird am Treiber geschluckt, und die Flanke wird etwas langsamer.',
+          'Leitung kürzer führen: Die Resonanz wandert nach oben, aus dem Messbereich heraus.',
+          'Flanken verlangsamen, soweit das Timing es erlaubt (Treiberstärke, Slew-Rate): Oberhalb von etwa 1/(π·tr) fallen die Oberwellen mit 40 dB pro Dekade.',
+          'Für belastbare Zahlen zur Resonanzüberhöhung die Vollwelle rechnen (Stufe 3, openEMS).',
         ],
         avoid: () => [
-          'Lange schnelle Leitungen nicht ohne Terminierung lassen: Reflexionen erzeugen stehende Wellen und Resonanzen.',
-          'Keine Stichleitungen (Stubs) an Takten: Sie wirken als Resonatoren.',
-          'Flanken nicht schneller als nötig: Treiberstärke oder Slew-Rate reduzieren, wo das Timing es erlaubt.',
+          'Lange schnelle Leitungen nicht ohne Abschluss lassen: Reflexionen erzeugen Klingeln genau bei der Resonanzfrequenz der Leitung.',
+          'Keine Stichleitungen (Stubs) an Takten: Sie sind eigene Resonatoren.',
+          'Den Serienwiderstand nicht ans Leitungsende setzen: Als Quellterminierung wirkt er nur direkt am Treiber.',
         ],
-        limits: () => 'Das ist ein Hinweis auf die Gültigkeit des Modells; um wie viel die Abstrahlung oberhalb der Grenze steigt, lässt sich ohne Vollwelle nicht beziffern.',
+        limits: () =>
+          'Wie stark die Leitung klingelt, hängt vom Ausgangswiderstand des Treibers und von der Eingangskapazität der Empfänger ab; beides kennt die App nur, wenn es eingetragen ist. Die schnelle Rechnung behandelt die Leitung als konzentriert: Die Resonanzüberhöhung ist in den Zahlen nicht enthalten, der Hinweis ist eine Warnung, keine Rechnung. Schon ein Serienwiderstand von wenigen Ohm kann reichen, wenn der Treiber selbst hochohmig ist.',
         refs: ['johnson', 'bogatin'] as const,
+      },
+      edgeTrace: {
+        what: (p: P) =>
+          `Die Leitung auf ${p.layer} läuft über ${p.run} mm nur ${p.gap} mm neben dem Rand ihrer Bezugsfläche ${p.planeNet} (${p.plane}). Der Rand kann die Platinenkante sein, ein Schlitz oder die Grenze zu einer anderen Fläche.`,
+        why: () =>
+          'Der Rückstrom verteilt sich unter der Leitung über eine Breite von einigen Abständen h zur Fläche (Stromdichte etwa ∝ 1/(1 + (x/h)²)). Liegt der Rand näher, wird ein Teil davon zur Seite gedrängt, das Feld greift um den Rand herum, und Hin- und Rückstrom heben sich weniger auf. An der Platinenkante koppelt die Leitung außerdem in den Spalt zwischen den Flächen, der dort wie eine Schlitzantenne abstrahlt.',
+        detected: (p: P) =>
+          `Für jedes Leitungsstück sucht die App im Raster der Bezugsfläche die nächste Stelle ohne Kupfer, seitlich zur Leitung (eine Leitung, die geradewegs auf die Kante zuläuft, etwa in einen Stecker, zählt nicht). Gemeldet wird, wenn auf mindestens 3 mm der Abstand kleiner ist als 5 × h, mindestens 1 mm (hier ${p.radius} mm).`,
+        fixes: () => [
+          'Schnelle Leitungen einige Millimeter nach innen legen, mindestens um den Richtwert vom Flächenrand weg.',
+          'Wenn die Leitung am Rand bleiben muss: auf eine innere Lage zwischen zwei Flächen (Stripline) legen, dort reicht das Feld kaum über den Rand.',
+          'Die Kante mit Masse-Vias in kurzem Abstand einfassen (Via-Zaun), damit die Flächen dort fest verbunden sind.',
+          'Bei einem Schlitz neben der Leitung: Schlitz verkleinern oder die Leitung weiter weg führen.',
+        ],
+        avoid: () => [
+          'Takte und schnelle Schnittstellen nicht an der Platinenkante entlang führen, auch nicht „weil dort Platz ist“.',
+          'Die Bezugsfläche nicht kurz vor der Kante enden lassen, wenn darüber Leitungen laufen.',
+        ],
+        limits: () =>
+          'Diesen Effekt rechnet das Modell nicht: Die Spiegelströme sehen eine Fläche, die bis zu ihrem Rand ideal ist. Der Hinweis beruht auf der Geometrie, der Richtwert ist eine Faustregel. Wie viel es kostet, hängt stark vom Aufbau ab (in Messungen einige dB bis über 10 dB); belastbar wird es erst mit der Vollwelle (Stufe 3).',
+        refs: ['ott', 'bogatin'] as const,
+      },
+      noReference: {
+        what: (p: P) =>
+          `Unter dieser Leitung gibt es auf keiner Lage eine Bezugsfläche. Der Rückstrom fließt durch die Masseverbindungen, die es gibt; Hin- und Rückweg umschließen zusammen etwa ${p.loopArea} mm².`,
+        why: () =>
+          'Ohne Fläche kann der Rückstrom nicht direkt unter der Leitung fließen. Er nimmt die Masseleitungen, oft weit entfernt, und die Schleife wird groß. Die Abstrahlung einer kleinen Schleife wächst mit ihrer Fläche (bei gleichem Strom: doppelte Fläche, 6 dB mehr). Zweilagige Platinen ohne Massefläche gehören deshalb zu den häufigsten Gründen für nicht bestandene Prüfungen.',
+        detected: () =>
+          'Die App findet unter keiner Lage eine Bezugsfläche und führt den Rückstrom über das Massenetz: vom Masse-Pin jedes Empfängers (bzw. vom nächsten Massekupfer) auf dem kürzesten Weg zum Masse-Pin des Treibers. Verglichen wird mit derselben Platine mit einer durchgehenden Massefläche auf der Gegenseite.',
+        fixes: () => [
+          'Eine durchgehende Massefläche auf einer ganzen Lage, bei zwei Lagen meist die Unterseite; Leitungen dann möglichst nur oben.',
+          'Wo das nicht geht: Masse direkt neben jeder schnellen Leitung mitführen und Treiber- und Empfängermasse auf kurzem Weg verbinden.',
+          'Freie Flächen auf beiden Lagen mit Masse füllen und mit vielen Vias verbinden.',
+          'Vier Lagen mit innenliegender Massefläche, wenn schnelle Takte oder Schnittstellen auf der Platine sind.',
+        ],
+        avoid: () => [
+          'Masse nicht als dünne Leitung am Rand entlang führen: Der Rückstrom muss dann den ganzen Umweg nehmen.',
+          'Keine „Massefläche“ aus Resten zwischen Leitungen, die kaum verbunden sind: Sie wirkt nicht als Bezug.',
+          'Für schnelle Signale nicht auf Sternmasse setzen: Bei hohen Frequenzen zählt der Weg direkt unter der Leitung, nicht die Gleichstromführung.',
+        ],
+        limits: () =>
+          'Der Rückweg folgt dem kürzesten Weg durchs Massekupfer. Bei hohen Frequenzen verteilt sich der Strom auch kapazitiv auf andere Leiter in der Nähe (Versorgung, andere Leitungen); die Schleife ist dann etwas kleiner. Ohne Fläche sind außerdem Gleichtaktströme auf Kabeln besonders stark; sie sind nicht gerechnet, das Ergebnis ist eher zu günstig.',
+        refs: ['ott', 'bogatin'] as const,
+      },
+      hotLoop: {
+        what: (p: P) =>
+          `Die Stromschleife dieser Quelle umschließt etwa ${p.loopArea} mm², gemessen entlang des Kupfers, durch das der Strom wirklich fließt (mit dem Weg durch die Fläche). Mit Bauteilen der Größe SOT-23/0603 und dem Kondensator direkt an den Pins sind etwa 10–20 mm² erreichbar.`,
+        why: () =>
+          'In der heißen Schleife eines Schaltreglers (Eingangskondensator → oberer Schalter → unterer Schalter bzw. Diode → Masse → Kondensator) springt der Strom bei jeder Flanke um Ampere innerhalb von Nanosekunden. Die Fläche bestimmt ihr Magnetfeld und ihre Induktivität. Mehr Induktivität heißt höhere Spannungsspitzen und Klingeln am Schaltknoten (meist zwischen 50 und 300 MHz, also im Messbereich), und mehr Magnetfeld, das in Nachbarschaltungen, Kabel und Flächenränder einkoppelt.',
+        detected: () =>
+          'Die App folgt dem Strom der Quelle von Pad zu Pad durch das Kupfer (Leitungen, Vias, Flächen) und berechnet die Fläche der geschlossenen Schleife (½·∮ r × dl). Gemeldet wird ab 30 mm²; der Schweregrad folgt aus der Fläche (ab 40 mm² ansehen, ab 80 mm² kritisch). Diese Schwellen sind Faustwerte der App, keine Normwerte.',
+        fixes: () => [
+          'Einen kleinen Keramik-Kondensator (100 nF bis 1 µF, 0402/0603) direkt an VIN und PGND des Reglers, auf derselben Lage, ohne Vias in der Schleife. So zeigt es meist auch das Layoutbeispiel im Datenblatt.',
+          'Direkt unter der Schleife eine durchgehende Massefläche in der nächsten Lage, mit möglichst dünnem Dielektrikum dazwischen: Der Spiegelstrom in der Fläche hebt das Feld der Schleife weitgehend auf.',
+          'Wird die Schleife über die Fläche geschlossen: Masse-Vias direkt an den Pads von Kondensator und PGND, mehrere parallel.',
+          'Danach erst: Schaltflanken verlangsamen (Bootstrap-Widerstand, wählbare Slew-Rate) oder ein RC-Snubber am Schaltknoten, beides kostet etwas Wirkungsgrad.',
+        ],
+        avoid: () => [
+          'Nicht den großen Elko als einzigen Eingangskondensator weit weg setzen: Für die schnellen Flanken ist er zu induktiv, die Schleife schließt sich dann über lange Wege.',
+          'Die Schleife nicht über Vias auf die andere Lage führen: Jede Via bringt grob 0,5–1 nH, und senkrechte Stücke kompensiert die Fläche nicht.',
+          'Unter der Schleife keine Aussparung in der Fläche: Dann fehlt die Kompensation durch den Spiegelstrom.',
+        ],
+        limits: () =>
+          'Die Fläche ist ein gutes Maß für Induktivität und Magnetfeld, aber kein Pegel in 3 m. Wie stark es wirklich strahlt, hängt von Dingen ab, die das Modell nicht enthält: Klingeln mit der Ausgangskapazität des Schalters, das elektrische Feld der Schaltknoten-Fläche und vor allem Gleichtaktströme auf Ein- und Ausgangskabeln. Über einer durchgehenden Fläche hebt sich das Dipolmoment einer flachen Schleife im Modell fast vollständig auf; eine Fernfeld-Zahl wäre dann Scheingenauigkeit und wird nicht angezeigt.',
+        refs: ['slyt682', 'an1149', 'ott'] as const,
       },
     },
   },

@@ -1,0 +1,327 @@
+{
+ "slot-clock": {
+  "layers": 2,
+  "w": 40,
+  "h": 30,
+  "title": "Takt über einem Schlitz in der Massefläche",
+  "mistake": "Eine Taktleitung kreuzt einen Schlitz in der Massefläche darunter (z. B. ein Bauteil-Ausschnitt oder eine aufgetrennte Fläche). Der Rückstrom muss um den Schlitz herum.",
+  "fix": "Schlitz schließen oder die Leitung um den Schlitz herum führen; notfalls einen Kondensator/Brücke über den Schlitz direkt an der Kreuzung.",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "return-gap"
+   ],
+   "good_absent": [
+    "return-gap"
+   ],
+   "bad_severity": "critical"
+  }
+ },
+ "via-no-stitch": {
+  "layers": 4,
+  "w": 40,
+  "h": 30,
+  "title": "Lagenwechsel ohne Masse-Via daneben",
+  "mistake": "Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.",
+  "fix": "Eine Masse-Via direkt neben jede Signal-Via eines schnellen Signals, das den Bezug wechselt (unter 1–2 mm).",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "no-stitching|ref-change"
+   ],
+   "good_absent": [
+    "no-stitching"
+   ],
+   "far_gain_min": 3
+  }
+ },
+ "ref-change-pwr": {
+  "layers": 4,
+  "w": 40,
+  "h": 30,
+  "title": "Bezugswechsel von Masse auf Versorgung ohne Kondensator",
+  "mistake": "Ein Takt wechselt von der Oberseite (Bezug: Massefläche In1) auf die Unterseite (Bezug: 3,3-V-Fläche In2). Der Rückstrom muss von Masse auf die Versorgungsfläche: über den nächsten Abblockkondensator, hier weit weg.",
+  "fix": "Einen Kondensator (z. B. 100 nF) zwischen Masse und Versorgung direkt an der Signal-Via, oder den Lagenwechsel so legen, dass beide Bezüge Masse sind.",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "ref-change"
+   ],
+   "far_gain_min": 3
+  }
+ },
+ "buck-loop": {
+  "layers": 2,
+  "w": 40,
+  "h": 30,
+  "title": "Schaltregler: Eingangskondensator weit weg (große heiße Schleife)",
+  "mistake": "Beim Abwärtswandler fließt der schnell geschaltete Strom in der Schleife Eingangskondensator → High-Side-Schalter → Low-Side-Schalter → Masse → Kondensator. Steht der Kondensator weit weg vom IC, ist diese Schleife groß und strahlt.",
+  "fix": "Eingangskondensator so nah wie möglich an VIN- und GND-Pin des Reglers, auf derselben Lage, ohne Vias in der Schleife; darunter ungestörte Massefläche.",
+  "sources": [
+   {
+    "id": "buck",
+    "type": "loop",
+    "name": "Buck 500 kHz",
+    "enabled": true,
+    "color": "#f472b6",
+    "pads": [
+     "C1.1",
+     "U1.3",
+     "U1.1",
+     "C1.2"
+    ],
+    "waveform": {
+     "f0": 500000.0,
+     "duty": 0.28,
+     "tr": 5e-09,
+     "amplitude": 2.0
+    },
+    "node": {
+     "net": "SW",
+     "voltage": 12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "hot-loop"
+   ],
+   "good_absent": [
+    "hot-loop"
+   ],
+   "bad_severity": "critical"
+  }
+ },
+ "long-clock": {
+  "layers": 2,
+  "w": 120,
+  "h": 30,
+  "title": "Lange, unterminierte Taktleitung mit schnellen Flanken",
+  "mistake": "Eine 100 mm lange Taktleitung mit 0,5-ns-Flanken ohne Serienwiderstand: Die Leitung ist für ihr Spektrum elektrisch lang, Reflexionen und Überschwingen erzeugen zusätzliche Oberwellen.",
+  "fix": "Serienwiderstand (22–33 Ω) direkt am Treiber, kurze Leitung, oder langsamere Flanken (Treiberstärke/Slew-Rate).",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 50 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 50000000.0,
+     "duty": 0.5,
+     "tr": 5e-10,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "long-line"
+   ],
+   "good_absent": [
+    "long-line"
+   ]
+  }
+ },
+ "series-term": {
+  "layers": 2,
+  "w": 120,
+  "h": 30,
+  "title": "Lange Taktleitung: 0 Ω statt Serienwiderstand am Treiber",
+  "mistake": "Dieselbe 100 mm lange Taktleitung mit 0,5-ns-Flanken; am Treiber sitzt nur eine 0-Ω-Brücke. Ohne Quellterminierung klingelt die Leitung bei ihrer Viertelwellen-Resonanz (hier im Messbereich).",
+  "fix": "Serienwiderstand 33 Ω direkt am Treiber (≈ Z0 minus Ausgangswiderstand): schluckt die Reflexion und verlangsamt die Flanke an der kapazitiven Last.",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 50 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK_SRC",
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 50000000.0,
+     "duty": 0.5,
+     "tr": 5e-10,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "long-line"
+   ],
+   "good_absent": [
+    "long-line"
+   ],
+   "far_gain_min": 3
+  }
+ },
+ "no-plane": {
+  "layers": 2,
+  "w": 40,
+  "h": 30,
+  "title": "Zweilagig ohne Massefläche: Rückleiter weit weg",
+  "mistake": "Eine zweilagige Platine ohne Massefläche: Der Takt läuft oben, die Masseverbindung zwischen Treiber und Empfänger als dünne Leitung am Platinenrand. Die Schleife aus Hin- und Rückweg umschließt eine große Fläche.",
+  "fix": "Eine durchgehende Massefläche auf der Unterseite (bei zwei Lagen die wichtigste Maßnahme), mindestens aber die Masseleitung direkt neben/unter der Taktleitung führen.",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "no-reference"
+   ],
+   "good_absent": [
+    "no-reference"
+   ],
+   "far_gain_min": 10
+  }
+ },
+ "edge-clock": {
+  "layers": 4,
+  "w": 40,
+  "h": 30,
+  "title": "Taktleitung direkt an der Platinenkante",
+  "mistake": "Eine Taktleitung läuft entlang der Platinenkante, weniger als 1 mm vom Rand der Bezugsfläche. Am Flächenrand kann sich der Rückstrom nicht symmetrisch unter der Leitung ausbreiten, das Streufeld reicht über die Kante hinaus.",
+  "fix": "Schnelle Leitungen mehrere Millimeter (Faustregel: mindestens das 3- bis 5-Fache der Höhe über der Fläche, besser einige mm) von der Kante weg; Kante mit Masse-Vias einfassen.",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "edge-trace"
+   ],
+   "good_absent": [
+    "edge-trace"
+   ]
+  }
+ }
+}

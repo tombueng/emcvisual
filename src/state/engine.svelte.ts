@@ -29,7 +29,7 @@ import { eFieldAt } from '../physics/efield';
 import { packCharges } from '../physics/images';
 import { trapezoidLines, type Line } from '../physics/spectrum';
 import type { FieldKind } from '../compute/fieldKernel';
-import { dipoleMoment, farField, type LimitSegment } from '../physics/farfield';
+import { dipoleCompensated, dipoleMoment, farField, type LimitSegment } from '../physics/farfield';
 import { limitsFor } from '../physics/standards';
 import { distPointSegment } from '../model/geometry';
 import { PickIndex } from '../model/pickIndex';
@@ -58,7 +58,8 @@ export interface ProbeReadout {
 }
 
 export interface FarReadout {
-  sources: { id: string; name: string; color: string; lines: ProbeLine[] }[];
+  /** compensated: a flat loop over a solid plane, the far field is not quantifiable (lines empty). */
+  sources: { id: string; name: string; color: string; lines: ProbeLine[]; compensated?: boolean }[];
   total: ProbeLine[];
   limits: LimitSegment[];
   distance: 3 | 10;
@@ -840,6 +841,11 @@ class Engine {
       if (!m || !pack || !s.enabled) continue;
       const fw = this.fullwaveActive() ? this.fullwave : null;
       const meta = fw?.sources.find((x) => x.id === s.id);
+      const moment = dipoleMoment(pack);
+      if (!meta && dipoleCompensated(m.info.loopArea, moment)) {
+        sources.push({ id: s.id, name: s.name, color: s.color, lines: [], compensated: true });
+        continue;
+      }
       // openEMS: strongest direction at 3 m per ampere; 10 m scales with 1/r
       const lines =
         fw && meta
@@ -847,7 +853,7 @@ class Engine {
               .map((l) => ({ f: l.f, e: l.amp * valueAtFrequency(fw.freqs, meta.farE3mPerA, l.f) * (3 / distance) }))
               .filter((l) => l.e > 0)
               .map((l) => ({ f: l.f, db: 20 * Math.log10(l.e) + 120 }))
-          : farField(dipoleMoment(pack), m.lines, distance);
+          : farField(moment, m.lines, distance);
       for (const l of lines) totals.set(Math.round(l.f), (totals.get(Math.round(l.f)) ?? 0) + 10 ** (l.db / 10));
       sources.push({ id: s.id, name: s.name, color: s.color, lines });
     }

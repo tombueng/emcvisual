@@ -75,7 +75,7 @@ export function rankedDiagnostics(): { d: Diagnostic; margin: number | null; sev
   const margins = new Map(farMargins().map((f) => [f.id, f.worst]));
   return rankFindings(
     app.diagnostics.map((d) => ({ item: d, sourceMargin: margins.get(d.sourceId) ?? null, gainDb: d.gain?.db ?? null })),
-  ).map((r) => ({ d: r.item, margin: r.sourceMargin, severity: findingSeverity(r.sourceMargin, r.item.gain?.db ?? null, r.item.kind) }));
+  ).map((r) => ({ d: r.item, margin: r.sourceMargin, severity: findingSeverity(r.sourceMargin, r.item.gain?.db ?? null, r.item.kind, r.item.value) }));
 }
 
 /** Severity of a source from its far-field margin. */

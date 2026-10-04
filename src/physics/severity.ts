@@ -23,10 +23,24 @@ export function marginScore(margin: number | null): number {
   return margin === null ? 0.3 : clamp((margin + 20) / 20, 0, 1);
 }
 
-export function findingSeverity(margin: number | null, gain: number | null, kind: DiagnosticKind): Severity {
-  // share of the problem: full from 6 dB gain on; validity notes and unquantified hints in between
-  const share = gain !== null ? clamp(gain / 6, 0.15, 1) : kind === 'long-line' ? 0.3 : 0.4;
-  const score = marginScore(margin) * (0.35 + 0.65 * share);
+/**
+ * A hot loop is rated by its area (`value`, mm²): 20 mm² is about the smallest the parts allow,
+ * 40 mm² should be looked at, from 80 mm² it is serious. Its far field is often not
+ * quantifiable (a flat loop over a solid plane cancels its own dipole in the model), so the
+ * area counts on its own; a known far-field margin can only raise the rating.
+ */
+export function hotLoopScore(area: number): number {
+  return clamp(Math.log10(area / 20), 0, 1);
+}
+
+export function findingSeverity(margin: number | null, gain: number | null, kind: DiagnosticKind, value?: number): Severity {
+  // share of the problem: full from 6 dB gain on; unquantified hints in between
+  let share = gain !== null ? clamp(gain / 6, 0.15, 1) : kind === 'long-line' ? 0.3 : 0.4;
+  // a gap under the return path also drives the plane halves and cables against each other
+  // (common mode, not in the gain figure): at least a large share
+  if (kind === 'return-gap') share = Math.max(share, 0.6);
+  let score = marginScore(margin) * (0.35 + 0.65 * share);
+  if (kind === 'hot-loop' && value !== undefined) score = Math.max(score, hotLoopScore(value));
   return { score, level: level(score) };
 }
 

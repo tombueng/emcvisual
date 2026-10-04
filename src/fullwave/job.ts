@@ -15,7 +15,7 @@ import type { Vec2 } from '../model/types';
 import type { Grid } from '../compute/grid';
 import { findPad, netTerminals, padName, returnHeight, terminationPad, type PhysicsContext, type SourceModel } from '../physics/currents';
 import type { LoadModel, Source } from '../physics/sources';
-import { parseEng } from '../physics/units';
+import { capacitorValue, resistorValue } from '../physics/units';
 
 export const FULLWAVE_JOB_KIND = 'pcb-field-fullwave-job';
 
@@ -145,24 +145,7 @@ function segmentPoly(a: Vec2, b: Vec2, w: number): Vec2[] {
   ];
 }
 
-/** "100n", "4u7", "10uF", "22p" → farads; NaN when it is not a capacitance. */
-export function capacitorValue(value: string): number {
-  const m = /^(\d+(?:[.,]\d+)?)\s*([pnuµm]?)(\d*)\s*F?\b/.exec(value.trim());
-  if (!m || (!m[2] && !/F/.test(value))) return NaN;
-  const mult = { p: 1e-12, n: 1e-9, u: 1e-6, µ: 1e-6, m: 1e-3, '': 1 }[m[2] ?? ''] ?? 1;
-  const digits = m[1]!.replace(',', '.');
-  return Number(m[3] ? `${digits}.${m[3]}` : digits) * mult;
-}
-
-/** "33R", "4k7", "100", "0R" → ohms; NaN when it is not a resistor value. */
-export function resistorValue(value: string): number {
-  const v = value.trim().replace(',', '.');
-  const m = /^(\d+(?:\.\d+)?)\s*([RrkKmM]|Ω|Ohm|ohm)?(\d*)$/.exec(v);
-  if (!m) return parseEng(v) ?? NaN;
-  const mult = { R: 1, r: 1, k: 1e3, K: 1e3, m: 1e-3, M: 1e6, Ω: 1, Ohm: 1, ohm: 1 }[m[2] ?? 'R'] ?? 1;
-  // "4k7": the digits after the letter are decimals
-  return Number(m[3] ? `${m[1]}.${m[3]}` : m[1]) * mult;
-}
+export { capacitorValue, resistorValue } from '../physics/units';
 
 export function buildJob(
   ctx: PhysicsContext,

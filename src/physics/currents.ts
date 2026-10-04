@@ -9,6 +9,7 @@ import type { BoardModel, Pad } from '../model/types';
 import { toWorld, type Vec3, type WorldFrame } from '../model/world';
 import { microstrip, shortLineLimit, stripline, unreferenced, type LineParams } from './lines';
 import { mapLines, trapezoidLines, triangleLines, type Line } from './spectrum';
+import { resistorValue } from './units';
 import { splitPadRef, STRAY_TURNS, type DiffPairSource, type InductorSource, type LoadModel, type LoopSource, type SignalSource, type Source } from './sources';
 
 export interface CurrentElement {
@@ -39,6 +40,15 @@ export interface SourceInfo {
   fShort: number;
   driver?: string;
   warnings: string[];
+  /**
+   * Current loops: vector area of the loop as the current really runs, including the part
+   * inside a plane (mm², world axes). Its length is the loop area that matters for the field.
+   */
+  loopArea?: Vec3;
+  /** Signals: series resistors between the source's nets (source termination), with the distance from the driver, mm. */
+  series?: { ref: string; ohms: number; fromDriverMm: number }[];
+  /** Signals: rise time after the series resistor's RC with the line and load, s. */
+  trEff?: number;
 }
 
 export interface SourceModel {
@@ -284,10 +294,107 @@ export function detectDriver(board: BoardModel, nets: number[]): number {
   return pads[0]?.i ?? -1;
 }
 
+// --- return through ground copper (no reference plane) ---------------------------------------
+
+const GROUND_NAME = /^(\/)?(gnd|vss|0v|agnd|dgnd|pgnd|gndd|gnda|gndpwr|earth|ground|masse)([_\-.]?\w*)?$/i;
+
+/**
+ * The net a signal returns on when there is no plane under it: a ground-named net on the
+ * driver's part, else on a receiving part, else any ground-named net with copper.
+ */
+export function groundNet(board: BoardModel, parts: number[]): number {
+  const named = (i: number) => i > 0 && GROUND_NAME.test(board.nets[i] ?? '');
+  for (const fp of parts) {
+    const hit = board.pads.find((p) => p.footprint === fp && named(p.net));
+    if (hit) return hit.net;
+  }
+  return board.nets.findIndex((n, i) => named(i) && board.tracks.some((t) => t.net === i));
+}
+
+/**
+ * Explicit return currents for parts of a signal without a reference plane: from each node
+ * the current crosses (capacitively) to the nearest ground copper, or for a receiver to its
+ * own ground pin, runs along the ground copper to the driver's ground pin and through the
+ * driver back to its output. Without a ground net nothing is added (and the loop stays open).
+ */
+class GroundReturn {
+  private g: NetGraph;
+  private tree: ReturnType<typeof shortestTree>;
+  private rootPad: number;
+  /** Current that arrives at the driver's ground pin, relative. */
+  total = 0;
+  constructor(
+    private ctx: PhysicsContext,
+    net: number,
+    driverPad: number,
+  ) {
+    const { board } = ctx;
+    this.g = buildNetGraph(board, [net], false);
+    const fp = board.pads[driverPad]!.footprint;
+    this.rootPad = board.pads.findIndex((p, i) => p.footprint === fp && p.net === net && this.g.padNodes.has(i));
+    this.tree = shortestTree(this.g, this.rootPad >= 0 ? this.g.padNodes.get(this.rootPad)![0]! : 0);
+  }
+
+  get ok() {
+    return this.rootPad >= 0;
+  }
+
+  /** Nearest ground node to a point (any layer). */
+  private nearest(x: number, y: number): number {
+    let best = -1;
+    let bd = Infinity;
+    this.g.nodes.forEach((nd, i) => {
+      if (!Number.isFinite(this.tree.dist[i]!)) return;
+      const d = Math.hypot(nd.x - x, nd.y - y);
+      if (d < bd) {
+        bd = d;
+        best = i;
+      }
+    });
+    return best;
+  }
+
+  /** Return of current w that leaves the signal at (x, y, layer); `viaPad`: a receiver's own pin. */
+  add(out: CurrentElement[], x: number, y: number, layer: number, w: number, net: number, viaPad?: number) {
+    const { board, frame } = this.ctx;
+    const L = board.layers;
+    let start = -1;
+    if (viaPad !== undefined) {
+      const fp = board.pads[viaPad]!.footprint;
+      const own = board.pads.findIndex((p, i) => p.footprint === fp && this.g.padNodes.has(i) && Number.isFinite(this.tree.dist[this.g.padNodes.get(i)![0]!]!));
+      if (own >= 0) start = this.g.padNodes.get(own)![0]!;
+    }
+    if (start < 0) start = this.nearest(x, y);
+    if (start < 0) return false;
+    const sn = this.g.nodes[start]!;
+    // into the part (or across to the ground conductor)
+    out.push({ a: toWorld(frame, { x, y }, L[layer]!.y), b: toWorld(frame, sn, L[sn.layer]!.y), w, r: 0.15, vertical: false, layer: -1, net, tag: 'return', noImage: true });
+    // along the ground copper towards the driver (tree steps run from the driver outwards)
+    for (const st of pathTo(this.tree, start) ?? []) {
+      const el = stepElement(this.ctx, this.g, st, -w);
+      out.push({ ...el, tag: 'return', noImage: true, layer: el.vertical ? -1 : el.layer });
+    }
+    this.total += w;
+    return true;
+  }
+
+  /** Through the driver from its ground pin to its output pad. */
+  close(out: CurrentElement[], driverPad: number) {
+    if (this.total === 0) return;
+    const { board, frame } = this.ctx;
+    const L = board.layers;
+    const g = board.pads[this.rootPad]!;
+    const d = board.pads[driverPad]!;
+    const side = board.footprints[d.footprint]!.side === 'bottom' ? L.length - 1 : 0;
+    out.push({ a: toWorld(frame, g.at, L[side]!.y), b: toWorld(frame, d.at, L[side]!.y), w: this.total, r: 0.15, vertical: false, layer: -1, net: d.net, tag: 'return', noImage: true });
+  }
+}
+
 // --- signal nets --------------------------------------------------------------------------------
 
 interface NetCurrents {
   elements: CurrentElement[];
+  series: { ref: string; ohms: number; fromDriverMm: number }[];
   cTotal: number;
   z0: number;
   eeff: number;
@@ -362,7 +469,19 @@ export function terminationPad(ctx: PhysicsContext, t: NetTerminals, endPad: str
 
 function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string, load: LoadModel): NetCurrents {
   const { board } = ctx;
-  const { g, tree, driver, loads, pickNode, root, warnings } = netTerminals(ctx, netNames, driverRef);
+  const { g, tree, driver, loads, pickNode, root, warnings, bridgePads } = netTerminals(ctx, netNames, driverRef);
+  // series parts between the source's nets: resistors are a source termination
+  const series: NetCurrents['series'] = [];
+  const seenParts = new Set<number>();
+  for (const pi of bridgePads) {
+    const fp = board.pads[pi]!.footprint;
+    if (seenParts.has(fp)) continue;
+    seenParts.add(fp);
+    const f = board.footprints[fp]!;
+    const ohms = /^R/i.test(f.ref) ? resistorValue(f.value) : NaN;
+    const d = tree.dist[pickNode(pi)]!;
+    if (Number.isFinite(ohms)) series.push({ ref: f.ref, ohms, fromDriverMm: Number.isFinite(d) ? d : Infinity });
+  }
 
   // line length, capacitance and Z0 along the tree
   const n = g.nodes.length;
@@ -390,10 +509,26 @@ function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string,
 
   const L = board.layers;
   const elements: CurrentElement[] = [];
+  // without a plane under a node, its current returns through the ground copper
+  const padOfNode = (v: number) => g.nodes[v]!.pad;
+  let gr: GroundReturn | null | undefined;
+  const groundReturn = () => {
+    if (gr === undefined) {
+      const net = groundNet(board, [board.pads[driver]!.footprint, ...loads.map((pi) => board.pads[pi]!.footprint)]);
+      gr = net > 0 ? new GroundReturn(ctx, net, driver) : null;
+      if (gr && !gr.ok) gr = null;
+    }
+    return gr;
+  };
   const nodeVertical = (v: number, w: number) => {
     const nd = g.nodes[v]!;
     const ret = returnHeight(ctx, nd.layer, nd.x, nd.y);
-    if (!ret.referenced) warnings.push('unreferenced');
+    if (!ret.referenced) {
+      warnings.push('unreferenced');
+      const pad = padOfNode(v);
+      const viaPad = pad !== undefined && loads.includes(pad) ? pad : undefined;
+      if (ctx.planes.length === 0 && groundReturn()?.add(elements, nd.x, nd.y, nd.layer, w, board.pads[driver]!.net, viaPad)) return;
+    }
     elements.push(verticalTo(ctx, nd.x, nd.y, L[nd.layer]!.y, ret.y, w, 0.15, board.pads[driver]!.net));
   };
 
@@ -419,11 +554,15 @@ function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string,
       if (s) elements.push(stepElement(ctx, g, s, sub[v]! / cTotal));
       if (v !== root && cNode[v]! > 0) nodeVertical(v, cNode[v]! / cTotal);
     }
-    // the driver: total current comes up from the plane, its own share goes straight back down
+    // the driver: total current comes up from the plane, its own share goes straight back down;
+    // what returned through the ground copper comes through the driver's ground pin instead
     const rn = g.nodes[root]!;
     const ret = returnHeight(ctx, rn.layer, rn.x, rn.y);
-    elements.push(verticalTo(ctx, rn.x, rn.y, ret.y, L[rn.layer]!.y, 1 - cNode[root]! / cTotal, 0.15, board.pads[driver]!.net));
-    return { elements, cTotal, z0, eeff, lengthMm, maxPathMm, driver, warnings: [...new Set(warnings)] };
+    const viaGround = gr ? gr.total : 0;
+    gr?.close(elements, driver);
+    const up = 1 - cNode[root]! / cTotal - viaGround;
+    if (Math.abs(up) > 1e-9) elements.push(verticalTo(ctx, rn.x, rn.y, ret.y, L[rn.layer]!.y, up, 0.15, board.pads[driver]!.net));
+    return { elements, series, cTotal, z0, eeff, lengthMm, maxPathMm, driver, warnings: [...new Set(warnings)] };
   }
 
   // terminated: constant current along driver -> termination
@@ -441,12 +580,23 @@ function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string,
   elements.push(verticalTo(ctx, rn.x, rn.y, returnHeight(ctx, rn.layer, rn.x, rn.y).y, L[rn.layer]!.y, 1, 0.15, board.pads[driver]!.net));
   elements.push(verticalTo(ctx, en.x, en.y, L[en.layer]!.y, returnHeight(ctx, en.layer, en.x, en.y).y, 1, 0.15, board.pads[driver]!.net));
   const z = load.z0 > 0 ? load.z0 : z0;
-  return { elements, cTotal: 0, z0: z, eeff, lengthMm: pathLen, maxPathMm: pathLen, driver, warnings: [...new Set(warnings)] };
+  return { elements, series, cTotal: 0, z0: z, eeff, lengthMm: pathLen, maxPathMm: pathLen, driver, warnings: [...new Set(warnings)] };
+}
+
+/**
+ * Rise time at the load behind series resistors: the resistor and the capacitance it drives
+ * form an RC low pass (10–90 % = 2.2·R·C), added in quadrature to the driver's own edge. The
+ * driver's own output resistance is already part of the given rise time.
+ */
+export function seriesRiseTime(tr: number, ohms: number, cTotal: number): number {
+  return Math.hypot(tr, 2.2 * ohms * cTotal);
 }
 
 function signalModel(ctx: PhysicsContext, src: SignalSource): SourceModel {
   const nc = netCurrents(ctx, src.nets, src.driver, src.load);
-  const v = voltageLines(ctx, src);
+  const rSeries = nc.series.reduce((sum, r) => sum + r.ohms, 0);
+  const trEff = src.load.model === 'capacitive' && rSeries > 0 ? seriesRiseTime(src.waveform.tr, rSeries, nc.cTotal) : src.waveform.tr;
+  const v = trapezoidLines({ ...src.waveform, tr: trEff }, ctx.fMax);
   const lines =
     src.load.model === 'capacitive'
       ? mapLines(v, (f) => 2 * Math.PI * f * nc.cTotal)
@@ -463,6 +613,8 @@ function signalModel(ctx: PhysicsContext, src: SignalSource): SourceModel {
       fShort: shortLineLimit(nc.maxPathMm, nc.eeff),
       driver: padName(ctx.board.pads[nc.driver]!),
       warnings: nc.warnings,
+      series: nc.series,
+      trEff,
     },
     centre: centreOf(nc.elements),
   };
@@ -519,6 +671,13 @@ function loopModel(ctx: PhysicsContext, src: LoopSource): SourceModel {
   const elements: CurrentElement[] = [];
   const warnings: string[] = [];
   let lengthMm = 0;
+  // vector area ½∮ r × dl of the loop as the current runs (plane parts included)
+  const area: Vec3 = [0, 0, 0];
+  const addArea = (a: Vec3, b: Vec3) => {
+    area[0] += 0.5 * (a[1] * b[2] - a[2] * b[1]);
+    area[1] += 0.5 * (a[2] * b[0] - a[0] * b[2]);
+    area[2] += 0.5 * (a[0] * b[1] - a[1] * b[0]);
+  };
   for (let k = 0; k < padIdx.length; k++) {
     const a = padIdx[k]!;
     const b = padIdx[(k + 1) % padIdx.length]!;
@@ -536,6 +695,7 @@ function loopModel(ctx: PhysicsContext, src: LoopSource): SourceModel {
         layer: la,
         net: pa.net,
       });
+      addArea(elements[elements.length - 1]!.a, elements[elements.length - 1]!.b);
       lengthMm += Math.hypot(pa.at.x - pb.at.x, pa.at.y - pb.at.y);
       continue;
     }
@@ -552,6 +712,7 @@ function loopModel(ctx: PhysicsContext, src: LoopSource): SourceModel {
     }
     for (const s of path) {
       const el = stepElement(ctx, g, s, 1);
+      addArea(el.a, el.b);
       // return current inside the net's own plane is represented by the mirror images
       if (!el.vertical && planeOf.get(el.layer) === pa.net) continue;
       elements.push(el);
@@ -563,7 +724,7 @@ function loopModel(ctx: PhysicsContext, src: LoopSource): SourceModel {
     id: src.id,
     elements,
     lines,
-    info: { lengthMm, eeff: 1, fShort: shortLineLimit(lengthMm, 3), warnings: [...new Set(warnings)] },
+    info: { lengthMm, eeff: 1, fShort: shortLineLimit(lengthMm, 3), warnings: [...new Set(warnings)], loopArea: area },
     centre: centreOf(elements),
   };
 }

@@ -87,6 +87,12 @@
     void app.fieldOrigin;
     return farMargins();
   });
+  const compensated = $derived.by(() => {
+    void app.models;
+    void app.sources.map((s) => s.enabled);
+    void app.fieldOrigin;
+    return engine.farReadout(3)?.sources.filter((s) => s.compensated) ?? [];
+  });
 </script>
 
 <div class="diag">
@@ -183,6 +189,14 @@
         <div class="static">
           <span class="row"><span class="src">{s.name}</span><span class="value" class:over={s.worst >= 0}>{t.diag.margin(s.worst)}</span></span>
           <span class="hint value">{formatEng(s.at, 'Hz', 3)}{shares(s.id)}</span>
+        </div>
+      </li>
+    {/each}
+    {#each compensated as s (s.id)}
+      <li style:--c={s.color}>
+        <div class="static">
+          <span class="row"><span class="src">{s.name}</span><span class="value">–</span></span>
+          <span class="hint">{t.diag.farCompensated}</span>
         </div>
       </li>
     {/each}

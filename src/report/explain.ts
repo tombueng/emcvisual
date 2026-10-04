@@ -46,12 +46,14 @@ export function explain(d: Diagnostic): Explanation {
     planeNet: d.planeNet || 'GND',
     otherNet: d.otherNet ?? '?',
     gap: fmtNum(d.value, 1),
-    radius: fmtNum(d.value, 0),
+    radius: d.kind === 'edge-trace' ? fmtNum(d.run?.min ?? 0, 1) : fmtNum(d.value, 0),
+    run: fmtNum(d.run?.length ?? 0, 0),
     detour: d.detour ? fmtNum(d.detour.length, 0) : '',
     area: d.detour ? fmtNum(d.detour.extraArea, 0) : '',
     via: d.detour?.via && d.detour.via !== 'via' ? d.detour.via : '',
     fShort: formatEng(d.value, 'Hz', 3),
-    length: m ? fmtNum(m.info.lengthMm, 0) : '?',
+    loopArea: fmtNum(d.value, 0),
+    length: m ? fmtNum(d.kind === 'long-line' ? (C0 / (4 * d.value * Math.sqrt(m.info.eeff))) * 1000 : m.info.lengthMm, 0) : '?',
     eeff: m ? fmtNum(m.info.eeff, 2) : '?',
     loop: s?.type === 'loop' || s?.type === 'inductor',
   };
@@ -75,7 +77,21 @@ export function explain(d: Diagnostic): Explanation {
       k = 'longLine';
       figures.push(E.fig.longLine(p.length, p.eeff, p.fShort));
       break;
+    case 'hot-loop':
+      k = 'hotLoop';
+      figures.push(E.fig.hotLoop(p.loopArea));
+      break;
+    case 'edge-trace':
+      k = 'edgeTrace';
+      figures.push(E.fig.edgeTrace(p.run, p.gap, p.radius, fmtNum((d.run?.min ?? 0) / 5, 2)));
+      break;
+    case 'no-reference':
+      k = 'noReference';
+      figures.push(E.fig.noReference(p.loopArea));
+      break;
   }
+  if (m?.info.series?.length && s && s.type === 'signal' && m.info.trEff !== undefined && m.info.trEff > s.waveform.tr * 1.05)
+    figures.push(E.fig.series(m.info.series.map((r) => `${r.ref} (${fmtNum(r.ohms, 0)} Ω)`).join(', '), formatEng(s.waveform.tr, 's', 2), formatEng(m.info.trEff, 's', 2)));
   if (gain) figures.push(d.gain!.scope === 'source' ? E.fig.gainSource(gain) : E.fig.gain(gain));
   // every text takes the figures; some ignore them (fewer parameters is fine in TypeScript)
   type Texts = {
@@ -136,6 +152,7 @@ export function explain(d: Diagnostic): Explanation {
     const er = board.dielectrics[0]?.epsilonR ?? 4.4;
     doubts.push(D.cavity(p.planeNet, p.otherNet, formatEng(C0 / (2 * L * Math.sqrt(er)), 'Hz', 2)));
   }
+  if (d.kind === 'return-gap' && s && s.type !== 'loop' && s.type !== 'inductor') doubts.push(D.slotCm);
   if (d.detour && d.detour.length > 0) doubts.push(D.shortestPath);
   if (d.gain?.scope === 'source') doubts.push(D.idealMirror);
   if (s && (s.type === 'signal' || s.type === 'diffpair')) doubts.push(D.trapezoid);
@@ -144,7 +161,7 @@ export function explain(d: Diagnostic): Explanation {
 
   // --- severity -------------------------------------------------------------------------------------
   const margin = worst ? worst.db - worst.lim : null;
-  const severity = findingSeverity(margin, d.gain?.db ?? null, d.kind);
+  const severity = findingSeverity(margin, d.gain?.db ?? null, d.kind, d.value);
   const reason = t.severity.reason(margin !== null ? `${t.diag.margin(margin)} (${formatEng(worst!.f, 'Hz', 3)})` : '–', gain ? (d.gain!.scope === 'source' ? E.fig.gainSource(gain) : gainTextShort(gain)) : t.severity.noGain);
 
   return {
