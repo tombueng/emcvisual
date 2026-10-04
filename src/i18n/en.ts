@@ -1,6 +1,9 @@
 import type { Strings } from './de';
 
 /** English UI strings. Must match the German dictionary key for key (checked by TypeScript). */
+/** Figures of a finding for the explanation texts (report/explain.ts). */
+type P = { layer: string; plane: string; planeNet: string; otherNet: string; gap: string; radius: string; detour: string; area: string; via: string; fShort: string; length: string; eeff: string; loop: boolean };
+
 export const en: Strings = {
   app: {
     workingTitle: 'working title',
@@ -426,6 +429,116 @@ export const en: Strings = {
     },
     noInputs: 'Nothing to set for this source here.',
     undocumented: 'not documented',
+  },
+  explain: {
+    sections: {
+      what: 'What is it?',
+      why: 'Why does it radiate?',
+      detected: 'How the app spots it',
+      figures: 'The figures here',
+      fixes: 'What helps (most effective first)',
+      limits: 'Where the calculation is uncertain',
+      refs: 'Further reading',
+    },
+    fig: {
+      gap: (mm: string, net: string, plane: string) => `${mm} mm of the line run over a gap in ${net} (${plane}).`,
+      detour: (mm: string, area: string) => `The return current takes ${mm} mm around it, adding about ${area} mm² of loop area.`,
+      transfer: (mm: string, area: string, via: string) => `The return current changes planes through ${via}: ${mm} mm detour, about ${area} mm² extra loop area.`,
+      nearestVia: 'the nearest via',
+      radius: (mm: string, net: string) => `No ${net} via within ${mm} mm of the signal via.`,
+      longLine: (mm: string, eeff: string, f: string) => `Line length ${mm} mm, effective permittivity ${eeff}: λ/10 is reached at ${f}.`,
+      gain: (g: string) => `Fixed, the source gets ${g} quieter at 3 m (every spectral line alike).`,
+      gainSource: (g: string) => `All gaps under this source together cost ${g} at 3 m.`,
+    },
+    refs: {
+      ott: 'H. W. Ott: Electromagnetic Compatibility Engineering. Wiley, 2009 (ch. 12 digital circuit radiation, ch. 16 PCB layout and stack-up).',
+      archambeault: 'B. Archambeault: PCB Design for Real-World EMI Control. Kluwer, 2002 (return current at reference changes, stitching capacitors).',
+      bogatin: 'E. Bogatin: Signal and Power Integrity – Simplified. 3rd ed., Prentice Hall, 2018 (return paths, reference planes).',
+      johnson: 'H. Johnson, M. Graham: High-Speed Digital Design. Prentice Hall, 1993 (electrically long lines, termination).',
+      an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (hot loop, input capacitor).',
+    },
+    kinds: {
+      gapDetour: {
+        what: (p: P) => `The line on ${p.layer} runs ${p.gap} mm over a gap in its reference plane ${p.planeNet} (${p.plane}). Right there the copper is missing in which the return current wants to flow at high frequencies.`,
+        why: () =>
+          'Above a few MHz the return current flows in the plane right under the line, because that loop has the lowest inductance. Over a gap it has to go around. Forward and return current then enclose an area, and a small loop radiates in proportion to area × current × frequency² (after Ott: E ≈ 263·10⁻¹⁶·f²·A·I/r). The current also drives a voltage across the gap: the slot can radiate itself, and the split plane drives common-mode current onto attached cables, which usually radiate even more.',
+        detected: () =>
+          'The app rasterises every reference plane (0.25 mm) and checks under every piece of line whether there is copper. It reports gaps of 1 mm or more with copper on both sides; small clearances (up to 3 mm², e.g. around vias) count as copper. The return model (stage 2) finds the shortest way through the plane copper around the gap and computes it as a real current path.',
+        fixes: () => [
+          'Reroute the line so it stays over continuous plane.',
+          'Close the gap, or make the plane continuous under the line. Split planes only where no fast signals cross.',
+          'If the line has to cross: a stitching capacitor (e.g. 100 nF, 0402) across the gap, right next to the crossing, between the two plane parts.',
+          'Change to a layer with a continuous reference plane, with a stitching via right next to the layer change.',
+          'Slow the edges (longer rise time): that lowers every harmonic above about 1/(π·tr).',
+        ],
+        limits: () =>
+          'The calculation is quasi-static: the slot as an antenna (resonant when its length approaches λ/2) and cable common mode are not included. The detour follows the shortest path; real current spreads wider, so the extra area is somewhat smaller. The full wave (stage 3, openEMS) is more accurate.',
+        refs: ['ott', 'bogatin', 'archambeault'] as const,
+      },
+      gapOpen: {
+        what: (p: P) =>
+          p.loop
+            ? `Under part of the current loop (${p.gap} mm on ${p.layer}) there is no reference plane ${p.planeNet}, e.g. a cut-out under the regulator.`
+            : `Under ${p.gap} mm of the line on ${p.layer} there is no reference plane ${p.planeNet}, and no copper leads around it.`,
+        why: () =>
+          'Over a continuous plane the current has its mirror image flowing the other way beneath it; from afar the two nearly cancel and only a very flat loop remains. Without the plane the loop radiates with its full area. In switching regulators the hot loop (input capacitor → switch → ground) with amperes and nanosecond edges is the strongest source on the board.',
+        detected: () =>
+          'As for gaps under lines: rasterised reference planes, gaps of 1 mm or more. Without a way around, the app computes the loop there without the mirror image. The effect covers all gaps under this source together: the comparison is the same source over continuous planes.',
+        fixes: (p: P) =>
+          p.loop
+            ? [
+                'Make the layer right under the hot loop a continuous GND plane. Cut-outs only where the datasheet asks for them (usually under the switch node, not under the loop).',
+                'Shrink the loop: input capacitor as close as possible to VIN and PGND, short wide connections, capacitor on the same layer as the regulator.',
+                'Add a small high-frequency capacitor (e.g. 100 nF, 0402) right at VIN/PGND.',
+                'Slow the switching edges if the regulator allows it (bootstrap resistor, slew-rate setting).',
+              ]
+            : ['Make the plane continuous under the line.', 'Reroute the line over continuous plane.', 'Change to a layer with a reference plane (with a stitching via).'],
+        limits: () =>
+          'The display stops at "more than 30 dB": the ideal mirror model almost cancels the vertical moment of a flat loop and so overstates the gain. In practice a continuous plane under the hot loop gains more like 10–20 dB.',
+        refs: ['ott', 'an1149'] as const,
+      },
+      refChange: {
+        what: (p: P) =>
+          `The line changes at a via from ${p.layer.split(' → ')[0]} (reference ${p.planeNet}) to a layer whose reference plane is another net (${p.otherNet}). The return current has to get from one plane to the other right here.`,
+        why: (p: P) =>
+          `Planes of different nets have no conducting connection at the via. The return current takes the nearest capacitor between ${p.planeNet} and ${p.otherNet}${p.via ? ` (here ${p.via})` : ''} or flows as displacement current through the capacitance between the planes. That adds a loop. The current also excites the cavity between the planes, which radiates at the board edges and can be strong at its resonances.`,
+        detected: () =>
+          'At every via of the signal the app determines the reference planes before and after the layer change. If they are different nets, it finds the nearest two-pin part between them and routes the return current as a path through the planes and that part.',
+        fixes: (p: P) => [
+          `Put both signal layers on the same reference net (e.g. ${p.planeNet} under both). Then a stitching via right next to the signal via is enough.`,
+          `If the change has to stay: a capacitor (100 nF, 0402) between ${p.planeNet} and ${p.otherNet} right at the signal via (less than 2 mm).`,
+          'Avoid the layer change, or put it where a decoupling capacitor sits anyway.',
+          'Slow the edges if the signal allows it.',
+        ],
+        limits: () =>
+          'Cavity resonances between the planes are not captured quasi-statically. The extra loop follows the shortest way to the capacitor. The full wave (stage 3) shows both more accurately.',
+        refs: ['archambeault', 'bogatin', 'ott'] as const,
+      },
+      noStitching: {
+        what: (p: P) =>
+          `The line changes layers. Both layers reference ${p.planeNet}, but there is no ${p.planeNet} via within ${p.radius} mm through which the return current could change planes.`,
+        why: () =>
+          'The return current has to run to the nearest connection between the planes and back under the line. The farther that connection, the bigger the extra loop and the more the cavity between the planes is excited.',
+        detected: (p: P) => `Around every signal via with a layer change the app looks for vias or plated pads of the plane net within ${p.radius} mm.`,
+        fixes: (p: P) => [`Put a ${p.planeNet} stitching via right next to every signal via that changes layers (1–2 mm away).`, 'For differential pairs one stitching via per pair, symmetric.'],
+        limits: () => 'Whether a farther via is enough depends on the frequency; the app only reports the distance here. The actual detour, if there is one, is given with the effect.',
+        refs: ['archambeault', 'bogatin'] as const,
+      },
+      longLine: {
+        what: (p: P) => `The line is electrically long from ${p.fShort}: longer than a tenth of the wavelength on the board.`,
+        why: () =>
+          'The fast calculation treats the line as lumped, with the same current everywhere. On electrically long lines waves travel back and forth; without a matching termination there are reflections and standing waves. The current then distributes differently, and at resonant frequencies the emission can be well above the computed value.',
+        detected: (p: P) => `From the length of the net (${p.length} mm) and the effective permittivity (${p.eeff}) follows the limit f = c / (10 · L · √εeff).`,
+        fixes: () => [
+          'A series resistor at the driver (about Z0 minus the driver output resistance, typically 22–33 Ω), so reflections die out.',
+          'Route the line shorter.',
+          'Slow the edges as far as the timing allows: above about 1/(π·tr) the harmonics fall at 40 dB per decade.',
+          'For solid numbers run the full wave (stage 3, openEMS).',
+        ],
+        limits: () => 'This is a note on the validity of the model; how much more the line radiates above the limit cannot be quantified without the full wave.',
+        refs: ['johnson', 'bogatin'] as const,
+      },
+    },
   },
   live: {
     badge: 'live',

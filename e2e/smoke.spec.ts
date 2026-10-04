@@ -258,6 +258,10 @@ test('problem view: a click on a hint shows only what matters, with labels and e
   const card = page.locator('aside.card');
   await expect(card).toContainText('Was die Rechnung hier bemängelt');
   await expect(card).toContainText('3 m: behoben');
+  // the explanation: what it is, why it radiates, what helps
+  await expect(card).toContainText('Warum strahlt das ab?');
+  await expect(card.locator('ol.fixes li').first()).toContainText('Bezugsnetz');
+  await expect(card).toContainText('Zum Nachlesen');
   // labels in the scene: the net with its values, the planes, the capacitor that carries the return
   await expect(page.locator('.labels .label.net')).toContainText('CLK_BAD');
   await expect(page.locator('.labels')).toContainText('GND · In1.Cu');

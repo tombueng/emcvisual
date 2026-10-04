@@ -15,6 +15,7 @@
   import { MAX_GAIN_DB } from '../physics/attribution';
   import type { FocusSpec } from './focusData';
   import { diagKey } from './focusData';
+  import { explain } from '../report/explain';
 
   interface Props {
     spec: FocusSpec;
@@ -41,6 +42,10 @@
   });
 
   const changed = () => source && engine.sourceChanged(source.id);
+  const ex = $derived.by(() => {
+    void app.models;
+    return explain(spec.diag);
+  });
   /** Origin of an input: from the scenario's provenance, else "not documented". */
   const origin = (path: string) => app.partsInfo.provenance[`${spec.source.id}/${path}`];
 </script>
@@ -70,6 +75,17 @@
   <p class="text">{diagnosticText(spec.diag)}</p>
   {#if spec.diag.gain}<p class="gain value">{gainText(spec.diag)}</p>{/if}
   {#if margin !== null}<p class="hint value">{t.focus.figures.margin}: {t.diag.margin(margin)}</p>{/if}
+
+  <div class="section-title">{t.explain.sections.what}</div>
+  <p class="text">{ex.what}</p>
+  <div class="section-title">{t.explain.sections.why}</div>
+  <p class="text">{ex.why}</p>
+  {#if ex.figures.length}
+    <div class="section-title">{t.explain.sections.figures}</div>
+    <ul class="figs">{#each ex.figures as f, i (i)}<li>{f}</li>{/each}</ul>
+  {/if}
+  <div class="section-title">{t.explain.sections.fixes}</div>
+  <ol class="fixes">{#each ex.fixes as f, i (i)}<li>{f}</li>{/each}</ol>
 
   {#if chart}
     <div class="section-title">{t.focus.spectrum}</div>
@@ -108,6 +124,19 @@
       {@render field(t.focus.fields.ripple, 'waveform.amplitude', source.waveform.amplitude, 'A', (v) => (source.waveform.amplitude = v))}
     {/if}
   {/if}
+
+  <details>
+    <summary>{t.explain.sections.detected}</summary>
+    <p class="text">{ex.detected}</p>
+  </details>
+  <details>
+    <summary>{t.explain.sections.limits}</summary>
+    <p class="text">{ex.limits}</p>
+  </details>
+  <details>
+    <summary>{t.explain.sections.refs}</summary>
+    <ul class="refs">{#each ex.refs as r, i (i)}<li>{r}</li>{/each}</ul>
+  </details>
 
   {#if model}
     <div class="section-title">{t.focus.derived}</div>
@@ -169,6 +198,29 @@
   }
   .chart {
     line-height: 0;
+  }
+  .figs,
+  .fixes,
+  .refs {
+    margin: 4px 0;
+    padding-left: 18px;
+    line-height: 1.45;
+  }
+  .fixes li {
+    margin-bottom: 4px;
+  }
+  .refs {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  details {
+    margin: 6px 0;
+  }
+  summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
   }
   .input {
     display: grid;

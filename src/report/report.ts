@@ -10,6 +10,7 @@ import { engine, selectionFromView } from '../state/engine.svelte';
 import { formatEng } from '../physics/units';
 import { BANDS } from '../physics/spectrum';
 import { diagnosticText, farMargins, gainText, rankedDiagnostics, sourceColor, sourceName, sourceSummary } from './texts';
+import { explain } from './explain';
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
@@ -19,6 +20,18 @@ function selectionLabel(): string {
   if (sel.mode === 'line') return formatEng(sel.f, 'Hz', 3);
   const band = BANDS.find((b) => b.id === app.view.bandId);
   return band ? `${formatEng(sel.f0, 'Hz', 2)}–${formatEng(sel.f1, 'Hz', 2)}` : '';
+}
+
+/** The detailed explanation of a finding: why, what helps, limits, literature. */
+function explainHtml(d: Parameters<typeof explain>[0]): string {
+  const x = explain(d);
+  const S = t.explain.sections;
+  return `<div class="explain">
+<p><b>${esc(S.why)}</b> ${esc(x.why)}</p>
+<p><b>${esc(S.fixes)}</b></p><ol>${x.fixes.map((f) => `<li>${esc(f)}</li>`).join('')}</ol>
+<p class="note"><b>${esc(S.limits)}</b> ${esc(x.limits)}</p>
+<p class="note"><b>${esc(S.refs)}</b> ${x.refs.map(esc).join(' ')}</p>
+</div>`;
 }
 
 /** Origin of the parts data and the parts without data (AI-PARTS-MANUAL.md), if any. */
@@ -72,7 +85,7 @@ export function buildReport(image: string | null): string {
     ? `<p class="note">${esc(t.diag.rankHint)}</p><ol class="findings">${rankedDiagnostics()
         .map(
           ({ d, margin }) =>
-            `<li>${dot(sourceColor(d.sourceId))}<b>${esc(sourceName(d.sourceId))}</b>${margin !== null ? ` <span class="at">(${esc(t.diag.margin(margin))})</span>` : ''} · ${esc(diagnosticText(d))} <span class="at">(${fmtNum(d.at.x, 1)} / ${fmtNum(d.at.y, 1)} mm)</span>${d.gain ? `<br><span class="gain">${esc(gainText(d))}</span>` : ''}</li>`,
+            `<li>${dot(sourceColor(d.sourceId))}<b>${esc(sourceName(d.sourceId))}</b>${margin !== null ? ` <span class="at">(${esc(t.diag.margin(margin))})</span>` : ''} · ${esc(diagnosticText(d))} <span class="at">(${fmtNum(d.at.x, 1)} / ${fmtNum(d.at.y, 1)} mm)</span>${d.gain ? `<br><span class="gain">${esc(gainText(d))}</span>` : ''}${explainHtml(d)}</li>`,
         )
         .join('')}</ol>`
     : `<p>${esc(t.diag.none)}</p>`;
@@ -138,6 +151,9 @@ export function buildReport(image: string | null): string {
   ol.findings li { margin-bottom: 8px; }
   .at { color: var(--muted); font-size: 12px; white-space: nowrap; }
   .gain { color: var(--amber); font-size: 13px; font-weight: 600; }
+  .explain { margin: 6px 0 14px; padding-left: 12px; border-left: 2px solid var(--line); font-size: 13px; }
+  .explain p { margin: 4px 0; }
+  .explain ol { margin: 2px 0 6px; padding-left: 20px; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: 13px; }
   dt { color: var(--muted); }
   dd { margin: 0; }

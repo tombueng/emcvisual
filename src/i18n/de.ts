@@ -1,4 +1,7 @@
 /** German UI strings (source of truth; other languages must have the same shape). */
+/** Figures of a finding for the explanation texts (report/explain.ts). */
+type P = { layer: string; plane: string; planeNet: string; otherNet: string; gap: string; radius: string; detour: string; area: string; via: string; fShort: string; length: string; eeff: string; loop: boolean };
+
 export const de = {
   app: {
     workingTitle: 'Arbeitstitel',
@@ -426,6 +429,116 @@ export const de = {
     },
     noInputs: 'Für diese Quelle gibt es hier nichts einzustellen.',
     undocumented: 'nicht belegt',
+  },
+  explain: {
+    sections: {
+      what: 'Was ist das?',
+      why: 'Warum strahlt das ab?',
+      detected: 'Wie die App das erkennt',
+      figures: 'Die Zahlen hier',
+      fixes: 'Was hilft (wirksamstes zuerst)',
+      limits: 'Wo die Rechnung unsicher ist',
+      refs: 'Zum Nachlesen',
+    },
+    fig: {
+      gap: (mm: string, net: string, plane: string) => `${mm} mm der Leitung liegen über einer Lücke in ${net} (${plane}).`,
+      detour: (mm: string, area: string) => `Der Rückstrom läuft ${mm} mm außen herum; das spannt etwa ${area} mm² zusätzliche Schleifenfläche auf.`,
+      transfer: (mm: string, area: string, via: string) => `Der Rückstrom wechselt über ${via} die Fläche: ${mm} mm Umweg, etwa ${area} mm² zusätzliche Schleifenfläche.`,
+      nearestVia: 'die nächste Via',
+      radius: (mm: string, net: string) => `Keine ${net}-Via im Umkreis von ${mm} mm um die Signal-Via.`,
+      longLine: (mm: string, eeff: string, f: string) => `Leitungslänge ${mm} mm, effektive Permittivität ${eeff}: λ/10 wird bei ${f} erreicht.`,
+      gain: (g: string) => `Behoben wird die Quelle in 3 m um ${g} leiser (jede Spektrallinie gleich viel).`,
+      gainSource: (g: string) => `Alle Lücken unter dieser Quelle zusammen kosten in 3 m ${g}.`,
+    },
+    refs: {
+      ott: 'H. W. Ott: Electromagnetic Compatibility Engineering. Wiley, 2009 (Kap. 12 Abstrahlung digitaler Schaltungen, Kap. 16 Leiterplatten-Layout und Lagenaufbau).',
+      archambeault: 'B. Archambeault: PCB Design for Real-World EMI Control. Kluwer, 2002 (Rückstrom bei Bezugswechseln, Brückenkondensatoren).',
+      bogatin: 'E. Bogatin: Signal and Power Integrity – Simplified. 3. Aufl., Prentice Hall, 2018 (Rückstrompfade, Bezugsflächen).',
+      johnson: 'H. Johnson, M. Graham: High-Speed Digital Design. Prentice Hall, 1993 (elektrisch lange Leitungen, Terminierung).',
+      an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (heiße Schleife, Eingangskondensator).',
+    },
+    kinds: {
+      gapDetour: {
+        what: (p: P) => `Die Leitung auf ${p.layer} läuft ${p.gap} mm über eine Lücke in ihrer Bezugsfläche ${p.planeNet} (${p.plane}). Genau dort fehlt das Kupfer, in dem der Rückstrom bei hohen Frequenzen fließen möchte.`,
+        why: () =>
+          'Oberhalb einiger MHz fließt der Rückstrom in der Fläche direkt unter der Leitung, weil diese Schleife die kleinste Induktivität hat. Über einer Lücke muss er außen herum. Hin- und Rückstrom spannen dann eine Fläche auf, und eine kleine Schleife strahlt proportional zu Fläche × Strom × Frequenz² (nach Ott: E ≈ 263·10⁻¹⁶·f²·A·I/r). Dazu treibt der Strom eine Spannung über die Lücke: Der Schlitz kann selbst als Antenne wirken, und die geteilte Fläche wird zur Quelle für Gleichtaktströme auf angeschlossenen Kabeln, die meist noch stärker abstrahlen.',
+        detected: () =>
+          'Die App rastert jede Bezugsfläche (0,25 mm) und prüft unter jedem Leitungsstück, ob Kupfer darunter liegt. Gemeldet werden Lücken ab 1 mm Länge mit Kupfer auf beiden Seiten; kleine Freistellungen (bis 3 mm², z. B. um Vias) zählen als Kupfer. Das Rückstrommodell (Stufe 2) sucht den kürzesten Weg durchs Flächenkupfer um die Lücke herum und rechnet ihn als echten Strompfad.',
+        fixes: () => [
+          'Leitung umlegen, sodass sie über durchgehender Fläche bleibt.',
+          'Lücke schließen oder die Fläche unter der Leitung durchgehend machen. Flächen nur dort teilen, wo keine schnellen Signale kreuzen.',
+          'Wenn die Leitung kreuzen muss: Brückenkondensator (z. B. 100 nF, 0402) über die Lücke, direkt neben der Kreuzung, zwischen beiden Flächenteilen.',
+          'Auf eine Lage mit durchgehender Bezugsfläche wechseln, mit einer Stitching-Via direkt neben dem Lagenwechsel.',
+          'Flanken verlangsamen (größere Anstiegszeit): Das senkt alle Oberwellen oberhalb von etwa 1/(π·tr).',
+        ],
+        limits: () =>
+          'Gerechnet wird quasistatisch: Der Schlitz als Antenne (Resonanz, wenn die Schlitzlänge etwa λ/2 erreicht) und Gleichtakt auf Kabeln sind nicht enthalten. Der Umweg folgt dem kürzesten Weg; real verteilt sich der Strom breiter, die zusätzliche Fläche ist dann etwas kleiner. Genauer wird es mit der Vollwelle (Stufe 3, openEMS).',
+        refs: ['ott', 'bogatin', 'archambeault'] as const,
+      },
+      gapOpen: {
+        what: (p: P) =>
+          p.loop
+            ? `Unter einem Teil der Stromschleife (${p.gap} mm auf ${p.layer}) gibt es keine Bezugsfläche ${p.planeNet}, etwa eine Aussparung unter dem Schaltregler.`
+            : `Unter ${p.gap} mm der Leitung auf ${p.layer} gibt es keine Bezugsfläche ${p.planeNet}, und kein Weg führt im Kupfer drumherum.`,
+        why: () =>
+          'Über einer durchgehenden Fläche fließt unter dem Strom sein Spiegelbild in Gegenrichtung; aus der Ferne heben sich beide fast auf, übrig bleibt eine sehr flache Schleife. Fehlt die Fläche, strahlt die Schleife mit ihrer vollen Fläche. Bei Schaltreglern ist die „heiße Schleife“ (Eingangskondensator → Schalter → Masse) mit Strömen von Ampere und Flanken von Nanosekunden die stärkste Quelle der Platine.',
+        detected: () =>
+          'Wie bei Lücken unter Leitungen: Rasterung der Bezugsfläche, Lücken ab 1 mm. Gibt es keinen Weg um die Lücke, rechnet die App die Schleife an dieser Stelle ohne Spiegel. Die Wirkung gilt für alle Lücken unter dieser Quelle zusammen: verglichen wird mit derselben Quelle über lückenloser Fläche.',
+        fixes: (p: P) =>
+          p.loop
+            ? [
+                'Die Lage direkt unter der heißen Schleife als durchgehende GND-Fläche ausführen. Aussparungen nur dort, wo das Datenblatt sie verlangt (meist unter dem Schaltknoten, nicht unter der Schleife).',
+                'Schleife verkleinern: Eingangskondensator so nah wie möglich an VIN und PGND, kurze breite Verbindungen, Kondensator auf derselben Lage wie der Regler.',
+                'Einen kleinen Hochfrequenz-Kondensator (z. B. 100 nF, 0402) zusätzlich direkt an VIN/PGND.',
+                'Schaltflanken verlangsamen, wenn der Regler das erlaubt (Bootstrap-Widerstand, Slew-Rate-Einstellung).',
+              ]
+            : ['Fläche unter der Leitung durchgehend machen.', 'Leitung über durchgehende Fläche umlegen.', 'Auf eine Lage mit Bezugsfläche wechseln (mit Stitching-Via).'],
+        limits: () =>
+          'Die Anzeige ist bei „mehr als 30 dB“ begrenzt: Das ideale Spiegelmodell löscht das senkrechte Moment einer flachen Schleife fast ganz aus und überschätzt deshalb den Gewinn. In der Praxis bringt eine durchgehende Fläche unter der heißen Schleife eher 10–20 dB.',
+        refs: ['ott', 'an1149'] as const,
+      },
+      refChange: {
+        what: (p: P) =>
+          `Die Leitung wechselt an einer Via von ${p.layer.split(' → ')[0]} (Bezug ${p.planeNet}) auf eine Lage, deren Bezugsfläche ein anderes Netz ist (${p.otherNet}). Der Rückstrom muss an dieser Stelle von einer Fläche auf die andere.`,
+        why: (p: P) =>
+          `Zwischen Flächen verschiedener Netze gibt es an der Via keine leitende Verbindung. Der Rückstrom nimmt den nächsten Kondensator zwischen ${p.planeNet} und ${p.otherNet}${p.via ? ` (hier ${p.via})` : ''} oder fließt als Verschiebungsstrom durch die Kapazität zwischen den Flächen. Dabei entsteht eine zusätzliche Schleife. Außerdem regt der Strom den Hohlraum zwischen den Flächen an, der an den Platinenrändern abstrahlt; bei seinen Resonanzfrequenzen kann das stark werden.`,
+        detected: () =>
+          'An jeder Via des Signals bestimmt die App die Bezugsflächen vor und nach dem Lagenwechsel. Sind es verschiedene Netze, sucht sie das nächste zweipolige Bauteil zwischen beiden Netzen und führt den Rückstrom als Pfad über die Flächen und durch dieses Bauteil.',
+        fixes: (p: P) => [
+          `Beide Signallagen auf dasselbe Bezugsnetz legen (z. B. ${p.planeNet} unter beiden). Dann genügt eine Stitching-Via direkt neben der Signal-Via.`,
+          `Wenn der Wechsel bleiben muss: Kondensator (100 nF, 0402) zwischen ${p.planeNet} und ${p.otherNet} direkt an der Signal-Via (weniger als 2 mm).`,
+          'Den Lagenwechsel vermeiden oder an eine Stelle legen, an der ein Entkoppelkondensator ohnehin sitzt.',
+          'Flanken verlangsamen, wenn das Signal es erlaubt.',
+        ],
+        limits: () =>
+          'Die Resonanzen des Hohlraums zwischen den Flächen sind quasistatisch nicht erfasst. Die zusätzliche Schleife wird entlang des kürzesten Wegs zum Kondensator gerechnet. Die Vollwelle (Stufe 3) zeigt beides genauer.',
+        refs: ['archambeault', 'bogatin', 'ott'] as const,
+      },
+      noStitching: {
+        what: (p: P) =>
+          `Die Leitung wechselt die Lage. Beide Lagen beziehen sich zwar auf ${p.planeNet}, aber im Umkreis von ${p.radius} mm gibt es keine ${p.planeNet}-Via, über die der Rückstrom die Fläche wechseln kann.`,
+        why: () =>
+          'Der Rückstrom muss zur nächsten Verbindung der beiden Flächen laufen und dann zurück unter die Leitung. Je weiter diese Verbindung entfernt ist, desto größer wird die zusätzliche Schleife, und desto mehr wird der Hohlraum zwischen den Flächen angeregt.',
+        detected: (p: P) => `Die App sucht um jede Signal-Via mit Lagenwechsel nach Vias oder durchkontaktierten Pads des Flächennetzes im Umkreis von ${p.radius} mm.`,
+        fixes: (p: P) => [`Eine ${p.planeNet}-Stitching-Via direkt neben jede Signal-Via setzen, die die Lage wechselt (Abstand 1–2 mm).`, 'Bei Differenzpaaren eine Stitching-Via je Paar, symmetrisch.'],
+        limits: () => 'Ob eine weiter entfernte Via ausreicht, hängt von der Frequenz ab; die App meldet hier nur den Abstand. Der tatsächliche Umweg steht, wenn vorhanden, bei der Wirkung.',
+        refs: ['archambeault', 'bogatin'] as const,
+      },
+      longLine: {
+        what: (p: P) => `Die Leitung ist ab ${p.fShort} elektrisch lang: länger als ein Zehntel der Wellenlänge auf der Platine.`,
+        why: () =>
+          'Die schnelle Rechnung behandelt die Leitung als konzentriert, mit überall gleichem Strom. Bei elektrisch langen Leitungen laufen Wellen hin und her; ohne passende Terminierung entstehen Reflexionen und stehende Wellen. Der Strom verteilt sich dann anders, und bei Resonanzfrequenzen kann die Abstrahlung deutlich höher sein als berechnet.',
+        detected: (p: P) => `Aus der Länge des Netzes (${p.length} mm) und der effektiven Permittivität (${p.eeff}) folgt die Grenze f = c / (10 · L · √εeff).`,
+        fixes: () => [
+          'Serienwiderstand am Treiber (Wert etwa Z0 minus Ausgangswiderstand des Treibers, typisch 22–33 Ω), damit Reflexionen abklingen.',
+          'Leitung kürzer führen.',
+          'Flanken verlangsamen, soweit das Timing es erlaubt: Oberhalb von etwa 1/(π·tr) fallen die Oberwellen mit 40 dB pro Dekade.',
+          'Für belastbare Zahlen die Vollwelle (Stufe 3, openEMS) rechnen.',
+        ],
+        limits: () => 'Das ist ein Hinweis auf die Gültigkeit des Modells; um wie viel die Abstrahlung oberhalb der Grenze steigt, lässt sich ohne Vollwelle nicht beziffern.',
+        refs: ['johnson', 'bogatin'] as const,
+      },
+    },
   },
   live: {
     badge: 'live',
