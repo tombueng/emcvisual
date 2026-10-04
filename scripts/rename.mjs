@@ -36,6 +36,8 @@ const updated = {
   displayName: values.display ?? values.codename,
   tagline: values.tagline ?? branding.tagline,
   repo: `${owner}/${values.codename}`,
+  // GitHub Pages URL (no redirect after a rename: see docs/RENAMING.md before switching)
+  siteUrl: branding.siteUrl?.includes('.github.io/') ? `https://${owner}.github.io/${values.codename}/` : branding.siteUrl,
   previousCodenames: [...new Set([...(branding.previousCodenames ?? []), old])],
 };
 write(brandingPath, JSON.stringify(updated, null, 2) + '\n');

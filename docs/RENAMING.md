@@ -11,10 +11,14 @@ Aktueller Codename: `emcvisual`
 1. **Eine Quelle für den Namen:** `branding.config.json`
    ```json
    { "codename": "…", "displayName": "…", "tagline": "…", "repo": "owner/name",
-     "storageNamespace": "pcbfield", "previousCodenames": [] }
+     "siteUrl": "https://owner.github.io/name/", "storageNamespace": "pcbfield",
+     "previousCodenames": [] }
    ```
-   Code liest den Namen nur über `src/branding.ts`. Der Seitentitel in `index.html` wird
-   beim Build per Vite-Plugin eingesetzt (`%APP_NAME%`).
+   Code liest den Namen nur über `src/branding.ts`. Titel, Meta-Tags, JSON-LD und der
+   statische Einführungstext in `index.html` werden beim Build per Vite-Plugin
+   (`tools/vite/seo.ts`) eingesetzt (`%APP_NAME%`, `%SITE_URL%` …); `robots.txt`,
+   `sitemap.xml` und `llms.txt` erzeugt dasselbe Plugin. Suchtexte ohne Namen stehen in
+   `seo.config.json`.
 2. **Der Name steht nur in diesen Dateien** (Erlaubnisliste in `scripts/check-codename.mjs`):
    `branding.config.json`, `package.json`, `package-lock.json`, `README.md` (Titel),
    `docs/RENAMING.md`. Die CI bricht ab, wenn er woanders auftaucht.
@@ -37,7 +41,8 @@ npm install            # aktualisiert package-lock.json
 npm run check:codename # prüft: alter Name nur noch in RENAMING.md/previousCodenames
 npm run check && npm test && npm run build
 ```
-Das Skript ändert `branding.config.json` (alter Name wandert nach `previousCodenames`),
+Das Skript ändert `branding.config.json` (alter Name wandert nach `previousCodenames`,
+`siteUrl` folgt dem Repo-Namen),
 `package.json` (`name`), den README-Titel und gibt die manuellen Schritte unten aus.
 
 ### Schritt 2: GitHub

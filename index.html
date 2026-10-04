@@ -3,11 +3,106 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="%APP_TAGLINE%" />
+    <title>%SEO_TITLE%</title>
+    <meta name="description" content="%SEO_DESCRIPTION%" />
+    <meta name="keywords" content="%SEO_KEYWORDS%" />
+    <meta name="author" content="%AUTHOR%" />
+    <meta name="application-name" content="%APP_NAME%" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0e1620" />
+    <link rel="canonical" href="%SITE_URL%" />
+    <!-- %SITE_VERIFICATION% -->
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <title>%APP_NAME%</title>
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="alternate" type="text/plain" title="LLM summary" href="./llms.txt" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="%APP_NAME%" />
+    <meta property="og:title" content="%SEO_TITLE%" />
+    <meta property="og:description" content="%SEO_DESCRIPTION%" />
+    <meta property="og:url" content="%SITE_URL%" />
+    <meta property="og:image" content="%OG_IMAGE%" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="%OG_IMAGE_ALT%" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="de_DE" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="%SEO_TITLE%" />
+    <meta name="twitter:description" content="%SEO_DESCRIPTION%" />
+    <meta name="twitter:image" content="%OG_IMAGE%" />
+    <meta name="twitter:image:alt" content="%OG_IMAGE_ALT%" />
+
+    <script type="application/ld+json">%JSON_LD%</script>
+
+    <style>
+      /* Static intro for crawlers and visitors without JavaScript; the app removes it on start. */
+      #static-intro {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 3rem 1.25rem 4rem;
+        color: #dfe7ef;
+        background: #0e1620;
+        font: 16px/1.6 'IBM Plex Sans', system-ui, sans-serif;
+      }
+      html:has(#static-intro) {
+        background: #0e1620;
+      }
+      #static-intro h1 {
+        font-size: 1.7rem;
+        line-height: 1.25;
+        margin: 0 0 1rem;
+      }
+      #static-intro h2 {
+        font-size: 1.15rem;
+        margin: 2rem 0 0.5rem;
+      }
+      #static-intro a {
+        color: #f2a33a;
+      }
+      #static-intro .muted {
+        color: #8da0b3;
+      }
+    </style>
   </head>
   <body>
+    <main id="static-intro">
+      <h1>%APP_NAME%: see and hear the EMI of your PCB</h1>
+      <p>
+        A free EMC / EMI simulator for printed circuit boards that runs in the browser. Load a
+        KiCad board, mark the noisy parts of the circuit (clocks, data lines, differential pairs,
+        the hot loop of a switching regulator) and explore the magnetic near field as a glowing 3D
+        world, with a virtual near-field probe, a spectrum-analyzer view and sound.
+      </p>
+      <p class="muted">This app needs JavaScript and WebGL 2. If you can read this for long, the app did not start.</p>
+
+      <h2>What it does</h2>
+      <ul>
+        <li>Imports KiCad 6 to 10 boards (.kicad_pcb) and detects the ground and power reference planes.</li>
+        <li>Simulates the quasi-static magnetic near field (H-field): Biot-Savart with return currents as image currents in the reference planes, including slots and cut-outs.</li>
+        <li>Sources: clock and data lines (also through series resistors), differential pairs such as USB, buck converter and switching-regulator hot loops.</li>
+        <li>Shows the field as a 3D glow, a slice plane like a near-field scan, animated field lines and an ant's-eye view across the board.</li>
+        <li>A virtual near-field probe gives the spectrum at the pointer; a far-field estimate compares radiated emissions with CISPR 32 / EN 55032 class B limits.</li>
+        <li>Layout hints for EMC pre-compliance: return paths over gaps in the ground plane, reference changes at vias (GND to VCC), missing stitching vias, hotspots with the nets and parts nearby.</li>
+        <li>Your board file never leaves your browser. English and German interface.</li>
+      </ul>
+
+      <h2>Who it is for</h2>
+      <p>
+        Hardware and PCB designers who want to find EMC problems before the lab, reviewers of PCB
+        layouts, and anyone learning why return paths, loop areas and rise times decide how loud a
+        board is. It shows causes and trends; it does not predict whether a product passes an EMC
+        test (no cables, enclosures or resonances yet).
+      </p>
+
+      <h2>Auf Deutsch</h2>
+      <p>%SEO_DESCRIPTION_DE%</p>
+
+      <p>
+        <a href="%SITE_URL%">Open the app</a> ·
+        <a href="%REPO_URL%">Source code and documentation on GitHub</a>
+      </p>
+    </main>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

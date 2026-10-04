@@ -44,3 +44,7 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     die Dokumentation bleibt auf Deutsch (ergänzt Nr. 10).
 18. **2026-10-04 · Repo öffentlich, App auf GitHub Pages.** Lizenz noch offen (bis dahin gilt
     das Urheberrecht ohne Nutzungsrechte).
+19. **2026-10-04 · Auffindbarkeit über echten Seitentext statt Keyword-Listen.** Ein statischer
+    Einführungstext im HTML (für Crawler ohne JavaScript), strukturierte Daten, `llms.txt`,
+    Sitemap und GitHub-Topics; das `keywords`-Meta-Tag ist nur Beiwerk (Google ignoriert es).
+    Solange keine Lizenz gewählt ist, steht nirgends „open source“.

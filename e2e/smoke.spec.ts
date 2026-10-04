@@ -76,3 +76,15 @@ test('switching to English keeps the board and the results', async ({ page }) =>
   await expect(page.locator('.list li').first()).toContainText('Buck, tight loop');
   expect(errors).toEqual([]);
 });
+
+test.describe('without JavaScript (crawlers)', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('the page still explains the tool', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('see and hear the EMI of your PCB');
+    await expect(page.getByText(/KiCad 6 to 10 boards/)).toBeVisible();
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /KiCad PCB/);
+    await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
+  });
+});

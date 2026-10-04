@@ -6,4 +6,7 @@ import './ui/global.css';
 const target = document.getElementById('app');
 if (!target) throw new Error('missing #app');
 document.documentElement.lang = i18n.lang;
-export default mount(Root, { target });
+const app = mount(Root, { target });
+// the static intro in index.html is for crawlers and visitors without JavaScript
+document.getElementById('static-intro')?.remove();
+export default app;

@@ -204,6 +204,20 @@ neu (`{#key i18n.lang}`). Die Engine hält Platine, Quellen und Volumina und hä
 neuen Viewer. Neue Texte kommen immer in beide Wörterbücher; `en: Strings` lässt TypeScript
 fehlende Schlüssel melden.
 
+## 7b. Auffindbarkeit (SEO, KI-Suche)
+
+- `tools/vite/seo.ts` setzt beim Build Titel, Beschreibung, Keywords, Open Graph, Twitter Card,
+  Canonical und JSON-LD (`SoftwareApplication`, `SoftwareSourceCode`) in `index.html` ein und
+  erzeugt `robots.txt`, `sitemap.xml` und `llms.txt` (Kurzbeschreibung für KI-Crawler).
+  Namen und URL kommen aus `branding.config.json`, die Texte aus `seo.config.json`.
+- `index.html` enthält einen statischen Einführungstext (`#static-intro`) für Crawler und
+  Besucher ohne JavaScript; `main.ts` entfernt ihn beim Start der App. Ein Playwright-Test
+  prüft ihn mit abgeschaltetem JavaScript.
+- Social-Preview `public/og-image.png` (1200 × 630) und `apple-touch-icon.png` erzeugt
+  `tools/seo/make_images.py` aus dem Screenshot des Smoke-Tests.
+- Search-Console-Bestätigung: Token in `seo.config.json` (`googleSiteVerification`,
+  `bingSiteVerification`) eintragen, das Plugin setzt die Meta-Tags.
+
 ## 8. Zustand und Persistenz
 
 - `state/app.svelte.ts`: `$state`-Objekte für Platine, Szenario, Ansicht, Rechenstatus.

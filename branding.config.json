@@ -4,5 +4,8 @@
   "tagline": "Elektromagnetische Felder von Leiterplatten sichtbar und hörbar machen",
   "repo": "tombueng/emcvisual",
   "storageNamespace": "pcbfield",
-  "previousCodenames": []
+  "previousCodenames": [],
+  "siteUrl": "https://tombueng.github.io/emcvisual/",
+  "author": "tombueng",
+  "authorUrl": "https://github.com/tombueng"
 }

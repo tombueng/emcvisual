@@ -17,5 +17,5 @@
     "allowJs": false,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "tests/**/*.ts", "e2e/**/*.ts", "vite.config.ts", "playwright.config.ts", "branding.config.json"]
+  "include": ["src/**/*.ts", "src/**/*.svelte", "tests/**/*.ts", "e2e/**/*.ts", "vite.config.ts", "playwright.config.ts", "tools/vite/**/*.ts", "branding.config.json", "seo.config.json"]
 }

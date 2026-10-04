@@ -1,0 +1,159 @@
+/**
+ * Search-engine and AI-crawler metadata, generated from branding.config.json and
+ * seo.config.json so the project name and URL live in one place (docs/RENAMING.md):
+ * head tags, JSON-LD, robots.txt, sitemap.xml and llms.txt.
+ */
+import type { Plugin } from 'vite';
+import branding from '../../branding.config.json' with { type: 'json' };
+import seo from '../../seo.config.json' with { type: 'json' };
+
+const repoUrl = `https://github.com/${branding.repo}`;
+const docs = (path: string) => `${repoUrl}/blob/main/${path}`;
+const ogImage = `${branding.siteUrl}og-image.png`;
+
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+function jsonLd(): string {
+  const data = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: branding.displayName,
+      url: branding.siteUrl,
+      description: seo.description,
+      applicationCategory: 'DesignApplication',
+      applicationSubCategory: seo.applicationSubCategory,
+      operatingSystem: 'Any (web browser)',
+      browserRequirements: 'Requires JavaScript and WebGL 2',
+      isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+      inLanguage: ['en', 'de'],
+      keywords: seo.keywords.join(', '),
+      featureList: seo.features,
+      image: ogImage,
+      screenshot: ogImage,
+      author: { '@type': 'Person', name: branding.author, url: branding.authorUrl },
+      sameAs: [repoUrl],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareSourceCode',
+      name: branding.displayName,
+      description: seo.description,
+      codeRepository: repoUrl,
+      programmingLanguage: ['TypeScript', 'Svelte'],
+      runtimePlatform: 'Web browser',
+      keywords: seo.keywords.join(', '),
+      author: { '@type': 'Person', name: branding.author, url: branding.authorUrl },
+    },
+  ];
+  // keep "</script>" out of the inline JSON
+  return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
+function llmsTxt(): string {
+  return `# ${branding.displayName}
+
+> ${seo.description}
+
+${branding.displayName} is a free web app for electronics and PCB designers. It reads a KiCad board
+file (.kicad_pcb, KiCad 6 to 10), lets you mark the noisy parts of the circuit (clock and data
+lines, differential pairs such as USB, the hot loop of a switching regulator / buck converter)
+and computes the magnetic near field around the board. The result is a 3D scene: the field
+glows above the copper, field lines show where the current loops close, a virtual near-field
+probe shows a spectrum like a spectrum analyzer, and every source can be heard.
+
+It is meant for EMC/EMI work before the lab (EMC pre-compliance), for PCB layout reviews and for
+learning: you can see why a slot in a ground plane under a clock line, a layer change from a
+GND to a VCC reference plane, or a large switching-regulator loop makes a board louder.
+
+How it works: quasi-static Biot-Savart field of straight current filaments, return currents as
+mirror images in the reference planes (with local plane coverage, so cut-outs and slots count),
+shielding by planes, trapezoid line spectra for the signals, and a far-field estimate from the
+magnetic dipole moment against CISPR 32 class B. It does not predict whether a product passes an
+EMC test: no cables, enclosures or resonances in this stage. Everything runs in the browser;
+the board file is not uploaded.
+
+Planned: current distribution in planes (slots, stitching vias), full-wave simulation with
+openEMS, measuring real boards with a 3D printer as a near-field scanner (tinySA / HackRF),
+a tracked hand-held probe, VR.
+
+German: EMV-Simulation für Leiterplatten im Browser. KiCad-Platine laden, Störquellen festlegen,
+magnetisches Nahfeld in 3D sehen und hören, Rückstrompfade und CISPR 32 prüfen.
+
+Keywords: ${seo.keywords.join(', ')}
+
+## App
+- [${branding.displayName} web app](${branding.siteUrl}): runs in the browser, includes a demo board with typical EMC mistakes
+
+## Docs
+- [README](${docs('README.md')}): overview, features, how to run it locally
+- [Stage 1 plan](${docs('docs/stufe-1/PLAN.md')}): goals, milestones, measured numbers (German)
+- [Physics model](${docs('docs/stufe-1/PHYSIK.md')}): formulas, assumptions, validity limits, literature (German)
+- [Architecture](${docs('docs/stufe-1/ARCHITEKTUR.md')}): modules, compute and render pipeline (German)
+
+## Optional
+- [Roadmap](${docs('docs/ROADMAP.md')}): later stages, measurement hardware, openEMS (German)
+- [Source code](${repoUrl})
+`;
+}
+
+const robotsTxt = () => `User-agent: *\nAllow: /\n\nSitemap: ${branding.siteUrl}sitemap.xml\n`;
+
+const sitemapXml = () => `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${branding.siteUrl}</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>${branding.siteUrl}llms.txt</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+</urlset>
+`;
+
+const files: Record<string, { type: string; body: () => string }> = {
+  'robots.txt': { type: 'text/plain', body: robotsTxt },
+  'sitemap.xml': { type: 'application/xml', body: sitemapXml },
+  'llms.txt': { type: 'text/plain; charset=utf-8', body: llmsTxt },
+};
+
+export function seoPlugin(): Plugin {
+  const vars: Record<string, string> = {
+    APP_NAME: branding.displayName,
+    APP_TAGLINE: branding.tagline,
+    SEO_TITLE: `${branding.displayName} – ${seo.title}`,
+    SEO_DESCRIPTION: seo.description,
+    SEO_DESCRIPTION_DE: seo.descriptionDe,
+    SEO_KEYWORDS: seo.keywords.join(', '),
+    SITE_URL: branding.siteUrl,
+    REPO_URL: repoUrl,
+    OG_IMAGE: ogImage,
+    OG_IMAGE_ALT: seo.ogImageAlt,
+    AUTHOR: branding.author,
+    AUTHOR_URL: branding.authorUrl,
+  };
+  return {
+    name: 'seo',
+    transformIndexHtml: {
+      order: 'pre',
+      handler: (html) => {
+        // optional search-console ownership tags (paste the token into seo.config.json)
+        const verify = [
+          seo.googleSiteVerification && `<meta name="google-site-verification" content="${esc(seo.googleSiteVerification)}" />`,
+          seo.bingSiteVerification && `<meta name="msvalidate.01" content="${esc(seo.bingSiteVerification)}" />`,
+        ].filter(Boolean).join('\n    ');
+        let out = html.replace('%JSON_LD%', jsonLd()).replace('<!-- %SITE_VERIFICATION% -->', verify);
+        for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`%${k}%`, esc(v));
+        return out;
+      },
+    },
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const name = req.url?.split('?')[0]?.split('/').pop() ?? '';
+        const f = files[name];
+        if (!f) return next();
+        res.setHeader('Content-Type', f.type);
+        res.end(f.body());
+      });
+    },
+    generateBundle() {
+      for (const [fileName, f] of Object.entries(files)) this.emitFile({ type: 'asset', fileName, source: f.body() });
+    },
+  };
+}
