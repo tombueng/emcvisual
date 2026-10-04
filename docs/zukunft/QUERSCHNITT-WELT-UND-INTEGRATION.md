@@ -34,6 +34,22 @@ Stufe und können parallel wachsen.
   aus (höher, dann links); ohne Platz bleibt von einem Hinweis die nummerierte Nadel. Klick
   setzt die Sonde dorthin oder wählt die Quelle. Schalter unter „Sprechblasen in 3D“
   (`src/ui/Callouts.svelte`).
+- **Sprechblasen im Raum** (umgesetzt 2026-10-05, experimentell): Mit HTML-in-Canvas (WICG,
+  Origin Trial in Chrome und Edge seit Google I/O 2026, verlängert bis Chrome 160) sind die
+  Blasen echte HTML-Elemente als Kinder des WebGL-Canvas. three.js (`HTMLTexture`,
+  `InteractionManager`, ab r184) zeichnet sie als Textur auf Flächen, die zum Betrachter zeigen.
+  Bauteile davor verdecken sie, in der Ferne werden sie kleiner, und sie erscheinen auch in VR,
+  wo die Einblendung nicht zu sehen ist. Klicks erreichen sie weiter über CSS-`matrix3d`. Die
+  Textur entsteht erst nach dem ersten `paint`-Ereignis des Elements; vorher schlägt das
+  Hochladen fehl („No cached paint record“). Die Blasen weichen einander im Bildraum aus wie die
+  Einblendung. Schalter „Im Raum statt als Einblendung“, nur wo der Browser es kann
+  (`src/render/worldCallouts.ts`).
+  - Für die Seite selbst braucht es ein Origin-Trial-Token für https://tombueng.github.io
+    (`originTrialTokens` in `seo.config.json`). Ohne Token geht es nur mit
+    `chrome://flags/#canvas-draw-element`.
+  - Chrome 155 benennt die API um (`content="drawable"`, `texElementSubImage2D`). three.js r186
+    kennt noch die ältere Fassung; bis three.js nachzieht, fällt Chrome 155+ auf die
+    Einblendung zurück (Erkennung über `texElementImage2D`).
 
 ## W3 Klang (Verklanglichung)
 - **Linear/harmonisch** (Stufe 1): Takte als Töne, Schaltregler als Schnarren.

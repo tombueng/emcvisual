@@ -150,6 +150,8 @@ export function seoPlugin(): Plugin {
         const verify = [
           seo.googleSiteVerification && `<meta name="google-site-verification" content="${esc(seo.googleSiteVerification)}" />`,
           seo.bingSiteVerification && `<meta name="msvalidate.01" content="${esc(seo.bingSiteVerification)}" />`,
+          // Chrome origin trials for the site (e.g. HTML-in-Canvas for speech bubbles in the scene)
+          ...(seo.originTrialTokens ?? []).map((tok: string) => `<meta http-equiv="origin-trial" content="${esc(tok)}" />`),
         ].filter(Boolean).join('\n    ');
         let out = html.replace('%JSON_LD%', jsonLd()).replace('<!-- %SITE_VERIFICATION% -->', verify);
         for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`%${k}%`, esc(v));

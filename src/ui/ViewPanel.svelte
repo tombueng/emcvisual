@@ -8,6 +8,9 @@
   import DiagnosticsPanel from './DiagnosticsPanel.svelte';
   import ScannerPanel from './ScannerPanel.svelte';
   import { downloadText, pickFile } from '../state/persist';
+  import { htmlInCanvasSupported } from '../render/worldCallouts';
+
+  const htmlInCanvas = htmlInCanvasSupported();
 
   interface Props {
     onpickmodels: () => void;
@@ -173,6 +176,11 @@
     {/if}
     <label class="check"><input type="checkbox" bind:checked={app.view.callouts.sources} onchange={() => engine.scheduleSave()} /> {t.callouts.sources}</label>
     <label class="check"><input type="checkbox" bind:checked={app.view.callouts.hotspots} onchange={() => engine.scheduleSave()} /> {t.callouts.hotspots}</label>
+    <label class="check" class:disabled={!htmlInCanvas}>
+      <input type="checkbox" bind:checked={app.view.callouts.inWorld} disabled={!htmlInCanvas} onchange={() => engine.scheduleSave()} />
+      {t.callouts.inWorld}
+    </label>
+    <p class="hint">{htmlInCanvas ? t.callouts.inWorldHint : t.callouts.inWorldMissing}</p>
 
     <div class="section-title">{t.view.fieldLinesTitle}</div>
     <label class="check"><input type="checkbox" bind:checked={app.view.showFieldLines} onchange={() => { engine.updateFieldLines(); engine.scheduleSave(); }} /> {t.view.fieldLines}</label>
@@ -265,6 +273,9 @@
 </section>
 
 <style>
+  .check.disabled {
+    opacity: 0.5;
+  }
   .panel {
     display: flex;
     flex-direction: column;

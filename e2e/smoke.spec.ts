@@ -199,3 +199,23 @@ test('report: one HTML file with picture, hints, hotspots, far field and sources
   expect(html).toContain('Buck schlecht (U3)');
   expect(html).toContain('CISPR 32');
 });
+
+test('speech bubbles inside the scene with HTML-in-Canvas', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text());
+  });
+  await page.goto('/?demo');
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('.bubble').first()).toBeAttached();
+  await page.getByText('Im Raum statt als Einblendung').click();
+  // the bubbles are now children of the WebGL canvas, the overlay is gone
+  const inCanvas = page.locator('.canvas canvas .wc');
+  await expect(inCanvas.first()).toBeAttached();
+  expect(await inCanvas.count()).toBeGreaterThanOrEqual(5);
+  await expect(page.locator('.bubble')).toHaveCount(0);
+  await expect(inCanvas.filter({ hasText: /^1Takt schlecht/ })).toContainText('über C2');
+  await page.screenshot({ path: 'e2e/output/world-callouts.png' });
+  expect(errors).toEqual([]);
+});

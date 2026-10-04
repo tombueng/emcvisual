@@ -13,6 +13,7 @@
   import ViewPanel from './ViewPanel.svelte';
   import SpectrumPanel from './SpectrumPanel.svelte';
   import Callouts from './Callouts.svelte';
+  import { buildCallouts } from './calloutData';
   import { showMeasurement } from '../state/scanner.svelte';
   import { canWatch, dropHandles, follow, live, pickWithHandle, stopFollowing, type FileHandle } from '../state/liveFile.svelte';
   import { EXAMPLE_BOARDS } from '../examples';
@@ -282,6 +283,16 @@
   }
 
   // --- reactions --------------------------------------------------------------------------------
+  // speech bubbles inside the 3D world (HTML-in-Canvas), when chosen and supported, and in VR
+  $effect(() => {
+    const v = viewer;
+    if (!v) return;
+    void [app.models, app.fieldOrigin, app.diagnostics, app.hotspots];
+    const list = app.board ? buildCallouts(v) : [];
+    const wanted = !!app.view.callouts.inWorld && !ant;
+    untrack(() => v.setWorldCallouts(list, wanted));
+  });
+
   $effect(() => {
     // re-read probe readout when the probe, the sources or their models change
     void app.models;
@@ -493,7 +504,7 @@
     {/if}
     {#if dragging}<div class="dropzone">{t.empty.drop}</div>{/if}
 
-    {#if viewer && app.board && !ant}<Callouts {viewer} />{/if}
+    {#if viewer && app.board && !ant && !(app.view.callouts.inWorld && viewer.htmlInCanvas)}<Callouts {viewer} />{/if}
 
     <div class="statusline value">
       {#if app.pickMode}<span class="pick">{app.pickMode.kind === 'pad' ? t.editor.picking : t.editor.pickingNet}</span>{/if}

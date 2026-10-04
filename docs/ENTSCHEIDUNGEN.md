@@ -85,3 +85,6 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     Hinweis für sich gegen die Quelle mit idealen Rückwegen (Anteil am Dipolmoment), nicht durch
     Weglassen. Sortiert wird zuerst nach dem Abstand der Quelle zum Grenzwert, dann nach der
     Wirkung der Behebung: So steht oben, was eine Prüfung am ehesten rettet.
+32. **2026-10-05 · Sprechblasen im Raum nur als Zusatz.** HTML-in-Canvas ist ein Origin Trial
+    mit wechselnder API und nur in Chromium. Die HTML-Einblendung bleibt der Standard; die
+    Blasen im Raum gibt es, wo der Browser es kann, und automatisch in VR.

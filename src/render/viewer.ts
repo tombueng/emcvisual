@@ -13,6 +13,8 @@ import { disposeObject, type ComponentModels } from './componentModels';
 import { colormapLut, type ColormapId } from './colormaps';
 import { buildIsosurfaces } from './isosurface';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
+import { WorldCallouts, htmlInCanvasSupported } from './worldCallouts';
+import type { Callout } from '../ui/calloutData';
 import { sliceFragment, sliceVertex, volumeFragment, volumeVertex } from './volumeShader';
 
 export interface VolumeParams {
@@ -166,6 +168,7 @@ export class Viewer {
       // in a headset three.js renders both eyes; the ray-marched glow needs the depth pass of
       // a flat screen, so VR shows the isosurfaces instead (see enableXR)
       if (this.renderer.xr.isPresenting) {
+        this.world?.update(this.renderer.xr.getCamera());
         this.renderer.render(this.scene, this.camera);
         return;
       }
@@ -238,8 +241,43 @@ export class Viewer {
     return { x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, behind: v.z > 1 || v.z < -1 };
   }
 
+  // --- speech bubbles inside the world (HTML-in-Canvas) -----------------------------------------
+  private world: WorldCallouts | null = null;
+  private calloutList: Callout[] = [];
+  private calloutsWanted = false;
+  private boardSize = 70;
+  readonly htmlInCanvas = htmlInCanvasSupported();
+
+  /**
+   * Bubbles for the world. They are shown when wanted and supported, and always in VR (where
+   * the HTML overlay cannot be seen) when the browser can.
+   */
+  setWorldCallouts(list: Callout[], wanted: boolean) {
+    this.calloutList = list;
+    this.calloutsWanted = wanted;
+    this.applyWorldCallouts();
+  }
+
+  private applyWorldCallouts() {
+    const on = this.htmlInCanvas && (this.calloutsWanted || this.xrIso);
+    if (!on) {
+      this.world?.dispose();
+      this.world = null;
+      this.requestRender();
+      return;
+    }
+    if (!this.world) {
+      this.world = new WorldCallouts(this.renderer, this.camera, () => this.requestRender());
+      this.scene.add(this.world.group);
+    }
+    this.world.setBoardSize(this.boardSize);
+    this.world.set(this.calloutList);
+    this.requestRender();
+  }
+
   private render() {
     this.camera.updateMatrixWorld();
+    this.world?.update();
     this.renderer.setRenderTarget(this.rt);
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(null);
@@ -267,6 +305,7 @@ export class Viewer {
     const w = board.bbox.x1 - board.bbox.x0;
     const d = board.bbox.y1 - board.bbox.y0;
     const r = Math.max(w, d);
+    this.boardSize = r;
     this.camera.near = Math.max(0.05, r / 2000);
     this.camera.far = r * 50;
     this.home = { pos: new THREE.Vector3(r * 0.15, r * 0.75, r * 0.95), near: this.camera.near };
@@ -361,12 +400,14 @@ export class Viewer {
       this.scene.position.set(0, 0.85, -0.45);
       this.xrIso = true;
       this.updateIsosurfaces();
+      this.applyWorldCallouts();
     });
     this.renderer.xr.addEventListener('sessionend', () => {
       this.scene.scale.copy(saved.scale);
       this.scene.position.copy(saved.position);
       this.xrIso = false;
       this.updateIsosurfaces();
+      this.applyWorldCallouts();
       this.resize();
     });
     const button = VRButton.createButton(this.renderer);

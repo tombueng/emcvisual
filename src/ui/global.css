@@ -179,3 +179,44 @@ input[type='checkbox'] {
     animation: none !important;
   }
 }
+
+/* speech bubbles inside the 3D world (HTML-in-Canvas, render/worldCallouts.ts); sizes are
+   doubled there for a sharp texture, so everything here is in em */
+.wc {
+  box-sizing: border-box;
+  max-width: 20em;
+  padding: 0.45em 0.7em 0.5em;
+  font-family: inherit;
+  line-height: 1.35;
+  color: var(--text);
+  background: var(--plate);
+  border: 0.09em solid var(--line);
+  border-left: 0.27em solid var(--c);
+  border-radius: 0.35em;
+  cursor: pointer;
+}
+.wc-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.wc-badge {
+  min-width: 1.5em;
+  height: 1.5em;
+  border-radius: 0.75em;
+  background: var(--c);
+  color: #0b0f14;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.5em;
+}
+.wc-title {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.wc-line {
+  color: var(--muted);
+}
+.wc-accent {
+  color: var(--field);
+}

@@ -8,7 +8,8 @@ export default defineConfig({
     locale: 'de-DE',
     viewport: { width: 1440, height: 900 },
     // WebGL in headless Chromium runs on SwiftShader
-    launchOptions: { args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--ignore-gpu-blocklist'] },
+    // HTML-in-Canvas (speech bubbles inside the scene) is an origin trial; the flag turns it on
+    launchOptions: { args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-blink-features=CanvasDrawElement'] },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, locale: 'de-DE' } }],
   webServer: {
