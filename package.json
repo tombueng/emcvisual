@@ -1,0 +1,34 @@
+{
+  "name": "emcvisual",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:codename": "node scripts/check-codename.mjs",
+    "rename": "node scripts/rename.mjs",
+    "demo-board": "/usr/bin/python3 tools/demo-board/gen_demo_board.py && /usr/bin/python3 tools/demo-board/export_reference.py public/demo/demo-board.kicad_pcb tests/fixtures/demo-board.reference.json"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^22.20.5",
+    "@types/three": "^0.186.0",
+    "svelte": "^5.57.1",
+    "svelte-check": "^4.7.6",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

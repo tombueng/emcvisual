@@ -1,0 +1,20 @@
+:root {
+  --bg: #0d1117;
+  --panel: #151b23;
+  --panel-2: #1c2430;
+  --border: #2a3441;
+  --text: #e6edf3;
+  --muted: #8b98a8;
+  --accent: #f59e0b;
+  --accent-2: #38bdf8;
+  --danger: #f87171;
+  --ok: #4ade80;
+  --radius: 8px;
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body, #app { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 13px/1.45 var(--font); overflow: hidden; }
+button, input, select { font: inherit; color: inherit; }

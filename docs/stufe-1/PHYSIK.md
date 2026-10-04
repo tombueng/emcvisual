@@ -1,0 +1,292 @@
+# Stufe 1: Physikalisches Modell
+
+Stand: 2026-10-04. Dieses Dokument beschreibt, was die Simulation rechnet, unter welchen
+Annahmen, und wo sie aufhört zu gelten. Jede Formel hier hat eine Entsprechung im Code
+(`src/physics/…`) und, wo möglich, einen Test gegen eine analytische Lösung.
+
+Koordinaten: Rechnung im **Welt-Koordinatensystem** (rechtshändig, three.js-Konvention):
+X = KiCad-x, Y = Höhe (oben positiv, Y = 0 in der Mitte der F.Cu-Kupferlage), Z = KiCad-y.
+Der Wechsel von KiCads linkshändigem (x, y nach unten) System ist eine Spiegelung; Beträge
+ändern sich dadurch nicht, Feldrichtungen werden dadurch korrekt rechtshändig. Längen intern
+in mm, Formeln unten in SI; die Umrechnung steckt im Kernel.
+
+---
+
+## 1. Größen und Einheiten
+
+| Größe | Einheit | Anzeige |
+|---|---|---|
+| Magnetische Feldstärke H | A/m | dBµA/m = 20·log10(H / 1 µA/m) |
+| Elektrische Feldstärke E (M8, Fernfeld) | V/m | dBµV/m |
+| Strom einer Spektrallinie | A | dBµA |
+| Sondenspannung (Schleifensonde) | V | dBµV |
+
+**Alle Linienamplituden werden als Effektivwert (RMS) angezeigt**, wie auf einem
+Spektrumanalysator, der eine Sinuslinie mit dem Spitzendetektor kalibriert als Effektivwert
+darstellt. Fourier-Koeffizienten (Scheitelwerte) werden dafür durch √2 geteilt.
+
+## 2. Gültigkeit der Quasistatik
+
+Das Modell vernachlässigt die Laufzeit zwischen Quelle und Feldpunkt. Der Phasenfehler ist
+k·r = 2π·r/λ. Für k·r ≤ 0,3 (≈ 17°) ist der Betragsfehler klein. Daraus:
+
+    f_qs = 0,3 · c0 / (2π · r_max)
+
+Mit r_max = Abstand Quelle–Feldpunkt, im Gitter etwa 20 mm: **f_qs ≈ 700 MHz**. Darüber zeigt
+das Bild weiterhin, *wo* die Quellen sitzen, aber die Beträge in größerem Abstand werden
+unzuverlässig. Die App blendet f_qs für das aktuelle Gitter ein.
+
+Zweite Annahme: **elektrisch kurze Leitungen** (konzentrierte Betrachtung). Eine Leitung der
+Länge L ist kurz, solange
+
+    L < λ_eff / 10   ⇔   f < f_kurz = c0 / (10 · L · √εeff)
+
+Beispiel: L = 40 mm, εeff = 3,3 → f_kurz ≈ 410 MHz. Darüber bilden sich stehende Wellen,
+die Stufe 1 nicht abbildet (Stufe 2). Die App zeigt f_kurz je Quelle an.
+
+## 3. Signale und ihre Spektren
+
+### 3.1 Trapez-Signal
+Periodisches Trapez mit Amplitude A, Periode T = 1/f0, Pulsbreite τ (bei 50 %), gleichen
+Anstiegs- und Abfallzeiten t_r. Einseitige Fourier-Koeffizienten (Scheitelwerte), n ≥ 1
+(Paul, *Introduction to EMC*, Kap. 3):
+
+    c_n = 2·A·(τ/T) · |sinc(n·π·τ/T)| · |sinc(n·π·t_r/T)|,     sinc(x) = sin(x)/x
+    c_0 = A·τ/T
+
+Hüllkurve: flach bis f1 = 1/(π·τ), dann −20 dB/Dekade, ab f2 = 1/(π·t_r) −40 dB/Dekade.
+**Die Anstiegszeit bestimmt die Oberwellen oberhalb f2**, daher ist sie der wichtigste
+Parameter für EMV.
+
+Tastgrad d = τ/T. Für d = 0,5 verschwinden die geraden Oberwellen (sinc(nπ/2) = 0 für
+gerades n).
+
+### 3.2 Datensignale
+Zufällige Daten haben ein kontinuierliches Spektrum. Stufe 1 rechnet konservativ mit dem
+ungünstigsten Muster 1010…, also einem Takt mit f0 = Bitrate/2 und d = 0,5. Kennzeichnung
+in der Oberfläche: „Daten (Worst-Case-Muster)“.
+
+### 3.3 Linienliste
+Für jede Quelle werden die Linien n·f0 bis f_max (Standard 1 GHz, einstellbar bis 6 GHz)
+erzeugt, höchstens 4096 Linien. Linien unter −80 dB relativ zur stärksten werden verworfen.
+
+## 4. Leitungsparameter
+
+### 4.1 Mikrostreifen (Außenlage über Fläche)
+Hammerstad/Jensen (vereinfachte Form), w = Breite, h = Abstand zur Fläche, εr des Dielektrikums:
+
+    w/h ≤ 1:  εeff = (εr+1)/2 + (εr−1)/2 · [ (1 + 12h/w)^−½ + 0,04·(1 − w/h)² ]
+              Z0   = 60/√εeff · ln(8h/w + w/(4h))
+    w/h ≥ 1:  εeff = (εr+1)/2 + (εr−1)/2 · (1 + 12h/w)^−½
+              Z0   = 120π / ( √εeff · (w/h + 1,393 + 0,667·ln(w/h + 1,444)) )
+
+Kapazität und Induktivität je Länge:
+
+    C' = √εeff / (c0 · Z0)        L' = Z0 · √εeff / c0
+
+Prüfwert: εr = 4,4, w/h ≈ 1,9 → Z0 ≈ 50 Ω (Test).
+
+### 4.2 Streifenleiter (Innenlage zwischen zwei Flächen)
+IPC-2141, Abstand der Flächen b, Kupferdicke t, gültig für w/b < 0,35:
+
+    Z0 = 60/√εr · ln( 4b / (0,67·π·(0,8w + t)) ),      εeff = εr
+
+Unsymmetrische Lage: b = h1 + h2 + t (Näherung).
+
+### 4.3 Kein Bezug
+Ohne Fläche ist Z0 nicht definiert. Ersatzannahme C' = 50 pF/m (typisch für eine Leitung
+über entferntem Bezug), sichtbar als Warnung „kein Bezug“.
+
+## 5. Stromverteilung je Quellentyp
+
+Jede Quelle liefert (a) eine **Stromgeometrie**: gerade Stromelemente mit relativen Gewichten
+g_e (bezogen auf einen Referenzstrom von 1 A), und (b) ein **Linienspektrum** I_k des
+Referenzstroms. Das Feld ist dann H_s(r, f_k) = I_k · h_s(r), wobei h_s das Feld der
+Geometrie für 1 A ist (§6).
+
+### 5.1 Signal mit kapazitiver Last (Standard für kurze CMOS-Leitungen)
+Der Treiber lädt die Leitungs- und Eingangskapazitäten um. Mit dem Spannungsspektrum V_k:
+
+    I_k = 2π·f_k · C_ges · V_k
+
+Verteilung im Netz: Netzgraph als Baum ab dem Treiber-Pad (bei Maschen: kürzeste-Wege-Baum).
+Jede Kante e hat die Leitungskapazität C_e = C'·Länge, die je zur Hälfte ihren Endknoten
+zugeschlagen wird (π-Ersatzschaltung). Last-Pads erhalten zusätzlich C_last (Standard 5 pF
+je Empfänger, einstellbar). Damit:
+
+    C_Knoten(n) = Σ_(e an n) C_e/2 + C_last(n)
+    g_e         = C_Teilbaum(Kind von e) / C_ges
+
+An jedem Knoten fließt der Verschiebungsstrom C_Knoten(n)/C_ges **senkrecht zur Bezugsfläche**
+(ein vertikales Stromelement vom Knoten zur Fläche). Am Treiber kommt der Gesamtstrom aus
+der Fläche (über den GND-Pin) zurück. So ist die Stromverteilung quellenfrei (∇·J = 0), was
+Biot-Savart für ein physikalisch sinnvolles Feld braucht.
+
+### 5.2 Signal mit Abschluss (lange oder terminierte Leitung)
+Strom längs des Pfads Treiber → Abschluss-Pad konstant:
+
+    I_k = V_k / Z0
+
+Z0 als längengewichtetes Mittel über den Pfad. Vertikale Elemente nur an Treiber und Abschluss.
+Abzweige tragen keinen Strom (Näherung).
+
+### 5.3 Mehrere Netze in einer Quelle
+Ein Takt läuft oft über einen Serienwiderstand (Netz „CLK_R“ → R → „CLK“). Eine Quelle darf
+mehrere Netze enthalten; Zweipol-Bauteile mit je einem Pad in zwei Netzen der Quelle werden
+als Brücke (gerade Verbindung der Pad-Mitten) behandelt.
+
+### 5.4 Stromschleife (Schaltregler)
+Die Schleife wird als geordnete Folge von Pads angegeben, z. B. für den heißen Kreis eines
+Abwärtswandlers: C_in+ → U.VIN, (im IC) → U.GND → C_in−, (im Kondensator) zurück.
+- Zwischen zwei Pads **desselben Netzes**: kürzester Weg über das Kupfer des Netzes
+  (Dijkstra über den Netzgraph, Vias mit kleiner Strafe; durch Zonen als gerade Linie).
+- Zwischen zwei Pads **desselben Bauteils**: gerade Linie (Strompfad im Bauteil).
+- Strom: Trapez mit Spitzenstrom I_pk, Frequenz f_sw, Tastgrad D, Schaltzeit t_r.
+- Teile des Wegs, die **in einer Flächenlage des eigenen Netzes** liegen (Rückweg durch die
+  GND-Fläche), werden nicht als eigene Elemente geführt: Bei hohen Frequenzen fließt dieser
+  Rückstrom unter dem Hinweg, und genau das bildet die Spiegelung (§8) ab.
+
+### 5.5 Differenzpaar
+Zwei Netze P und N mit demselben Signal, Gewichte +1 und −(1 − ε). ε ist die Unsymmetrie
+(Standard 5 %); daraus entsteht der Gleichtaktanteil. Lastmodell wie §5.1 oder §5.2 (je Netz).
+
+## 6. Linearität und Komposition
+
+Die Feldgleichungen sind linear. Weil die Gewichte g_e nicht von der Frequenz abhängen, ist
+das räumliche Muster h_s(r) (Vektor, für 1 A) je Quelle **frequenzunabhängig**. Es wird
+einmal pro Quelle und Geometrie gerechnet; danach:
+
+    |H_s(r, f_k)| = |I_s,k| · |h_s(r)|
+
+**Innerhalb einer Quelle** addieren sich die Beiträge der Elemente vektoriell (kohärent),
+das steckt in h_s. **Zwischen Quellen** wird die Leistung addiert, weil unabhängige
+Oszillatoren nicht phasenstarr sind und ihre Linien ohnehin selten zusammenfallen:
+
+    |H(r)|² = Σ_s  w_s · |h_s(r)|²,      w_s = Σ_(k ∈ Auswahl) |I_s,k|²
+
+Auswahl: eine einzelne Linie, ein Band (Leistungssumme der Linien im Band, z. B.
+CISPR 30–230 MHz) oder das ganze Spektrum. Gespeichert wird je Quelle nur |h_s|² als
+Float32-Volumen; die Komposition ist eine gewichtete Summe und dauert Millisekunden.
+
+## 7. Biot-Savart für ein gerades Stromelement
+
+Für einen Faden von A nach B mit Strom I, Feldpunkt P, R_a = P − A, R_b = P − B,
+R_a = |R_a|, R_b = |R_b|, L = |B − A|, ê = (B − A)/L (Hanson/Hirshman 2002):
+
+    H(P) = I/(4π) · (ê × R_a) · 2L·(R_a + R_b) / ( R_a·R_b·((R_a + R_b)² − L²) )
+
+Prüfung: Punkt im Abstand d von der Mitte, L → ∞ ergibt H = I/(2π·d) (Test).
+
+**Kernregularisierung:** Der Faden ist eine Idealisierung; nahe am Leiter divergiert 1/d.
+Mit dem senkrechten Abstand d⊥ = |ê × R_a| und dem Kernradius a (halbe Leiterbreite,
+mindestens die Kupferdicke; bei Vias der Bohrradius):
+
+    d⊥ < a:  H ← H · (d⊥/a)²
+
+Das entspricht dem Feld im Inneren eines runden Leiters (∝ d) und hält die Werte endlich.
+Sehr breite Leiter (w > 2 Gitterabstände) werden in mehrere parallele Fäden zerlegt.
+
+## 8. Bezugsflächen, Spiegelung und Abschirmung
+
+### 8.1 Flächen erkennen
+Eine Kupferlage ist eine **Flächenlage** für Netz N, wenn die gefüllten Zonen von N mehr als
+50 % der Platinenfläche dieser Lage bedecken (Flächeninhalt der `filled_polygon` per
+Gaußscher Trapezformel; KiCad speichert Löcher als Keyhole, die Formel zieht sie korrekt ab).
+Übersteuerbar je Lage. Jede Flächenlage wird auf ein feines Raster (0,1–0,25 mm) gebracht
+(Scanline-Füllung); Bedeckungsabfragen sind dann O(1).
+
+### 8.2 Spiegelung
+Eine ideal leitende Ebene bei y = y_F wird für den Halbraum der Quelle durch einen
+Spiegelstrom ersetzt (Spiegelpunkt y' = 2·y_F − y):
+- **tangentiale** (waagerechte) Ströme: Spiegel mit **umgekehrter** Richtung (Gewicht −g),
+- **normale** (senkrechte) Ströme: Spiegel mit **gleicher** Richtung (Gewicht +g).
+
+Für eine Leiterbahn über einer Fläche ist der Spiegelstrom genau das Feld des Rückstroms, der
+sich bei hohen Frequenzen unter der Leitung sammelt (Verteilung ∝ 1/(1 + (x/h)²), Johnson,
+*High-Speed Digital Design*). Für eine flach liegende Schleife bildet er die Wirbelströme ab,
+die das Feld über einer Fläche schwächen.
+
+### 8.3 Lokale Bedeckung
+Für jedes waagerechte Element wird in Schritten von 0,25 mm geprüft, ob die nächste
+Flächenlage in Richtung Bezug dort Kupfer hat. Wo nicht, sucht das Modell die nächste
+weiter entfernte Flächenlage, die Kupfer hat, oder lässt den Spiegel weg (freie Schleife).
+Das Element wird an solchen Wechseln geteilt. Lücken kürzer als 1 mm (Via-Freistellungen)
+werden überbrückt. Senkrechte Elemente (Vias) werden an jeder Flächenlage geteilt.
+
+Damit wird ein Schlitz unter einer Taktleitung als **größere Schleife** (Spiegel in der
+entfernteren Fläche) sichtbar. Der tatsächliche Umweg des Rückstroms um den Schlitz herum
+wird nicht berechnet (Stufe 2), aber als Warnung gemeldet.
+
+### 8.4 Abschirmung
+Ein Feldpunkt P erhält von Element E keinen Beitrag, wenn zwischen der Höhe von E und der
+Höhe von P eine Flächenlage liegt, die **an der Stelle von P** Kupfer hat. Umsetzung ohne
+Mehraufwand im inneren Schleifenkörper: Die Flächenlagen teilen die Höhe in „Fächer“
+(Slots); jedes Element gehört zu einem Fach; je Gitterspalte gibt eine Bitmaske an, welche
+Flächen dort Kupfer haben. Ein Elementpaket desselben Fachs wird für einen Punkt komplett
+übersprungen, wenn eine bedeckende Fläche zwischen den Fächern liegt. Spiegelelemente gelten
+nur im Halbraum ihres Originals und tragen dessen Fach.
+
+Außerhalb des Platinenumrisses gibt es keine Flächen, also keine Abschirmung: Das Feld
+„quillt“ an den Kanten heraus, was qualitativ dem Kantenstreufeld entspricht.
+
+## 9. Virtuelle Sonde
+
+Am Sondenort P wird h_s(P) **exakt** (ohne Gitter) per Biot-Savart über alle Elemente einer
+Quelle berechnet. Spektrum: |H(P, f_k)| = |I_s,k| · |h_s(P)|, Summe über Quellen als
+Leistungssumme je Frequenz. Anzeige wahlweise:
+- |H| (isotrope Sonde, wie eine dreiachsige Sonde),
+- eine Komponente H_x, H_y, H_z (gerichtete Schleifensonde),
+- Sondenspannung einer Schleife mit Radius a: U = 2π·f·µ0·π·a²·H_n (ideal, Leerlauf).
+
+## 10. E-Feld (optional, M8)
+
+Quasistatisch aus Linienladungen q' = C'·V_k längs der Leitung mit Spiegelladung −q' unter
+der Fläche; geschlossene Formel für das Feld einer endlichen Linienladung. Liefert die
+Schaltknoten (SW) und Hochspannungsflanken, die im H-Feld unauffällig sind.
+
+## 11. Fernfeld-Orientierung
+
+Für elektrisch kleine Strukturen ist das magnetische Dipolmoment der vollständigen,
+quellenfreien Stromverteilung (Elemente **und** Spiegel) maßgeblich:
+
+    m = ½ · Σ_e  g_e · (A_e × B_e)          [A·m² je A Referenzstrom]
+
+Freiraum-Fernfeld in Hauptstrahlrichtung (Jackson, magnetische Dipolstrahlung):
+
+    E = η0 · k² · |m| / (4π·r) = 1,316·10⁻¹⁴ · f² · |m| / r        [V/m]
+
+Messplatz mit leitendem Boden: Faktor 2 (Ott, *EMC Engineering*, Gl. 12-2:
+E = 263·10⁻¹⁶ · f²·A·I / r). Angezeigt wird E in 3 m und 10 m gegen die Grenzwerte
+**CISPR 32 Klasse B** (Quasi-Peak): 3 m: 40 dBµV/m (30–230 MHz), 47 dBµV/m (230–1000 MHz);
+10 m: 30 bzw. 37 dBµV/m.
+
+Eigenschaften, die das Modell richtig wiedergibt: Eine flache Schleife über einer Fläche hat
+ein senkrechtes Moment, das ihr Spiegel aufhebt (leise); eine Leiterbahn mit Rückstrom in der
+Fläche bildet eine senkrechte Schleife, deren Moment sich mit dem Spiegel verdoppelt.
+
+**Grenzen:** Das ist die Gegentakt-Abstrahlung der Platine allein. In der Praxis dominieren
+oft Gleichtaktströme auf Kabeln; die kennt Stufe 1 nicht. Ab einer Strukturgröße von etwa
+λ/4 überschätzt die f²-Formel (keine Sättigung); diese Bereiche werden schraffiert.
+
+## 12. Bekannte Grenzen von Stufe 1 (Zusammenfassung)
+
+1. Keine Laufzeit- und Resonanzeffekte (Quasistatik, konzentrierte Leitungen).
+2. Rückstrom immer direkt unter dem Hinweg; Umwege um Schlitze nur als Warnung.
+3. Flächen als ideale Leiter (Skin-Tiefe von 35 µm Kupfer < Kupferdicke ab ≈ 4 MHz).
+4. Keine Kabel, kein Gehäuse, keine Bauteil-Parasitics (ESL, Streufeld von Spulen).
+5. Chip-interne Ströme nur über die angegebenen Pads.
+6. Quellen untereinander inkohärent.
+
+## 13. Literatur
+
+- C. R. Paul, *Introduction to Electromagnetic Compatibility*, 2. Aufl., Wiley 2006.
+- H. W. Ott, *Electromagnetic Compatibility Engineering*, Wiley 2009, Kap. 12.
+- J. D. Jackson, *Classical Electrodynamics*, 3. Aufl., Wiley 1999, Kap. 5 und 9.
+- S. L. Hanson, S. P. Hirshman, „Compact expressions for the Biot–Savart fields of a
+  filamentary segment“, *Physics of Plasmas* 9 (2002) 4410.
+- E. Hammerstad, Ø. Jensen, „Accurate Models for Microstrip Computer-Aided Design“,
+  IEEE MTT-S 1980.
+- IPC-2141A, *Design Guide for High-Speed Controlled Impedance Circuit Boards*.
+- H. Johnson, M. Graham, *High-Speed Digital Design*, Prentice Hall 1993.
+- E. Bogatin, *Signal and Power Integrity – Simplified*, 3. Aufl., 2018.
+- CISPR 32:2015+A1:2019, Grenzwerte gestrahlte Störaussendung Klasse B.

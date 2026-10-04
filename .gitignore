@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+*.local
+*.local.md
+.DS_Store
+tools/demo-board/build/
+tools/**/__pycache__/
+*.kicad_prl
+*-backups/
+fp-info-cache

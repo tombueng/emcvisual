@@ -1,0 +1,8 @@
+{
+  "codename": "emcvisual",
+  "displayName": "emcvisual",
+  "tagline": "Elektromagnetische Felder von Leiterplatten sichtbar und hörbar machen",
+  "repo": "tombueng/emcvisual",
+  "storageNamespace": "pcbfield",
+  "previousCodenames": []
+}
