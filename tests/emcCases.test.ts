@@ -13,7 +13,7 @@ import type { DiagnosticKind } from '../src/physics/diagnostics';
 interface CaseMeta {
   title: string;
   sources: unknown[];
-  expect: { bad?: string[]; good_absent?: string[]; far_gain_min?: number; near_gain_min?: number; bad_severity?: SeverityLevel };
+  expect: { bad?: string[]; good_absent?: string[]; far_gain_min?: number; near_gain_min?: number; bad_severity?: SeverityLevel; bad_split?: boolean };
 }
 
 const DIR = 'tests/fixtures/emc-cases';
@@ -58,6 +58,7 @@ describe('known EMC mistakes: bad board vs. good twin', () => {
       matrix.push({ case: id, bad: kb.join(',') || '-', good: kg.join(',') || '-', level, far: `${farBad} → ${farGood}`, near: `${nearBad} → ${nearGood}` });
       for (const k of meta.expect.bad ?? []) expect(has(kb, k), `${id}: bad board should report ${k}, got [${kb}]`).toBe(true);
       for (const k of meta.expect.good_absent ?? []) expect(has(kg, k), `${id}: good board should not report ${k}, got [${kg}]`).toBe(false);
+      if (meta.expect.bad_split) expect(bad.sources.some((s) => s.hints.some((h) => h.split)), `${id}: the split should be named`).toBe(true);
       if (meta.expect.near_gain_min !== undefined) expect(nearBad - nearGood, `${id}: near field bad ${nearBad} vs good ${nearGood}`).toBeGreaterThanOrEqual(meta.expect.near_gain_min);
       if (meta.expect.bad_severity) expect(RANK[level], `${id}: rated ${level}, expected at least ${meta.expect.bad_severity}`).toBeGreaterThanOrEqual(RANK[meta.expect.bad_severity]);
       if (meta.expect.far_gain_min !== undefined) expect(farBad - farGood, `${id}: far field bad ${farBad} vs good ${farGood}`).toBeGreaterThanOrEqual(meta.expect.far_gain_min);

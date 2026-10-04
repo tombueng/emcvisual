@@ -177,8 +177,10 @@ export const de = {
     warnings: 'Hinweise zum Layout',
     none: 'Keine Auffälligkeiten bei den aktiven Quellen.',
     kinds: {
-      'return-gap': (d: { layer: string; plane: string; planeNet: string; value: number }) =>
-        `Rückstrompfad unterbrochen: ${d.layer} läuft ${d.value.toFixed(1).replace('.', ',')} mm über eine Lücke in ${d.planeNet} (${d.plane}).`,
+      'return-gap': (d: { layer: string; plane: string; planeNet: string; value: number; split?: boolean; otherNet?: string }) =>
+        d.split
+          ? `Rückstrompfad unterbrochen: ${d.layer} kreuzt die Trennung zwischen ${d.planeNet} und ${d.otherNet ?? '?'} (${d.plane}).`
+          : `Rückstrompfad unterbrochen: ${d.layer} läuft ${d.value.toFixed(1).replace('.', ',')} mm über eine Lücke in ${d.planeNet} (${d.plane}).`,
       'ref-change': (d: { layer: string; planeNet: string; otherNet?: string }) =>
         `Bezugswechsel am Via (${d.layer}): von ${d.planeNet} nach ${d.otherNet ?? '?'}. Der Rückstrom muss über einen Kondensator springen.`,
       'no-stitching': (d: { layer: string; planeNet: string; value: number }) =>
@@ -470,6 +472,8 @@ export const de = {
     },
     fig: {
       gap: (mm: string, net: string, plane: string) => `${mm} mm der Leitung liegen über einer Lücke in ${net} (${plane}).`,
+      split: (a: string, b: string, plane: string) =>
+        `Auf ${plane} liegen ${a} und ${b} nebeneinander; die Leitung kreuzt die Trennlinie. Für den Rückstrom ist das eine Lücke: Er kann nur über einen Kondensator zwischen den Netzen auf die andere Seite.`,
       detour: (mm: string, area: string) => `Der Rückstrom läuft ${mm} mm außen herum; das spannt etwa ${area} mm² zusätzliche Schleifenfläche auf.`,
       transfer: (mm: string, area: string, via: string) => `Der Rückstrom wechselt über ${via} die Fläche: ${mm} mm Umweg, etwa ${area} mm² zusätzliche Schleifenfläche.`,
       nearestVia: 'die nächste Via',

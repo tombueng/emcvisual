@@ -4,7 +4,7 @@
  * via, unterminated lines whose resonance falls into the measured range, and hot loops of
  * switching stages that are larger than the parts need.
  */
-import { covered, coveredNear, type PlaneLayer } from '../model/planes';
+import { covered, coveredNear, netAt, type PlaneLayer } from '../model/planes';
 import type { BoardModel, Vec2 } from '../model/types';
 import { toBoard, type WorldFrame } from '../model/world';
 import { buildSource, groundNet, type CurrentElement, type SourceModel } from './currents';
@@ -31,6 +31,8 @@ export interface Diagnostic {
   value: number;
   /** edge-trace: length of the line within the distance, and the distance recommended, mm. */
   run?: { length: number; min: number };
+  /** return-gap: the line crosses from one net's copper to another's on a split plane layer. */
+  split?: boolean;
   otherNet?: string;
   /** Stage 2: how the return current actually goes (detour length, extra loop area, link). */
   detour?: { length: number; extraArea: number; via?: string };
@@ -44,8 +46,15 @@ export interface Diagnostic {
   gain?: { db: number; scope: 'finding' | 'source'; alone?: number };
 }
 
-const STEP = 0.25;
-const MIN_GAP = 1.0;
+const STEP = 0.1;
+/** Gaps narrower than this along the line are raster noise. */
+const MIN_GAP = 0.2;
+/**
+ * A gap with a way around is reported when the return's detour is at least this much longer
+ * than straight across (mm): narrow anti-pad chains and thermal gaps cost little, a slot or a
+ * split forces a real detour.
+ */
+const DETOUR_MIN = 2;
 const STITCH_RADIUS = 3.0;
 /** Hot loops below this area are about as small as the parts allow (SOT-23/0603 class: 10–20 mm²). */
 export const HOT_LOOP_MIN = 30;
@@ -97,13 +106,15 @@ export function diagnoseSource(
     const ref = referencePlane(board, planes, e.layer);
     if (!ref) continue;
     for (const g of gapsAlong(e, ref, frame)) {
+      const split = g.nets && g.nets[0] !== g.nets[1];
       out.push({
         kind: 'return-gap',
         sourceId: src.id,
         at: g.at,
         layer: board.layers[e.layer]!.name,
         plane: board.layers[ref.layer]!.name,
-        planeNet: board.nets[ref.net] ?? '',
+        planeNet: board.nets[split ? g.nets![0] : ref.net] ?? '',
+        ...(split ? { otherNet: board.nets[g.nets![1]] ?? '', split: true } : {}),
         value: g.length,
       });
     }
@@ -259,7 +270,9 @@ export function diagnoseSource(
     }
     if (!d.gain && d.kind === 'return-gap' && planeGapsDb !== undefined && planeGapsDb > 0.05) d.gain = { db: planeGapsDb, scope: 'source' };
   }
-  return merge(out);
+  // a gap the return can pass right beside (a short anti-pad chain, a thermal gap) is no finding
+  const real = out.filter((d) => d.kind !== 'return-gap' || d.split || !d.detour || d.detour.length - d.value >= DETOUR_MIN);
+  return merge(real);
 }
 
 /**
@@ -356,16 +369,28 @@ function coveringRef(board: BoardModel, planes: PlaneLayer[], layer: number, at:
     .sort((a, b) => Math.abs(a.y - y) - Math.abs(b.y - y))[0];
 }
 
-function gapsAlong(e: CurrentElement, ref: PlaneLayer, frame: WorldFrame): { at: Vec2; length: number }[] {
+function gapsAlong(e: CurrentElement, ref: PlaneLayer, frame: WorldFrame): { at: Vec2; length: number; nets?: [number, number] }[] {
   const len = Math.hypot(e.b[0] - e.a[0], e.b[2] - e.a[2]);
   const n = Math.max(1, Math.ceil(len / STEP));
-  const gaps: { at: Vec2; length: number }[] = [];
+  const gaps: { at: Vec2; length: number; nets?: [number, number] }[] = [];
   let start = -1;
   const flush = (end: number) => {
     const l = ((end - start) / n) * len;
     if (l >= MIN_GAP) {
       const t = (start + end) / 2 / n;
-      gaps.push({ at: toBoard(frame, e.a[0] + (e.b[0] - e.a[0]) * t, e.a[2] + (e.b[2] - e.a[2]) * t), length: l });
+      // the nets on both sides (split planes: GND on one side, a supply on the other)
+      // (looked up just beyond the gap, also past the ends of this piece of line: the return
+      // model cuts the line at the gap)
+      let nets: [number, number] | undefined;
+      if (ref.nets) {
+        const beyond = 0.3 / Math.max(len, 1e-6);
+        const p = toBoard(frame, e.a[0] + (e.b[0] - e.a[0]) * (start / n - beyond), e.a[2] + (e.b[2] - e.a[2]) * (start / n - beyond));
+        const q = toBoard(frame, e.a[0] + (e.b[0] - e.a[0]) * (end / n + beyond), e.a[2] + (e.b[2] - e.a[2]) * (end / n + beyond));
+        const a = netAt(ref, p.x, p.y);
+        const b = netAt(ref, q.x, q.y);
+        if (a > 0 && b > 0) nets = [a, b];
+      }
+      gaps.push({ at: toBoard(frame, e.a[0] + (e.b[0] - e.a[0]) * t, e.a[2] + (e.b[2] - e.a[2]) * t), length: l, ...(nets ? { nets } : {}) });
     }
     start = -1;
   };

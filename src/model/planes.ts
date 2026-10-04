@@ -29,6 +29,22 @@ export interface PlaneLayer {
   raster: CoverageRaster;
   /** True when set by the user rather than detected. */
   override: boolean;
+  /**
+   * Split planes (several nets on the layer): the net of each raster cell, 0 where there is no
+   * copper. A line crossing from one net's area into another's needs its return to jump
+   * between nets there.
+   */
+  nets?: Int32Array;
+}
+
+/** Net of the plane copper at a point (0: none, or no split information). */
+export function netAt(p: PlaneLayer, x: number, y: number): number {
+  const r = p.raster;
+  if (!p.nets) return covered(r, x, y) ? p.net : 0;
+  const i = Math.floor((x - r.x0) / r.cell);
+  const j = Math.floor((y - r.y0) / r.cell);
+  if (i < 0 || j < 0 || i >= r.nx || j >= r.ny) return 0;
+  return p.nets[j * r.nx + i]!;
 }
 
 /** Overrides by layer name: a net name forces a plane, null removes one. */
@@ -39,6 +55,13 @@ export function boardArea(board: BoardModel): number {
   if (!outer) return 0;
   return Math.abs(signedArea(outer)) - holes.reduce((s, h) => s + Math.abs(signedArea(h)), 0);
 }
+
+/**
+ * Holes in a plane up to this size (largest extent, mm) count as copper: anti-pads of vias and
+ * through-hole pins. A slot counts by its length, not its area: 0.3 × 9 mm forces the return
+ * 4.5 mm aside although it is under 3 mm².
+ */
+export const HOLE_EXTENT = 2.5;
 
 export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, threshold = 0.25, splitShare = 0.05): PlaneLayer[] {
   const area = boardArea(board) || 1;
@@ -69,13 +92,24 @@ export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, 
     const nets = new Set([net]);
     if (!override) for (const [n, a] of byNet) if (a / area >= splitShare) nets.add(n);
     const polys = board.zones.filter((z) => z.layer === layer.index && nets.has(z.net)).flatMap((z) => z.polygons);
+    const raster = fillSmallHoles(rasterize(polys, board.bbox, area), HOLE_EXTENT);
+    // which net each cell belongs to, when the layer is split between nets
+    let netData: Int32Array | undefined;
+    if (nets.size > 1) {
+      netData = new Int32Array(raster.data.length);
+      for (const n of nets) {
+        const r = rasterize(board.zones.filter((z) => z.layer === layer.index && z.net === n).flatMap((z) => z.polygons), board.bbox, area);
+        for (let k = 0; k < r.data.length; k++) if (r.data[k]) netData[k] = n;
+      }
+    }
     planes.push({
       layer: layer.index,
       net,
       y: layer.y,
       coverage: (byNet.get(net) ?? 0) / area,
-      raster: fillSmallHoles(rasterize(polys, board.bbox, area), 3),
+      raster,
       override,
+      ...(netData ? { nets: netData } : {}),
     });
   }
   return planes;
@@ -160,15 +194,16 @@ export function referenceCopper(rs: CoverageRaster, x: number, y: number): boole
 }
 
 /**
- * Fill enclosed holes smaller than maxArea (mm²): via anti-pads and thermal gaps carry no
- * return-current detour worth modelling, slots and cut-outs (larger, or open to the board
- * edge) stay. 4-connected flood fill over the uncovered cells.
+ * Fill enclosed holes whose largest extent is at most maxExtent (mm): via anti-pads and
+ * thermal gaps carry no return-current detour worth modelling; slots (long, however narrow)
+ * and cut-outs (larger, or open to the board edge) stay. 4-connected flood fill over the
+ * uncovered cells.
  */
-export function fillSmallHoles(r: CoverageRaster, maxArea: number): CoverageRaster {
+export function fillSmallHoles(r: CoverageRaster, maxExtent: number): CoverageRaster {
   const { nx, ny } = r;
   const data = r.data.slice();
   const seen = new Uint8Array(nx * ny);
-  const maxCells = maxArea / (r.cell * r.cell);
+  const maxCells = maxExtent / r.cell;
   const stack: number[] = [];
   const comp: number[] = [];
   for (let start = 0; start < nx * ny; start++) {
@@ -178,11 +213,19 @@ export function fillSmallHoles(r: CoverageRaster, maxArea: number): CoverageRast
     stack.push(start);
     seen[start] = 1;
     let open = false;
+    let i0 = nx;
+    let i1 = -1;
+    let j0 = ny;
+    let j1 = -1;
     while (stack.length) {
       const v = stack.pop()!;
       comp.push(v);
       const i = v % nx;
       const j = (v - i) / nx;
+      if (i < i0) i0 = i;
+      if (i > i1) i1 = i;
+      if (j < j0) j0 = j;
+      if (j > j1) j1 = j;
       if (i === 0 || j === 0 || i === nx - 1 || j === ny - 1) open = true;
       const nb = [i > 0 ? v - 1 : -1, i < nx - 1 ? v + 1 : -1, j > 0 ? v - nx : -1, j < ny - 1 ? v + nx : -1];
       for (const u of nb) {
@@ -191,7 +234,7 @@ export function fillSmallHoles(r: CoverageRaster, maxArea: number): CoverageRast
         stack.push(u);
       }
     }
-    if (!open && comp.length <= maxCells) for (const v of comp) data[v] = 1;
+    if (!open && Math.max(i1 - i0 + 1, j1 - j0 + 1) <= maxCells) for (const v of comp) data[v] = 1;
   }
   return { ...r, data };
 }

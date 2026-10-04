@@ -58,7 +58,7 @@ export interface SourceCheck {
   nearMax?: number;
   /** Far-field gain when fixed, dB (scope 'source': all plane gaps under the source together). */
   /** gainDb: share against ideal returns (orders the hints); aloneDb: effect of fixing only this spot. */
-  hints: { kind: string; x: number; y: number; layer: string; value?: number; gainDb?: number; gainScope?: 'finding' | 'source'; aloneDb?: number }[];
+  hints: { kind: string; x: number; y: number; layer: string; value?: number; split?: boolean; otherNet?: string; gainDb?: number; gainScope?: 'finding' | 'source'; aloneDb?: number }[];
   /** All return-path problems / all plane gaps of the source: louder at 3 m by this much, dB. */
   returnPathsDb: number;
   planeGapsDb: number;
@@ -154,6 +154,7 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
           y: round(d.at.y),
           layer: d.layer,
           value: round(d.value, 3),
+          ...(d.split ? { split: true, otherNet: d.otherNet } : {}),
           ...(d.gain ? { gainDb: round(d.gain.db), gainScope: d.gain.scope, ...(d.gain.alone !== undefined ? { aloneDb: round(d.gain.alone) } : {}) } : {}),
         }))
         .sort((a, b) => (b.gainDb ?? -1) - (a.gainDb ?? -1));

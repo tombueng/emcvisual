@@ -62,7 +62,7 @@ export function explain(d: Diagnostic): Explanation {
   switch (d.kind) {
     case 'return-gap':
       k = d.detour && d.detour.length > 0 ? 'gapDetour' : 'gapOpen';
-      figures.push(E.fig.gap(p.gap, d.planeNet, d.plane));
+      figures.push(d.split ? E.fig.split(d.planeNet, d.otherNet ?? '?', d.plane) : E.fig.gap(p.gap, d.planeNet, d.plane));
       if (d.detour && d.detour.length > 0) figures.push(E.fig.detour(p.detour, p.area));
       break;
     case 'ref-change':

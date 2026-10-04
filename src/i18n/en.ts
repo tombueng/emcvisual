@@ -180,7 +180,9 @@ export const en: Strings = {
     none: 'Nothing conspicuous for the active sources.',
     kinds: {
       'return-gap': (d) =>
-        `Return path broken: ${d.layer} runs ${d.value.toFixed(1)} mm over a gap in ${d.planeNet} (${d.plane}).`,
+        d.split
+          ? `Return path broken: ${d.layer} crosses the split between ${d.planeNet} and ${d.otherNet ?? '?'} (${d.plane}).`
+          : `Return path broken: ${d.layer} runs ${d.value.toFixed(1)} mm over a gap in ${d.planeNet} (${d.plane}).`,
       'ref-change': (d) =>
         `Reference change at a via (${d.layer}): from ${d.planeNet} to ${d.otherNet ?? '?'}. The return current has to jump through a capacitor.`,
       'no-stitching': (d) => `Layer change (${d.layer}) without a ${d.planeNet} via within ${d.value} mm.`,
@@ -467,6 +469,8 @@ export const en: Strings = {
       refs: 'Further reading',
     },
     fig: {
+      split: (a: string, b: string, plane: string) =>
+        `On ${plane}, ${a} and ${b} lie side by side; the line crosses the dividing line. For the return current that is a gap: it can only get to the other side through a capacitor between the nets.`,
       gap: (mm: string, net: string, plane: string) => `${mm} mm of the line run over a gap in ${net} (${plane}).`,
       detour: (mm: string, area: string) => `The return current takes ${mm} mm around it, adding about ${area} mm² of loop area.`,
       transfer: (mm: string, area: string, via: string) => `The return current changes planes through ${via}: ${mm} mm detour, about ${area} mm² extra loop area.`,

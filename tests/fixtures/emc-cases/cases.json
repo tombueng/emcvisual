@@ -40,6 +40,87 @@
    "bad_severity": "critical"
   }
  },
+ "split-plane": {
+  "layers": 2,
+  "w": 40,
+  "h": 30,
+  "title": "Takt kreuzt die Trennung zwischen GND- und 3,3-V-Fläche",
+  "mistake": "Die Unterseite ist in eine GND-Fläche (links) und eine 3,3-V-Fläche (rechts) geteilt; der Takt oben kreuzt die Trennlinie. Der Rückstrom kann an der Trennung nicht weiterfließen und muss über den nächsten Kondensator zwischen den Netzen.",
+  "fix": "Die Bezugsfläche nicht teilen: GND durchgehend, 3,3 V als Leitung oder auf einer anderen Lage; notfalls Leitungen nur innerhalb einer Fläche führen.",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "return-gap"
+   ],
+   "good_absent": [
+    "return-gap"
+   ],
+   "bad_split": true
+  }
+ },
+ "narrow-slot": {
+  "layers": 2,
+  "w": 40,
+  "h": 30,
+  "title": "Leitung in der Masselage schneidet einen schmalen Schlitz",
+  "mistake": "Auf der Unterseite (Massefläche) läuft eine Leitung quer über die Platine. Mit ihren Abständen schneidet sie einen nur etwa 0,8 mm breiten, aber langen Schlitz in die Fläche; der Takt oben kreuzt ihn. Schmal heißt nicht harmlos: Der Rückstrom muss um das ganze Schlitzende herum.",
+  "fix": "Leitungen nicht durch die Bezugsfläche führen (jede Leitung in der Fläche ist ein Schlitz); die Leitung auf die Oberseite oder eine andere Lage legen.",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "return-gap"
+   ],
+   "good_absent": [
+    "return-gap"
+   ]
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

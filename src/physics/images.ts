@@ -37,7 +37,7 @@ export interface ImageOptions {
   imageAt: 'mirror' | 'plane';
 }
 
-const DEFAULTS: ImageOptions = { step: 0.25, minGap: 1.0, imageAt: 'mirror' };
+const DEFAULTS: ImageOptions = { step: 0.1, minGap: 0.2, imageAt: 'mirror' };
 
 interface Raw {
   a: Vec3;

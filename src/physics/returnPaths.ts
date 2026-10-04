@@ -51,8 +51,8 @@ export interface ReturnResult {
   detours: Detour[];
 }
 
-const STEP = 0.25;
-const MIN_GAP = 1.0;
+const STEP = 0.1;
+const MIN_GAP = 0.2;
 const SURFACE = 0.02; // plane currents sit on the plane surface facing the signal
 const GRID = 0.4; // path-search cell, mm
 
@@ -381,7 +381,7 @@ function loopArea(a: Vec2, b: Vec2, detourFromB: Vec2[]): number {
 
 /**
  * Shortest path from p to q through the copper of a plane: 8-connected Dijkstra on a coarse
- * grid (a cell counts as copper when most of it is), searched in a window around the points
+ * grid (a cell counts as copper when all of it is, so narrow slots stay closed), searched in a window around the points
  * first and on the whole raster if needed, then straightened by line-of-sight pulling.
  */
 export function geodesic(r: CoverageRaster, p: Vec2, q: Vec2, margin = 25): Vec2[] | null {
@@ -410,7 +410,8 @@ function searchIn(r: CoverageRaster, p: Vec2, q: Vec2, win: { x0: number; y0: nu
           t++;
           if (covered(r, x0 + (i + (a + 0.5) / sub) * cell, y0 + (j + (b + 0.5) / sub) * cell)) c++;
         }
-      copper[j * nx + i] = c * 2 >= t ? 1 : 0;
+      // only cells that are copper all over: a narrow slot or split must not be bridged
+      copper[j * nx + i] = c === t ? 1 : 0;
     }
   const cellOf = (v: Vec2) => [Math.floor((v.x - x0) / cell), Math.floor((v.y - y0) / cell)] as const;
   const snap = (v: Vec2): number => {

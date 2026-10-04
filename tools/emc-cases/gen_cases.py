@@ -235,6 +235,48 @@ def slot_clock(b, bad):
         b.keepout(b.B, (19, 3, 21, 27))
 
 
+@case('split-plane', 2, 40, 30,
+      title='Takt kreuzt die Trennung zwischen GND- und 3,3-V-Fläche',
+      mistake='Die Unterseite ist in eine GND-Fläche (links) und eine 3,3-V-Fläche (rechts) geteilt; der Takt oben kreuzt die Trennlinie. Der Rückstrom kann an der Trennung nicht weiterfließen und muss über den nächsten Kondensator zwischen den Netzen.',
+      fix='Die Bezugsfläche nicht teilen: GND durchgehend, 3,3 V als Leitung oder auf einer anderen Lage; notfalls Leitungen nur innerhalb einer Fläche führen.',
+      sources=[clock_source('clk', 'Takt 25 MHz', ['CLK'], 'Y1.3')],
+      expect={'bad': ['return-gap'], 'good_absent': ['return-gap'], 'bad_split': True})
+def split_plane(b, bad):
+    clock_driver(b, 'Y1', 6, 15, 'CLK')
+    receiver(b, 'U1', 34, 15, 'CLK')
+    b.track('CLK', b.F, [b.pad('Y1', '3'), (12, b.pad('Y1', '3')[1]), (12, 15.95), (b.pad('U1', '1')[0] - 2, 15.95), b.pad('U1', '1')])
+    if bad:
+        b.zone('GND', b.B, [(0.5, 0.5), (20, 0.5), (20, 29.5), (0.5, 29.5)])
+        b.zone('+3V3', b.B, [(20.5, 0.5), (39.5, 0.5), (39.5, 29.5), (20.5, 29.5)])
+    else:
+        b.zone('GND', b.B)
+
+
+@case('narrow-slot', 2, 40, 30,
+      title='Leitung in der Masselage schneidet einen schmalen Schlitz',
+      mistake='Auf der Unterseite (Massefläche) läuft eine Leitung quer über die Platine. Mit ihren Abständen schneidet sie einen nur etwa 0,8 mm breiten, aber langen Schlitz in die Fläche; der Takt oben kreuzt ihn. Schmal heißt nicht harmlos: Der Rückstrom muss um das ganze Schlitzende herum.',
+      fix='Leitungen nicht durch die Bezugsfläche führen (jede Leitung in der Fläche ist ein Schlitz); die Leitung auf die Oberseite oder eine andere Lage legen.',
+      sources=[clock_source('clk', 'Takt 25 MHz', ['CLK'], 'Y1.3')],
+      expect={'bad': ['return-gap'], 'good_absent': ['return-gap']})
+def narrow_slot(b, bad):
+    clock_driver(b, 'Y1', 6, 15, 'CLK')
+    receiver(b, 'U1', 34, 15, 'CLK')
+    b.track('CLK', b.F, [b.pad('Y1', '3'), (12, b.pad('Y1', '3')[1]), (12, 15.95), (b.pad('U1', '1')[0] - 2, 15.95), b.pad('U1', '1')])
+    b.zone('GND', b.B)
+    # an unrelated signal routed through the ground layer (bad) or on top (good)
+    b.place('Resistor_SMD', 'R_0603_1608Metric', 'R1', '10k', 20, 3, rot=90, pins={'1': 'SIG', '2': 'SIG2'})
+    b.place('Resistor_SMD', 'R_0603_1608Metric', 'R2', '10k', 20, 27, rot=90, pins={'1': 'SIG', '2': 'SIG3'})
+    p, q = b.pad('R1', '1'), b.pad('R2', '1')
+    if bad:
+        b.via('SIG', p[0], p[1] + 1.6)
+        b.via('SIG', q[0], q[1] - 1.6)
+        b.track('SIG', b.F, [p, (p[0], p[1] + 1.6)])
+        b.track('SIG', b.F, [q, (q[0], q[1] - 1.6)])
+        b.track('SIG', b.B, [(p[0], p[1] + 1.6), (q[0], q[1] - 1.6)])
+    else:
+        b.track('SIG', b.F, [p, (p[0] + 3, p[1] + 3), (q[0] + 3, q[1] - 3), q])
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',
