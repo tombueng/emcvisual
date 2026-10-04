@@ -44,6 +44,8 @@ export interface ScenarioSettings {
   planeOverrides: PlaneOverrides;
   /** 'image' = stage 1 mirror model, 'detour' = stage 2 return paths around gaps and through links. */
   returnModel: 'image' | 'detour';
+  /** Emission standard the far field is compared with (physics/standards.ts). */
+  standard: string;
 }
 
 /** Where a value came from (docs/AI-PARTS-MANUAL.md), keyed "<source id>/<field path>" or "part:<ref>/<field>". */
@@ -143,7 +145,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   callouts: { hints: true, sources: true, hotspots: false, maxHints: 5, inWorld: false, spectrum: true },
 };
 
-export const DEFAULT_SETTINGS: ScenarioSettings = { quality: 'normal', fMax: 1e9, planeOverrides: {}, returnModel: 'detour' };
+export const DEFAULT_SETTINGS: ScenarioSettings = { quality: 'normal', fMax: 1e9, planeOverrides: {}, returnModel: 'detour', standard: 'cispr32-b' };
 
 export class ScenarioError extends Error {}
 

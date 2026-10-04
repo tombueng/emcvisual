@@ -89,3 +89,9 @@ export function gainText(d: Diagnostic): string {
   const v = d.gain.db >= MAX_GAIN_DB - 0.05 ? t.diag.gainMore(MAX_GAIN_DB) : t.diag.gainDb(d.gain.db);
   return d.gain.scope === 'source' ? t.diag.gainSource(v) : t.diag.gainFinding(v);
 }
+
+/** Short name of the selected emission standard, e.g. "CISPR 32 B". */
+export function standardShort(): string {
+  const items = t.standards.items as Record<string, { short: string }>;
+  return items[app.standard]?.short ?? app.standard;
+}

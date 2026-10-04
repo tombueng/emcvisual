@@ -10,8 +10,10 @@ import { formatEng } from '../physics/units';
 import { MAX_GAIN_DB } from '../physics/attribution';
 import type { Diagnostic } from '../physics/diagnostics';
 import { engine } from '../state/engine.svelte';
-import { cispr32ClassB, limitAt } from '../physics/farfield';
+import { limitAt } from '../physics/farfield';
+import { limitsFor } from '../physics/standards';
 import { findingSeverity, type Severity } from '../physics/severity';
+import { standardShort } from './texts';
 import { C0 } from '../physics/units';
 
 export interface Explanation {
@@ -93,7 +95,7 @@ export function explain(d: Diagnostic): Explanation {
   const doubts: string[] = [];
   const att = app.attribution[d.sourceId];
   const far = engine.farReadout(3)?.sources.find((x) => x.id === d.sourceId);
-  const limits = cispr32ClassB(3);
+  const limits = limitsFor(app.standard, 3);
   let worst: { f: number; db: number; lim: number } | null = null;
   for (const l of far?.lines ?? []) {
     const lim = limitAt(limits, l.f);
@@ -103,7 +105,7 @@ export function explain(d: Diagnostic): Explanation {
   if (m) calc.push(C.path(fmtNum(m.info.lengthMm, 0), d.plane || '–'));
   if (att) calc.push(C.moment(mm2(att.momentNow)));
   calc.push(C.formula);
-  if (worst) calc.push(C.worst(formatEng(worst.f, 'Hz', 3), fmtNum(worst.db, 1), fmtNum(worst.lim, 0), t.diag.margin(worst.db - worst.lim)));
+  if (worst) calc.push(C.worst(standardShort(), formatEng(worst.f, 'Hz', 3), fmtNum(worst.db, 1), fmtNum(worst.lim, 0), t.diag.margin(worst.db - worst.lim)));
   if (d.gain && att && worst) {
     const g = Math.min(d.gain.db, MAX_GAIN_DB);
     const fixed = d.gain.scope === 'source' ? att.momentSolid : att.momentNow / 10 ** (g / 20);

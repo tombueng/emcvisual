@@ -8,10 +8,10 @@ import { app } from '../state/app.svelte';
 import { engine } from '../state/engine.svelte';
 import { t } from '../i18n';
 import { toWorld } from '../model/world';
-import { farMargins, gainText, rankedDiagnostics, diagnosticText, sourceName, sourceColor, sourceSeverityOf } from '../report/texts';
+import { farMargins, gainText, rankedDiagnostics, diagnosticText, sourceName, sourceColor, sourceSeverityOf, standardShort } from '../report/texts';
 import { severityColor } from '../physics/severity';
 import type { Diagnostic } from '../physics/diagnostics';
-import { cispr32ClassB } from '../physics/farfield';
+import { limitsFor } from '../physics/standards';
 import { MAX_GAIN_DB } from '../physics/attribution';
 import { miniSpectrumSvg } from './spectrumSvg';
 import { diagKey } from './focusData';
@@ -58,7 +58,7 @@ export function buildCallouts(viewer: Viewer): Callout[] {
   const out: Callout[] = [];
   // 3 m spectra per source for the bubbles: as is, and for a hint with the fix applied
   const far = c.spectrum ? new Map((engine.farReadout(3)?.sources ?? []).map((s) => [s.id, s.lines])) : new Map<string, { f: number; db: number }[]>();
-  const limits = cispr32ClassB(3);
+  const limits = limitsFor(app.standard, 3);
   const chart = (id: string, color: string, shift?: number) => {
     const lines = far.get(id);
     if (!lines?.length) return undefined;
@@ -68,7 +68,7 @@ export function buildCallouts(viewer: Viewer): Callout[] {
       color,
       limits,
       shift: shift !== undefined ? Math.min(shift, MAX_GAIN_DB) : undefined,
-      labels: { left: '30 MHz', right: '1 GHz', caption: shift !== undefined ? t.callouts.chartFixed : t.callouts.chart },
+      labels: { left: '30 MHz', right: '1 GHz', caption: shift !== undefined ? t.callouts.chartFixed : t.callouts.chart(standardShort()) },
     });
   };
   if (c.hints) {

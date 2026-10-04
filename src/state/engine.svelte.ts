@@ -28,7 +28,8 @@ import { eFieldAt } from '../physics/efield';
 import { packCharges } from '../physics/images';
 import { trapezoidLines, type Line } from '../physics/spectrum';
 import type { FieldKind } from '../compute/fieldKernel';
-import { cispr32ClassB, dipoleMoment, farField, type LimitSegment } from '../physics/farfield';
+import { dipoleMoment, farField, type LimitSegment } from '../physics/farfield';
+import { limitsFor } from '../physics/standards';
 import { distPointSegment } from '../model/geometry';
 import { PickIndex } from '../model/pickIndex';
 import { app, type Hotspot, type LineInfo } from './app.svelte';
@@ -169,6 +170,7 @@ class Engine {
       app.quality = sc?.settings.quality ?? 'normal';
       app.fMax = sc?.settings.fMax ?? 1e9;
       app.returnModel = sc?.settings.returnModel ?? 'detour';
+      app.standard = sc?.settings.standard ?? 'cispr32-b';
       app.view = { ...DEFAULT_VIEW, ...(sc?.view ?? {}) };
       app.partsInfo = sc ? partsInfoOf(sc) : EMPTY_PARTS_INFO;
       app.selectedId = keep && app.sources.some((s) => s.id === selected) ? selected : (app.sources[0]?.id ?? null);
@@ -795,7 +797,7 @@ class Engine {
       sources.push({ id: s.id, name: s.name, color: s.color, lines });
     }
     const total = [...totals.entries()].sort((a, b) => a[0] - b[0]).map(([f, p]) => ({ f, db: 10 * Math.log10(p) }));
-    return { sources, total, limits: cispr32ClassB(distance), distance };
+    return { sources, total, limits: limitsFor(app.standard, distance), distance };
   }
 
   private linesWorker: Worker | null = null;
@@ -873,7 +875,7 @@ class Engine {
       kind: SCENARIO_KIND,
       version: SCENARIO_VERSION,
       board: { fileName: this.boardName, hash: app.boardHash },
-      settings: { quality: app.quality, fMax: app.fMax, planeOverrides: $state.snapshot(app.planeOverrides), returnModel: app.returnModel },
+      settings: { quality: app.quality, fMax: app.fMax, planeOverrides: $state.snapshot(app.planeOverrides), returnModel: app.returnModel, standard: app.standard },
       sources: $state.snapshot(app.sources),
       view: $state.snapshot(app.view),
       ...(app.partsInfo.parts.length ? { parts: app.partsInfo.parts } : {}),
@@ -890,6 +892,7 @@ class Engine {
     app.quality = sc.settings.quality;
     app.fMax = sc.settings.fMax;
     app.returnModel = sc.settings.returnModel;
+    app.standard = sc.settings.standard;
     app.view = { ...sc.view };
     app.partsInfo = partsInfoOf(sc);
     app.selectedId = app.sources[0]?.id ?? null;

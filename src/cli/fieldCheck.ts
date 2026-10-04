@@ -12,7 +12,8 @@ import { buildSource, SourceError, type PhysicsContext } from '../physics/curren
 import { applyReturnModel, type Detour } from '../physics/returnPaths';
 import { packWithImages } from '../physics/images';
 import { fieldAt, slotMaskTable } from '../physics/biotsavart';
-import { cispr32ClassB, dipoleMoment, farField, limitAt } from '../physics/farfield';
+import { dipoleMoment, farField, limitAt } from '../physics/farfield';
+import { limitsFor } from '../physics/standards';
 import { diagnoseSource } from '../physics/diagnostics';
 import { attributeSource } from '../physics/attribution';
 import { selectionWeight } from '../compute/composer';
@@ -89,7 +90,7 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
       pts.push({ x: bx - frame.ox, z: by - frame.oy, bx, by, bits });
     }
 
-  const limits = cispr32ClassB(3);
+  const limits = limitsFor(scenario.settings.standard, 3);
   const out: SourceCheck[] = [];
   for (const src of scenario.sources) {
     if (!src.enabled) continue;

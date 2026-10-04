@@ -9,9 +9,9 @@
   import { t } from '../i18n';
   import { formatEng } from '../physics/units';
   import EngInput from './EngInput.svelte';
-  import { diagnosticText, farMargins, gainText, rankedDiagnostics } from '../report/texts';
+  import { diagnosticText, farMargins, gainText, rankedDiagnostics, standardShort } from '../report/texts';
   import { miniSpectrumSvg } from './spectrumSvg';
-  import { cispr32ClassB } from '../physics/farfield';
+  import { limitsFor } from '../physics/standards';
   import { MAX_GAIN_DB } from '../physics/attribution';
   import type { FocusSpec } from './focusData';
   import { diagKey } from './focusData';
@@ -36,9 +36,9 @@
       width: 300,
       height: 96,
       color: spec.color,
-      limits: cispr32ClassB(3),
+      limits: limitsFor(app.standard, 3),
       shift: spec.diag.gain ? Math.min(spec.diag.gain.db, MAX_GAIN_DB) : undefined,
-      labels: { left: '30 MHz', right: '1 GHz', caption: spec.diag.gain ? t.callouts.chartFixed : t.callouts.chart },
+      labels: { left: '30 MHz', right: '1 GHz', caption: spec.diag.gain ? t.callouts.chartFixed : t.callouts.chart(standardShort()) },
     });
   });
 

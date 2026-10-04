@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { standardShort } from '../report/texts';
   import { app } from '../state/app.svelte';
   import { engine } from '../state/engine.svelte';
   import { t, fmtNum } from '../i18n';
@@ -238,7 +239,7 @@
       {#if data}
         <button class="csv" onclick={exportCsv}>{t.probe.csv}</button>
         <span>{data.unit}</span>
-        {#if data.limits}<span class="limit">{t.probe.limit}</span>{/if}
+        {#if data.limits}<span class="limit">{t.probe.limit(standardShort())}</span>{/if}
         {#if peak}<span>{t.probe.peak}: {formatEng(peak.f, 'Hz', 4)}, {fmtNum(peak.db)}</span>{/if}
       {:else}
         <span>{t.probe.noProbe}</span>

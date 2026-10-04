@@ -9,7 +9,7 @@ import { app } from '../state/app.svelte';
 import { engine, selectionFromView } from '../state/engine.svelte';
 import { formatEng } from '../physics/units';
 import { BANDS } from '../physics/spectrum';
-import { diagnosticText, farMargins, gainText, rankedDiagnostics, sourceColor, sourceName, sourceSummary } from './texts';
+import { diagnosticText, farMargins, gainText, rankedDiagnostics, sourceColor, sourceName, sourceSummary, standardShort } from './texts';
 import { explain } from './explain';
 import { severityColor } from '../physics/severity';
 
@@ -184,7 +184,7 @@ ${findings}
 <h2>${esc(t.diag.hotspots)}</h2>
 ${hotspots}
 
-<h2>${esc(t.diag.far)}</h2>
+<h2>${esc(t.diag.far(standardShort()))}</h2>
 ${farTable}
 <p class="note">${esc(t.diag.farHint)}</p>
 

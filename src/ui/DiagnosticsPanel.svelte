@@ -4,10 +4,13 @@
   import { t } from '../i18n';
   import { formatEng } from '../physics/units';
   import { toWorld } from '../model/world';
-  import { diagnosticText, farMargins, gainText, rankedDiagnostics } from '../report/texts';
+  import { diagnosticText, farMargins, gainText, rankedDiagnostics, standardShort } from '../report/texts';
   import { MAX_GAIN_DB } from '../physics/attribution';
   import { diagKey } from './focusData';
   import { severityColor } from '../physics/severity';
+  import { STANDARDS } from '../physics/standards';
+
+  const stdText = (id: string) => (t.standards.items as Record<string, { name: string; short: string; text: string }>)[id] ?? { name: id, short: id, text: '' };
   import { buildReport } from '../report/report';
   import { buildAiRequest } from '../ai/request';
   import { suggestSources } from '../physics/suggest';
@@ -115,6 +118,28 @@
     {/if}
     {#if app.partsInfo.notes}<p class="hint">{app.partsInfo.notes}</p>{/if}
   {/if}
+  <div class="section-title">{t.standards.title}</div>
+  <select
+    class="standard"
+    aria-label={t.standards.pick}
+    value={app.standard}
+    onchange={(e) => {
+      app.standard = (e.currentTarget as HTMLSelectElement).value;
+      engine.scheduleSave();
+    }}
+  >
+    {#each STANDARDS as st (st.id)}<option value={st.id}>{stdText(st.id).name}</option>{/each}
+  </select>
+  <p class="hint std">{stdText(app.standard).text}</p>
+  <details class="stds">
+    <summary>{t.standards.allTitle}</summary>
+    {#each STANDARDS as st (st.id)}
+      <p class="hint"><b>{stdText(st.id).name}.</b> {stdText(st.id).text}</p>
+    {/each}
+    <p class="hint">{t.standards.common}</p>
+    <p class="hint">{t.standards.missing}</p>
+  </details>
+
   <div class="section-title">{t.diag.warnings}</div>
   {#if app.diagnostics.length === 0}
     <p class="hint">{t.diag.none}</p>
@@ -151,7 +176,7 @@
     {/each}
   </ul>
 
-  <div class="section-title">{t.diag.far}</div>
+  <div class="section-title">{t.diag.far(standardShort())}</div>
   <ul>
     {#each far as s (s.id)}
       <li style:--c={s.color}>
@@ -207,6 +232,18 @@
     height: 8px;
     border-radius: 50%;
     margin-right: 6px;
+  }
+  select.standard {
+    width: 100%;
+  }
+  .std {
+    margin-top: 6px;
+  }
+  .stds summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 4px;
   }
   .report {
     display: flex;

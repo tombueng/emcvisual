@@ -38,7 +38,12 @@ test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
 
   // far field view with limit lines
   await page.getByRole('tab', { name: 'Fernfeld 3 m' }).click();
-  await expect(page.getByText('CISPR 32 Klasse B')).toBeVisible();
+  await expect(page.locator('.limit')).toHaveText('CISPR 32 B');
+  // another standard: the limit, the far-field section and the explanation follow
+  await page.locator('select.standard').selectOption('fcc15-b');
+  await expect(page.locator('.limit')).toHaveText('FCC 15 B');
+  await expect(page.getByText(/Fernfeld-Orientierung \(FCC 15 B, 3 m\)/)).toBeVisible();
+  await expect(page.locator('p.std')).toContainText('§15.109');
 
   await page.screenshot({ path: 'e2e/output/demo.png' });
   expect(errors).toEqual([]);

@@ -77,6 +77,8 @@ class AppState {
   selectedId = $state<string | null>(null);
   quality = $state<Quality>('normal');
   returnModel = $state<'image' | 'detour'>('detour');
+  /** Emission standard for the far-field comparison (physics/standards.ts). */
+  standard = $state<string>('cispr32-b');
   /** Stage 2 return paths per source (gap detours and plane transfers). */
   detours = $state.raw<Record<string, Detour[]>>({});
   fMax = $state(1e9);
