@@ -9,7 +9,10 @@
 board and turns it into a 3D world you can look at and listen to: glowing field volumes,
 field lines, a virtual near-field probe with a spectrum-analyzer view, a far-field estimate
 against CISPR 32 and layout hints (return paths over plane gaps, reference changes at vias).
-The interface speaks German and English; the docs are in German.
+Return currents detour around plane slots and jump through stitching vias or capacitors, the
+electric field can be shown as well, and a near-field scanner (a 3D printer moving a probe,
+tinySA as receiver; a virtual rig for trying it without hardware) compares measurements with
+the simulation. The interface speaks German and English; the docs are in German.
 
 Elektromagnetische Felder einer Leiterplatte kann man nicht sehen. Dieses Werkzeug rechnet
 sie aus einer KiCad-Platine aus und macht daraus eine **begehbare 3D-Welt mit Bild und Ton**:
@@ -39,8 +42,20 @@ Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 
 Plan, Abnahmekriterien und Umsetzungsnotizen: [docs/stufe-1/PLAN.md](docs/stufe-1/PLAN.md).
 
-Was später kommt (Flächenströme, Vollwelle mit openEMS, Messung mit einem 3D-Drucker als
-Scanner, Handsonde, VR): [docs/ROADMAP.md](docs/ROADMAP.md).
+**Stufe 2 (in Arbeit):** Rückströme laufen um Schlitze in der Fläche herum und springen bei
+einem Lagenwechsel über die nächste Stitching-Via oder den nächsten Kondensator (Umwege werden
+in 3D gezeigt); elektrisches Feld aus Leitungs- und Knotenladungen; Streufeld offener und
+geschirmter Speicherdrosseln. Details: [docs/zukunft/STUFE-2-FLAECHENSTROEME.md](docs/zukunft/STUFE-2-FLAECHENSTROEME.md).
+
+**Stufe 4 (in Arbeit):** Reiter „Messung“: Ein 3D-Drucker fährt eine Nahfeldsonde über die
+Platine, ein Empfänger misst je Punkt ein Spektrum, das Ergebnis erscheint als Schnitt in
+Messhöhe und als Differenz zur Simulation. Ein virtueller Prüfstand misst die Simulation und
+zeigt die ganze Kette ohne Hardware; die Treiber für OctoPrint, G-Code über USB und den tinySA
+sind geschrieben, aber noch an keinem Gerät erprobt. Details:
+[docs/zukunft/STUFE-4-MESSUNG-SCANNER.md](docs/zukunft/STUFE-4-MESSUNG-SCANNER.md).
+
+Was später kommt (Flächenlöser, Vollwelle mit openEMS, Handsonde, VR):
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Loslegen
 

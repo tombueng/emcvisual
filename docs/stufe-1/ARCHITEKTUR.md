@@ -42,6 +42,8 @@ src/
     currents.ts             Quelle → Stromelemente + Spektrum
     images.ts               Spiegel, Bedeckungs-Zerlegung, Fächer
     biotsavart.ts           Kernel (Punkt), Feld einer Elementliste
+    charges.ts, efield.ts   Stufe 2b: Ladungen aus C' und Spannung, quasistatisches E-Feld
+    returnPaths.ts          Stufe 2a: Rückstrom-Umwege durch Flächen, Sprünge über Via/Kondensator
     farfield.ts             Dipolmoment, E in 3/10 m, CISPR-Grenzen
     diagnostics.ts          Rückstrom- und Bezugswarnungen
     suggest.ts              Quellen-Vorschläge aus Netznamen, Pin-Funktionen, Pin-Typen
@@ -64,14 +66,25 @@ src/
     colormaps.ts            Inferno/Turbo (Polynom-Fits) als LUT
   audio/
     sonifier.ts             Web-Audio-Graph je Quelle
+  scanner/                  Stufe 4: Nahfeld-Scanner (Drucker + Empfänger)
+    types.ts                Positioner, Receiver, Messformat
+    registration.ts         Platine ↔ Drucker (Kabsch, mit Spiegelung)
+    plan.ts                 Raster, Schlangenlinie, Anheben über hohen Bauteilen
+    runner.ts               Fahren, Warten, Sweeps mit Max-Hold, Abbruch
+    probe.ts                Sondenmodell (H-Schleife, E-Stummel) ↔ dBm
+    measurement.ts          Hintergrundabzug, Feldstärke, Schnitte, JSON-Format
+    virtual.ts              virtueller Prüfstand (misst die Simulation)
+    drivers.ts, webserial.ts  OctoPrint-REST, G-Code und tinySA über Web Serial
   state/
     app.svelte.ts           Anwendungszustand (Svelte-Runes)
     engine.svelte.ts        Orchestrierung: Platine, Quellen, Jobs, Komposition, Sonde, Export
     scenario.ts             Szenario-JSON: Typen, Validierung, Migration
     persist.ts              localStorage (try/catch), Download/Upload
+    scanner.svelte.ts       Scanner-Steuerung: Geräte, Registrierung, Scan, Anzeige
   ui/
     App.svelte (Layout, Zeiger, Ton), SourcesPanel, SourceEditor, EngInput, NetInput,
-    ViewPanel (mit Lagen), DiagnosticsPanel, SpectrumPanel (Analysator, Sonde, Ton)
+    ViewPanel (Reiter Ansicht/Diagnose/Messung; unter 1100 px eine Schublade),
+    DiagnosticsPanel, ScannerPanel, SpectrumPanel (Analysator, Sonde, Ton)
 public/demo/                Demo-Platine + Szenario
 tools/demo-board/           pcbnew-Skript für die Demo-Platine, Referenzdaten-Export
 tests/                      Vitest (Kern), fixtures/ (pcbnew-Referenzen)
@@ -244,3 +257,5 @@ fehlende Schlüssel melden.
   berechnete Flächenströme, ohne Kernel und Darstellung zu ändern.
 - Volumina tragen Metadaten (Herkunft: Simulation A/B/C, Messung), damit die PCB-World
   Simulation und Messung nebeneinander und als Differenz zeigen kann.
+- Messungen (Stufe 4) erscheinen heute als Schnitte in Messhöhe (`viewer.setMeasurementSlices`);
+  neue Geräte implementieren nur `Positioner` oder `Receiver` (`src/scanner/types.ts`).

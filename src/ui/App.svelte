@@ -12,11 +12,14 @@
   import SourcesPanel from './SourcesPanel.svelte';
   import ViewPanel from './ViewPanel.svelte';
   import SpectrumPanel from './SpectrumPanel.svelte';
+  import { showMeasurement } from '../state/scanner.svelte';
 
   let viewEl: HTMLDivElement;
   let viewer: Viewer | null = null;
   const sonifier = new Sonifier();
   let dragging = $state(false);
+  /** Narrow windows: the right panel is a drawer over the viewport. */
+  let panelOpen = $state(false);
   let down: { x: number; y: number } | null = null;
 
   onMount(() => {
@@ -260,6 +263,12 @@
   });
 
   $effect(() => {
+    // measured slices follow the frequency selection and the dB window
+    void [app.view.mode, app.view.bandId, app.view.lineF, app.view.dbLow, app.view.dbHigh, app.view.colormap, app.composite];
+    untrack(() => showMeasurement());
+  });
+
+  $effect(() => {
     // field lines follow the selected source and its geometry
     void app.selectedId;
     void app.models;
@@ -377,6 +386,9 @@
         {#if app.compute.busy}{t.top.computing} {Math.round(app.compute.progress * 100)} %{:else if app.compute.lastMs > 0}{t.top.computed(app.compute.lastMs)}{/if}
       </span>
     </div>
+    <button class="btn panel-toggle" class:on={panelOpen} aria-expanded={panelOpen} aria-controls="right-panel" onclick={() => (panelOpen = !panelOpen)}>
+      {t.top.panel}
+    </button>
   </header>
 
   <aside class="left">
@@ -417,7 +429,7 @@
     {#if app.toast}<div class="toast" role="status">{app.toast}</div>{/if}
   </main>
 
-  <aside class="right">
+  <aside class="right" class:open={panelOpen} id="right-panel">
     <ViewPanel onpickmodels={pickModels} />
   </aside>
 
@@ -477,6 +489,9 @@
     align-items: center;
     gap: 6px;
     overflow-x: auto;
+    min-width: 0;
+    /* keeps absolutely placed children (sr-only) inside the scroll box */
+    position: relative;
   }
   .quality {
     display: flex;
@@ -613,24 +628,44 @@
     padding: 8px 14px;
     border-radius: var(--radius-m);
   }
+  .panel-toggle {
+    display: none;
+    flex: none;
+  }
   @media (max-width: 1100px) {
     .app {
       grid-template-columns: 260px minmax(0, 1fr) 0;
     }
+    .panel-toggle {
+      display: inline-flex;
+    }
     .right {
       display: none;
+      position: fixed;
+      top: 46px;
+      right: 0;
+      bottom: 0;
+      width: min(300px, 100vw);
+      z-index: 20;
+      overflow-y: auto;
+      box-shadow: -8px 0 24px rgb(0 0 0 / 0.35);
+    }
+    .right.open {
+      display: block;
     }
   }
   @media (max-width: 760px) {
     .app {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto minmax(320px, 1fr) 200px auto;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 46px minmax(320px, 1fr) 200px auto;
       grid-template-areas: 'top' 'view' 'spec' 'left';
       overflow-y: auto;
     }
     .actions .btn:not(:nth-child(-n + 2)),
     .quality,
-    .status {
+    .status,
+    .badge,
+    .file {
       display: none;
     }
   }

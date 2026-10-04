@@ -14,6 +14,9 @@
     "Virtual near-field probe with spectrum-analyzer view and sonification",
     "Far-field estimate against CISPR 32 class B limits (3 m / 10 m)",
     "Layout hints: return paths over plane gaps, reference changes at vias, missing stitching vias, hotspots",
+    "Return currents that detour around plane slots and jump through stitching vias or decoupling capacitors",
+    "Quasi-static electric field and inductor stray fields (open and shielded)",
+    "Near-field scanner: a 3D printer (OctoPrint or USB G-code) moves the probe, a tinySA measures; results compared with the simulation",
     "Runs entirely in the browser; the board file never leaves the computer",
     "English and German user interface"
   ],
@@ -63,6 +66,11 @@
     "Platinenlayout",
     "Nahfeldsonde",
     "Rückstrompfad",
-    "Massefläche"
+    "Massefläche",
+    "3D printer near-field scanner",
+    "tinySA",
+    "OctoPrint",
+    "EMC measurement",
+    "electric field"
   ]
 }

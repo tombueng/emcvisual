@@ -504,7 +504,20 @@ class Engine {
   /** Spectrum at the probe position (exact Biot-Savart, no grid). */
   probeReadout(): ProbeReadout | null {
     if (!app.board || !app.probe.visible) return null;
-    const P = [app.probe.x, app.probe.height, app.probe.z] as const;
+    return this.readoutAt(app.probe.x, app.probe.height, app.probe.z, app.probe.asVoltage);
+  }
+
+  /** Field lines at a board point and height (power sum over the enabled sources), for scanning. */
+  fieldLinesAt(bx: number, by: number, height: number): { f: number; db: number }[] {
+    if (!app.board) return [];
+    const r = this.readoutAt(bx - this.frame.ox, height, by - this.frame.oy, false);
+    return r ? r.total : [];
+  }
+
+  /** Spectrum at a world point (x, height, z): exact Biot-Savart / Coulomb, no grid. */
+  readoutAt(x: number, height: number, z: number, asVoltage: boolean): ProbeReadout | null {
+    if (!app.board) return null;
+    const P = [x, height, z] as const;
     const b = toBoard(this.frame, P[0], P[2]);
     const planes = [...app.planes].sort((p, q) => q.y - p.y);
     let bits = 0;
@@ -512,7 +525,7 @@ class Engine {
       if (covered(p.raster, b.x, b.y)) bits |= 1 << i;
     });
     const h = new Float64Array(3);
-    const asV = app.probe.asVoltage;
+    const asV = asVoltage;
     const area = Math.PI * (app.probe.radius / 1000) ** 2;
     const sources: ProbeReadout['sources'] = [];
     const totals = new Map<number, number>();

@@ -85,7 +85,7 @@ class AppState {
   diagnostics = $state.raw<Diagnostic[]>([]);
   hotspots = $state.raw<Hotspot[]>([]);
   spectrumMode = $state<SpectrumMode>('probe');
-  rightTab = $state<'view' | 'diag'>('view');
+  rightTab = $state<'view' | 'diag' | 'scan'>('view');
   fieldLinesBusy = $state(false);
 
   get selected(): Source | undefined {

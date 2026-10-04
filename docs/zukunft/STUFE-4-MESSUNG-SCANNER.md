@@ -1,12 +1,53 @@
 # Stufe 4: Messung mit einem 3D-Drucker als Nahfeld-Scanner
 
-Stand: 2026-10-04 · Status: Idee, konserviert · Voraussetzung: Stufe 1 (Gitter, Darstellung)
+Stand: 2026-10-04 · Status: Scanner-Kette umgesetzt (virtuell geprüft, Hardware-Treiber ungetestet) · Voraussetzung: Stufe 1 (Gitter, Darstellung)
 
 ## Ziel
 
 Echte Platinen abtasten: Nahfeldsonde am Druckkopf, günstiger Empfänger, Messung auf einem
 3D-Gitter über der Platine. Die Messdaten landen in derselben PCB-World wie die Simulation:
 nebeneinander, überlagert, als Differenz. **Möglichst wieder im Browser** (Web Serial / WebUSB).
+
+## Umgesetzt: Scanner-Kette (2026-10-04)
+
+Reiter „Messung“ im rechten Bereich; Code in `src/scanner/`, Steuerung in
+`src/state/scanner.svelte.ts`, Oberfläche in `src/ui/ScannerPanel.svelte`.
+
+| Teil | Datei | Was es tut |
+|---|---|---|
+| Schnittstellen | `types.ts` | `Positioner` (fährt), `Receiver` (misst einen Sweep), Messformat |
+| Registrierung | `registration.ts` | Platine ↔ Drucker als starre 2D-Abbildung (Kabsch), mit Spiegelung, weil KiCads y nach unten zeigt; ab drei Punkten wählt die bessere Lösung, Restfehler in mm |
+| Scanplan | `plan.ts` | Raster über die Platine oder 20 × 20 mm um die Sonde, Schlangenlinie, mehrere Höhen; über hohen Bauteilen (Gehäusehöhe aus KiCad + Abstand + Sondenradius) wird die Sonde angehoben |
+| Ablauf | `runner.ts` | erst anheben, dann fahren, warten, mehrere Sweeps mit Max-Hold, Abbruch zwischen zwei Punkten |
+| Sondenmodell | `probe.ts` | H-Schleife: U = 2πf·µ0·πa²·H, E-Stummel: U = E·h_eff, dBm an 50 Ω; Korrektur `factorDb` für eine spätere Kalibrierung |
+| Auswertung | `measurement.ts` | Hintergrund abziehen (Leistung, untere Grenze ein Zehntel des Hintergrunds), Umrechnung in dBµA/m, gleiche Frequenzauswahl wie die Simulation (Gesamt, Band, Linie), Schnitte je Höhe, JSON-Datei (`kind: "pcb-field-measurement"`) |
+| Virtueller Prüfstand | `virtual.ts` | Drucker und Empfänger, die messen, was die Simulation vorhersagt (mit Rauschboden −100 dBm ± 1 dB); beim Hintergrundlauf ist die Platine „aus“ |
+| Hardware | `drivers.ts`, `webserial.ts` | OctoPrint-REST (`POST /api/printer/command`, API-Schlüssel nur im Speicher), G-Code über Web Serial (wartet auf `ok` nach `M400`), tinySA über Web Serial (`scan start stop punkte 3`) |
+
+Darstellung: Die Messung erscheint als Schnittebene in Messhöhe in der Farbskala der
+Simulation, während des Scans laufend aktualisiert. „Differenz zur Simulation“ zeigt
+Messung − Simulation in ±20 dB (rot lauter, blau leiser); die Simulation wird dafür in der
+Höhe ausgewertet, in der die Sonde wirklich war. Punkte, deren Leistung weniger als 3 dB über
+dem Hintergrund liegt, bleiben frei, denn dort sagt eine Differenz nichts über die Platine.
+
+Geprüft:
+- Unit-Tests: Registrierung findet eine gespiegelte, gedrehte, verschobene Lage exakt
+  wieder; der Plan läuft als Schlangenlinie und hebt über dem Steckverbinder an; ein
+  virtueller Scan liefert über Sondenmodell und Dateiformat genau die vorgegebene Feldstärke
+  zurück; der Hintergrundlauf markiert leere Bänder als Rauschen; der tinySA-Parser liest die
+  Ausgabe von `scan`.
+- E2E (Playwright): Demo-Platine, ganzer Scan mit 41 × 26 = 1066 Punkten, Hintergrund,
+  Differenzansicht.
+- Im Browser: Median der Differenz Messung − Simulation 0,35 dB im Band 30–230 MHz; die
+  Abweichungen am Rand kommen aus dem Rauschboden und verschwinden mit Hintergrundabzug.
+
+Noch offen:
+- Die Hardware-Treiber sind gegen die dokumentierten Protokolle geschrieben, aber noch an
+  keinem Gerät gelaufen. OctoPrint quittiert Befehle sofort; die Ankunft wird aus Weg und
+  Vorschub geschätzt. Die App muss für ein OctoPrint im LAN über http laufen (`npm run dev`),
+  und OctoPrint muss CORS erlauben (Einstellungen → API).
+- Klipper/Moonraker, HackRF, adaptive Verfeinerung, Binärformat und echter Ton (IQ-Schnipsel).
+- Kalibrierung des Sondenfaktors an einer bekannten Struktur.
 
 ## Hardware (Richtpreise)
 
@@ -50,7 +91,8 @@ Ein RTL-SDR (24 MHz–1,7 GHz) geht auch, ist aber langsam und schmalbandig (2,4
   (es gibt WebUSB-Umsetzungen des Sweep-Modus; Reife prüfen).
 - **Zeitbedarf:** 80 × 100 mm bei 2 mm = 2000 Punkte; 0,5–2 s je Punkt → 15–60 min je Ebene.
   Adaptive Verfeinerung spart den Großteil.
-- **Datenformat:** eigenes Binärformat (Header JSON + Float32-Blöcke), Rohspektren behalten.
+- **Datenformat:** zunächst JSON mit Rohspektren (umgesetzt); später ein Binärformat
+  (Header JSON + Float32-Blöcke), wenn die Dateien zu groß werden.
 
 ## Kalibrierung und Einheiten
 

@@ -54,3 +54,12 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     Millisekunden; der Flächenlöser bleibt für die genaue Stromverteilung.
 21. **2026-10-04 · Kleine Löcher in Flächen (bis 3 mm²) gelten als Kupfer** (Via-Freistellungen);
     Schlitze und Aussparungen bleiben Lücken.
+22. **2026-10-04 · Stufe 4 beginnt mit einem virtuellen Prüfstand.** Drucker und Empfänger,
+    die die Simulation „messen“, prüfen die ganze Kette (Plan, Registrierung, Fahrt, Sweep,
+    Speichern, Vergleich) ohne Hardware; eine echte Messung lässt sich später direkt dagegen
+    halten.
+23. **2026-10-04 · Erste Hardware-Wege: OctoPrint-REST, G-Code über Web Serial, tinySA über
+    Web Serial.** OctoPrint, weil der vorhandene Drucker daran hängt; Web Serial, weil es ohne
+    Installation im Browser läuft. Der OctoPrint-API-Schlüssel wird nicht gespeichert.
+24. **2026-10-04 · Messdateien zunächst als JSON** mit Rohspektren und Hintergrund; ein
+    Binärformat erst, wenn die Größe stört.

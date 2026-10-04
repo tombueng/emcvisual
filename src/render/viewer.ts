@@ -403,6 +403,64 @@ export class Viewer {
     this.requestRender();
   }
 
+  private measurementSlices: THREE.Group | null = null;
+
+  /**
+   * Measured slices as textured planes: values in dB on a regular grid (NaN = not measured),
+   * coloured with the field colour map, or with a blue-white-red map for differences.
+   */
+  setMeasurementSlices(
+    slices: { y: number; x0: number; z0: number; step: number; nx: number; nz: number; values: Float32Array; lo: number; hi: number; diverging: boolean }[],
+    colormap: ColormapId,
+  ) {
+    if (this.measurementSlices) {
+      this.scene.remove(this.measurementSlices);
+      disposeObject(this.measurementSlices);
+      this.measurementSlices = null;
+    }
+    if (slices.length === 0) return this.requestRender();
+    const g = new THREE.Group();
+    const lut = colormapLut(colormap);
+    for (const sl of slices) {
+      const rgba = new Uint8Array(sl.nx * sl.nz * 4);
+      for (let k = 0; k < sl.values.length; k++) {
+        const v = sl.values[k]!;
+        if (!Number.isFinite(v)) continue;
+        const t = Math.min(1, Math.max(0, (v - sl.lo) / (sl.hi - sl.lo)));
+        if (sl.diverging) {
+          // blue (below) – white (0) – red (above)
+          const a = t * 2 - 1;
+          rgba[k * 4] = Math.round(255 * (a > 0 ? 1 : 1 + a));
+          rgba[k * 4 + 1] = Math.round(255 * (1 - Math.abs(a)));
+          rgba[k * 4 + 2] = Math.round(255 * (a < 0 ? 1 : 1 - a));
+        } else {
+          const i = Math.round(t * 255) * 4;
+          rgba[k * 4] = lut[i]!;
+          rgba[k * 4 + 1] = lut[i + 1]!;
+          rgba[k * 4 + 2] = lut[i + 2]!;
+        }
+        rgba[k * 4 + 3] = 235;
+      }
+      const tex = new THREE.DataTexture(rgba, sl.nx, sl.nz, THREE.RGBAFormat);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.magFilter = THREE.NearestFilter;
+      tex.needsUpdate = true;
+      const w = sl.nx * sl.step;
+      const h = sl.nz * sl.step;
+      const geo = new THREE.PlaneGeometry(w, h);
+      geo.rotateX(-Math.PI / 2);
+      const uv = geo.getAttribute('uv') as THREE.BufferAttribute;
+      for (let k = 0; k < uv.count; k++) uv.setY(k, 1 - uv.getY(k));
+      const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+      mesh.position.set(sl.x0 - sl.step / 2 + w / 2, sl.y, sl.z0 - sl.step / 2 + h / 2);
+      mesh.renderOrder = 7;
+      g.add(mesh);
+    }
+    this.measurementSlices = g;
+    this.scene.add(g);
+    this.requestRender();
+  }
+
   private returnPaths: THREE.Group | null = null;
 
   /** Stage 2 return paths drawn on top of everything (they run inside the board). */

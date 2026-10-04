@@ -6,6 +6,7 @@
   import { C0, formatEng } from '../physics/units';
   import type { ViewMode } from '../state/scenario';
   import DiagnosticsPanel from './DiagnosticsPanel.svelte';
+  import ScannerPanel from './ScannerPanel.svelte';
   import { downloadText } from '../state/persist';
 
   interface Props {
@@ -49,10 +50,13 @@
       <button role="tab" aria-selected={app.rightTab === 'diag'} class:active={app.rightTab === 'diag'} onclick={() => (app.rightTab = 'diag')}>
         {t.diag.tab}{#if app.diagnostics.length}<span class="count value">{app.diagnostics.length}</span>{/if}
       </button>
+      <button role="tab" aria-selected={app.rightTab === 'scan'} class:active={app.rightTab === 'scan'} onclick={() => (app.rightTab = 'scan')}>{t.scan.tab}</button>
     </div>
   </header>
   {#if app.rightTab === 'diag'}
     <div class="scroll body"><DiagnosticsPanel /></div>
+  {:else if app.rightTab === 'scan'}
+    <div class="scroll body"><ScannerPanel /></div>
   {:else}
   <div class="scroll body">
     <div class="section-title">{t.view.fieldKind}</div>

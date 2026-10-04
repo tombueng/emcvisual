@@ -94,3 +94,31 @@ test('a link with ?demo opens the demo board', async ({ page }) => {
   await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('.list li')).toHaveCount(8);
 });
+
+test('virtual scan: measure, background, difference to the simulation', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?demo');
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+
+  await page.getByRole('tab', { name: 'Messung' }).click();
+  await page.getByRole('button', { name: 'Verbinden' }).click();
+  await page.getByRole('button', { name: 'Scan starten' }).click();
+  // whole demo board at 2 mm pitch: 41 × 26 points
+  await expect(page.getByText(/· 1066 ·/)).toBeVisible({ timeout: 60_000 });
+  await page.getByRole('button', { name: 'Hintergrund messen' }).click();
+  await expect(page.getByText(/mit Hintergrund/)).toBeVisible({ timeout: 60_000 });
+  await page.getByRole('button', { name: 'Differenz zur Simulation' }).click();
+  await expect(page.getByText(/Rot: Messung lauter/)).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('narrow window: settings open as a drawer, no sideways scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.goto('/?demo');
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('tab', { name: 'Messung' })).toBeHidden();
+  await page.getByRole('button', { name: 'Einstellungen' }).click();
+  await expect(page.getByRole('tab', { name: 'Messung' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(800);
+});
