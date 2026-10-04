@@ -91,7 +91,7 @@ export class WorldCallouts {
     const seen = new Set<string>();
     list.forEach((c, i) => {
       seen.add(c.key);
-      const signature = JSON.stringify([c.badge, c.title, c.lines, c.accent, c.color, c.kind]);
+      const signature = JSON.stringify([c.badge, c.title, c.lines, c.accent, c.color, c.kind, c.spectrum]);
       let it = this.items.get(c.key);
       if (!it) {
         it = this.create(c);
@@ -165,6 +165,12 @@ export class WorldCallouts {
       a.className = 'wc-accent';
       a.textContent = c.accent;
       el.append(a);
+    }
+    if (c.spectrum) {
+      const chart = document.createElement('div');
+      chart.className = 'wc-chart';
+      chart.innerHTML = c.spectrum; // our own SVG markup (spectrumSvg.ts), labels escaped there
+      el.append(chart);
     }
     this.canvas.requestPaint?.();
   }

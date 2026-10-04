@@ -10,7 +10,7 @@
  * Job coordinates (mm): X = KiCad x − ox, Y = −(KiCad y − oy), Z = height above the F.Cu
  * copper centre (world y). That is right-handed with Z up, as openEMS expects.
  */
-import { circlePoints, padOutline, rotateKicad } from '../model/geometry';
+import { circlePoints, padOutline, pointInRing, rotateKicad } from '../model/geometry';
 import type { Vec2 } from '../model/types';
 import type { Grid } from '../compute/grid';
 import { findPad, netTerminals, padName, returnHeight, terminationPad, type PhysicsContext, type SourceModel } from '../physics/currents';
@@ -51,6 +51,8 @@ export interface JobSource {
   lumped: JobLumped[];
   /** Thin PEC straps (capacitors in a hot loop are shorts at these frequencies). */
   shorts: JobElement[];
+  /** Nets this source drives; their copper is kept clear of other copper on the same layer. */
+  nets: number[];
 }
 
 export interface FullwaveJob {
@@ -62,15 +64,30 @@ export interface FullwaveJob {
   outline: XY[];
   layers: { name: string; z: number; thickness: number }[];
   dielectrics: { zTop: number; zBottom: number; epsR: number; tanD: number }[];
-  /** Copper sheets per layer (pads, zones, via rings and tracks; all nets: neighbours couple too). */
-  copper: { layer: number; polys: XY[][] }[];
+  /** Net names; `net` fields below index into this list (0 = no net). */
+  nets: string[];
+  /**
+   * Copper sheets per layer (all nets: neighbours couple too). `kind` says what it is, so the
+   * runner can give a source's own copper priority over the rest (see run_job.py).
+   */
+  copper: { layer: number; polys: { net: number; kind: 'zone' | 'pad' | 'track' | 'via'; pts: XY[] }[] }[];
   /**
    * Centre lines of tracks and a line across every pad. They are snapped to the mesh as thin
    * wires, so narrow copper stays connected even when it is thinner than a cell.
    */
-  wires: { layer: number; a: XY; b: XY; width: number }[];
-  /** Plated barrels of vias and through-hole pads, as thin wires from z0 to z1. */
-  barrels: { x: number; y: number; z0: number; z1: number }[];
+  wires: { layer: number; net: number; a: XY; b: XY; width: number }[];
+  /**
+   * Plated barrels of vias and through-hole pads, as thin wires from z0 to z1. `isolate` lists
+   * the layers where a zone of another net covers the barrel: there it needs an antipad that
+   * the mesh resolves, or the via would touch that plane.
+   */
+  barrels: { x: number; y: number; z0: number; z1: number; net: number; r: number; isolate: number[] }[];
+  /**
+   * Two-pin capacitors of the board (decoupling, filters) as series R-L-C between their pads.
+   * Without them the planes form an open cavity that rings for a long time, and return
+   * currents that jump between planes through a capacitor have no path.
+   */
+  caps: (JobElement & { c: number; nets: number[]; esr?: number; esl?: number })[];
   sources: JobSource[];
   /** Sources that are not simulated, with the reason. */
   skipped: { id: string; name: string; reason: string }[];
@@ -128,6 +145,15 @@ function segmentPoly(a: Vec2, b: Vec2, w: number): Vec2[] {
   ];
 }
 
+/** "100n", "4u7", "10uF", "22p" → farads; NaN when it is not a capacitance. */
+export function capacitorValue(value: string): number {
+  const m = /^(\d+(?:[.,]\d+)?)\s*([pnuµm]?)(\d*)\s*F?\b/.exec(value.trim());
+  if (!m || (!m[2] && !/F/.test(value))) return NaN;
+  const mult = { p: 1e-12, n: 1e-9, u: 1e-6, µ: 1e-6, m: 1e-3, '': 1 }[m[2] ?? ''] ?? 1;
+  const digits = m[1]!.replace(',', '.');
+  return Number(m[3] ? `${digits}.${m[3]}` : digits) * mult;
+}
+
 /** "33R", "4k7", "100", "0R" → ohms; NaN when it is not a resistor value. */
 export function resistorValue(value: string): number {
   const v = value.trim().replace(',', '.');
@@ -145,35 +171,53 @@ export function buildJob(
   grid: Grid,
   meta: { fileName: string; hash: string },
   opts: JobOptions = DEFAULT_JOB_OPTIONS,
+  /** Capacitor data from the scenario (AI-PARTS-MANUAL.md), overrides the value field. */
+  parts: { ref: string; c?: number; esr?: number; esl?: number }[] = [],
 ): FullwaveJob {
   const { board, frame } = ctx;
   const J = (p: Vec2): XY => [round(p.x - frame.ox), round(-(p.y - frame.oy))];
   const L = board.layers;
 
   // --- geometry -------------------------------------------------------------------------------
-  const perLayer: XY[][][] = L.map(() => []);
-  for (const t of board.tracks) perLayer[t.layer]?.push(segmentPoly(t.a, t.b, t.width).map(J));
-  for (const p of board.pads) for (const li of p.layers) perLayer[li]?.push(padOutline(p).map(J));
-  for (const z of board.zones) for (const ring of z.polygons) if (ring.length >= 3) perLayer[z.layer]?.push(ring.map(J));
-  const wires: FullwaveJob['wires'] = board.tracks.map((t) => ({ layer: t.layer, a: J(t.a), b: J(t.b), width: t.width }));
+  type Poly = FullwaveJob['copper'][number]['polys'][number];
+  const perLayer: Poly[][] = L.map(() => []);
+  for (const t of board.tracks) perLayer[t.layer]?.push({ net: t.net, kind: 'track', pts: segmentPoly(t.a, t.b, t.width).map(J) });
+  for (const p of board.pads) for (const li of p.layers) perLayer[li]?.push({ net: p.net, kind: 'pad', pts: padOutline(p).map(J) });
+  for (const z of board.zones) for (const ring of z.polygons) if (ring.length >= 3) perLayer[z.layer]?.push({ net: z.net, kind: 'zone', pts: ring.map(J) });
+  const wires: FullwaveJob['wires'] = board.tracks.map((t) => ({ layer: t.layer, net: t.net, a: J(t.a), b: J(t.b), width: t.width }));
   for (const p of board.pads) {
     // along the long side, through the centre where tracks end
     const long = p.size.x >= p.size.y ? { x: p.size.x / 2 - p.size.y / 4, y: 0 } : { x: 0, y: p.size.y / 2 - p.size.x / 4 };
     const d = rotateKicad(long, p.angle);
     const a = J({ x: p.at.x - d.x, y: p.at.y - d.y });
     const b = J({ x: p.at.x + d.x, y: p.at.y + d.y });
-    for (const li of p.layers) wires.push({ layer: li, a, b, width: Math.min(p.size.x, p.size.y) });
+    for (const li of p.layers) wires.push({ layer: li, net: p.net, a, b, width: Math.min(p.size.x, p.size.y) });
   }
+  /**
+   * Layers where fill of another net comes close to a barrel. KiCad's fill already has the
+   * antipad as a hole, but a hole smaller than a cell disappears in the mesh, so look at rings
+   * 0.6–1.5 mm outside the barrel: fill there means the runner must cut a meshable antipad.
+   */
+  const isolateAt = (at: Vec2, r: number, net: number, from: number, to: number) => {
+    const ring = [0.6, 1, 1.5].flatMap((d) => circlePoints(at, r + d, 8));
+    const out: number[] = [];
+    for (let li = from; li <= to; li++)
+      if (board.zones.some((z) => z.layer === li && z.net !== net && ring.some((q) => z.polygons.some((poly) => pointInRing(q, poly))))) out.push(li);
+    return out;
+  };
   const barrels: FullwaveJob['barrels'] = [];
   for (const v of board.vias) {
-    for (let li = v.fromLayer; li <= v.toLayer; li++) perLayer[li]?.push(circlePoints(v.at, v.diameter / 2, 8).map(J));
+    for (let li = v.fromLayer; li <= v.toLayer; li++) perLayer[li]?.push({ net: v.net, kind: 'via', pts: circlePoints(v.at, v.diameter / 2, 8).map(J) });
     const [x, y] = J(v.at);
-    barrels.push({ x, y, z0: L[v.toLayer]!.y, z1: L[v.fromLayer]!.y });
+    barrels.push({ x, y, z0: L[v.toLayer]!.y, z1: L[v.fromLayer]!.y, net: v.net, r: v.diameter / 2, isolate: isolateAt(v.at, v.diameter / 2, v.net, v.fromLayer, v.toLayer) });
   }
   for (const p of board.pads) {
     if (p.kind !== 'thru_hole' || p.layers.length < 2) continue;
     const [x, y] = J(p.at);
-    barrels.push({ x, y, z0: L[p.layers[p.layers.length - 1]!]!.y, z1: L[p.layers[0]!]!.y });
+    const from = p.layers[0]!;
+    const to = p.layers[p.layers.length - 1]!;
+    const r = Math.max(p.size.x, p.size.y) / 2;
+    barrels.push({ x, y, z0: L[to]!.y, z1: L[from]!.y, net: p.net, r, isolate: isolateAt(p.at, r, p.net, from, to) });
   }
 
   const dielectrics = board.dielectrics.map((d) => {
@@ -236,6 +280,22 @@ export function buildJob(
     return { port, lumped };
   };
 
+  const netIds = (names: string[]) => names.map((n) => board.nets.indexOf(n)).filter((i) => i > 0);
+  const caps: FullwaveJob['caps'] = [];
+  for (const f of board.footprints) {
+    if (!/^C\d/i.test(f.ref) || f.pads.length !== 2) continue;
+    const data = parts.find((p) => p.ref === f.ref);
+    const c = data?.c ?? capacitorValue(f.value);
+    const [a, b] = f.pads as [number, number];
+    if (!(c > 0) || board.pads[a]!.net === board.pads[b]!.net) continue;
+    caps.push({
+      ...between(a, b),
+      c,
+      nets: [board.pads[a]!.net, board.pads[b]!.net],
+      ...(data?.esr !== undefined ? { esr: data.esr } : {}),
+      ...(data?.esl !== undefined ? { esl: data.esl } : {}),
+    });
+  }
   const out: JobSource[] = [];
   const skipped: FullwaveJob['skipped'] = [];
   for (const src of sources) {
@@ -248,11 +308,11 @@ export function buildJob(
     try {
       if (src.type === 'signal') {
         const { port, lumped } = loadsFor(src.nets, src.driver, src.load, 1, model.info.z0 ?? 50);
-        out.push({ id: src.id, name: src.name, type: src.type, ports: [port], lumped, shorts: [] });
+        out.push({ id: src.id, name: src.name, type: src.type, ports: [port], lumped, shorts: [], nets: netIds(src.nets) });
       } else if (src.type === 'diffpair') {
         const p = loadsFor([src.netP], src.driverP, src.load, 1, (model.info.z0 ?? 100) / 2);
         const n = loadsFor([src.netN], src.driverN, src.load, -1, (model.info.z0 ?? 100) / 2);
-        out.push({ id: src.id, name: src.name, type: src.type, ports: [p.port, n.port], lumped: [...p.lumped, ...n.lumped], shorts: [] });
+        out.push({ id: src.id, name: src.name, type: src.type, ports: [p.port, n.port], lumped: [...p.lumped, ...n.lumped], shorts: [], nets: netIds([src.netP, src.netN]) });
       } else if (src.type === 'loop') {
         const idx = src.pads.map((r) => findPad(board, r));
         if (idx.some((i) => i < 0)) throw new Error('pad-not-found');
@@ -272,7 +332,7 @@ export function buildJob(
         // let the loop current (L/R) ring for a long time before the run may stop
         const port: JobPort = { ...between(drive[0], drive[1]), r: 10, excite: 1 };
         const shorts = inside.filter((s) => s !== drive).map(([a, b]) => between(a, b));
-        out.push({ id: src.id, name: src.name, type: src.type, ports: [port], lumped: [], shorts });
+        out.push({ id: src.id, name: src.name, type: src.type, ports: [port], lumped: [], shorts, nets: [...new Set(idx.map((i) => board.pads[i]!.net).filter((n) => n > 0))] });
       } else {
         skipped.push({ id: src.id, name: src.name, reason: 'inductor' });
       }
@@ -289,6 +349,8 @@ export function buildJob(
     outline: (board.outline[0] ?? []).map(J),
     layers: L.map((l) => ({ name: l.name, z: round(l.y), thickness: l.thickness })),
     dielectrics,
+    nets: board.nets,
+    caps,
     copper: perLayer.map((polys, layer) => ({ layer, polys })).filter((c) => c.polys.length > 0),
     wires,
     barrels,

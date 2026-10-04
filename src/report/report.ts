@@ -21,6 +21,24 @@ function selectionLabel(): string {
   return band ? `${formatEng(sel.f0, 'Hz', 2)}–${formatEng(sel.f1, 'Hz', 2)}` : '';
 }
 
+/** Origin of the parts data and the parts without data (AI-PARTS-MANUAL.md), if any. */
+function partsSection(): string {
+  const info = app.partsInfo;
+  const prov = Object.values(info.provenance);
+  if (!prov.length && !info.missing.length) return '';
+  const n = (b: string) => prov.filter((p) => p.basis === b).length;
+  const rows = info.missing
+    .map((m) => `<tr><td>${esc(m.ref)}${m.mpn ? ` <span class="at">${esc(m.mpn)}</span>` : ''}</td><td>${esc(m.needed.join(', '))}</td><td>${esc(m.reason ?? '')}</td><td>${esc(m.assumed ?? '')}</td></tr>`)
+    .join('');
+  return `<h2>${esc(t.parts.title)}</h2>
+<p>${esc(t.parts.counts(n('datasheet'), n('calculated'), n('schematic'), n('assumed')))}</p>
+${
+  info.missing.length
+    ? `<table><thead><tr><th>${esc(t.report.colPart)}</th><th>${esc(t.report.colNeeded)}</th><th>${esc(t.report.colReason)}</th><th>${esc(t.report.colAssumed)}</th></tr></thead><tbody>${rows}</tbody></table>`
+    : `<p>${esc(t.parts.noneMissing)}</p>`
+}`;
+}
+
 export function buildReport(image: string | null): string {
   const R = t.report;
   const board = app.board;
@@ -148,6 +166,7 @@ ${hotspots}
 ${farTable}
 <p class="note">${esc(t.diag.farHint)}</p>
 
+${partsSection()}
 <h2>${esc(R.sources)}</h2>
 <table><thead><tr><th>${esc(R.colSource)}</th><th>${esc(R.colModel)}</th><th>${esc(R.colState)}</th><th>${esc(R.colNotes)}</th></tr></thead><tbody>${sources}</tbody></table>
 

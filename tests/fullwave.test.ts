@@ -7,7 +7,7 @@ import { worldFrame } from '../src/model/world';
 import { buildSource, type SourceModel } from '../src/physics/currents';
 import type { Source } from '../src/physics/sources';
 import { makeGrid } from '../src/compute/grid';
-import { buildJob, jobFrequencies, resistorValue, FULLWAVE_JOB_KIND } from '../src/fullwave/job';
+import { buildJob, capacitorValue, jobFrequencies, resistorValue, FULLWAVE_JOB_KIND } from '../src/fullwave/job';
 
 describe('full-wave job export', () => {
   const board = parseBoard(readFileSync('public/demo/demo-board.kicad_pcb', 'utf8'));
@@ -58,6 +58,14 @@ describe('full-wave job export', () => {
     expect(resistorValue('4k7')).toBeCloseTo(4700);
     expect(resistorValue('22')).toBe(22);
     expect(resistorValue('0R')).toBe(0);
+    expect(capacitorValue('100n')).toBeCloseTo(100e-9, 15);
+    expect(capacitorValue('4u7')).toBeCloseTo(4.7e-6, 12);
+    expect(capacitorValue('10uF')).toBeCloseTo(10e-6, 12);
+    expect(capacitorValue('22p')).toBeCloseTo(22e-12, 18);
+    expect(capacitorValue('BAT54')).toBeNaN();
+    // the demo's capacitors are in the job, between their two nets
+    expect(job.caps.length).toBeGreaterThanOrEqual(4);
+    for (const c of job.caps) expect(c.nets[0]).not.toBe(c.nets[1]);
     const f = jobFrequencies(20e6, 1e9, 12);
     expect(f[0]).toBe(20e6);
     expect(f[f.length - 1]).toBe(1e9);
@@ -75,9 +83,9 @@ describe('full-wave job export', () => {
 });
 
 // Needs an openEMS run of the demo job (tools/openems/run_job.py); skipped otherwise.
-const RESULT = 'tools/openems/runs/demo.job.fullwave.bin';
-describe.runIf(existsSync(RESULT))('full wave against the fast model (quasi-static limit)', () => {
-  it('agrees with stage 1 above the bad buck loop at the lowest frequency', async () => {
+const RESULT = ['tools/openems/runs/demo-full.fullwave.bin', 'tools/openems/runs/demo.job.fullwave.bin'].find((f) => existsSync(f)) ?? '';
+describe.runIf(!!RESULT)('full wave against the fast model (quasi-static limit)', () => {
+  it('agrees with stage 1 above the hot loops at the lowest frequency', async () => {
     const { parseFullwave, decodeTable } = await import('../src/fullwave/result');
     const { computeBlock } = await import('../src/compute/fieldKernel');
     const { coverColumns } = await import('../src/compute/grid');
@@ -113,15 +121,16 @@ describe.runIf(existsSync(RESULT))('full wave against the fast model (quasi-stat
             }
           }
         diffs.sort((a, b) => a - b);
-        return (p: number) => diffs[Math.floor(p * (diffs.length - 1))]!;
+        return (p: number) => (diffs.length ? diffs[Math.floor(p * (diffs.length - 1))]! : NaN);
       };
       const blocks = r.blocks.get(meta.id)!;
       blocks.forEach((b, k) => {
         const q = stats(b);
         report.push(`${meta.id} ${(r.freqs[k]! / 1e6).toFixed(0)} MHz: median ${q(0.5).toFixed(1)} dB, 10–90 % ${q(0.1).toFixed(1)}…${q(0.9).toFixed(1)} dB`);
       });
-      // in the quasi-static range both must agree within a few dB, 3 mm and more above the board
-      expect(Math.abs(stats(blocks[0]!)(0.5))).toBeLessThan(3);
+      // hot loops: in the quasi-static range both must agree within a few dB, 3 mm and more
+      // above the board (signal lines also depend on the driver and load model, so only report)
+      if (src.type === 'loop') expect(Math.abs(stats(blocks[0]!)(0.5))).toBeLessThan(3);
     }
     console.log(report.join('\n'));
   });

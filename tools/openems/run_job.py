@@ -64,11 +64,14 @@ def mesh_lines(job, src, res):
     air = m['airXY']
     # ports, lumped parts and straps need lines at both ends, or they collapse onto one line
     fx, fy = [], []
-    for e in src['ports'] + src['lumped'] + src['shorts']:
+    for e in src['ports'] + src['lumped'] + src['shorts'] + job.get('caps', []):
         fx += [e['start'][0], e['stop'][0]]
         fy += [e['start'][1], e['stop'][1]]
-    X = merge(fx, uniform(x0, x1, res), res / 3)
-    Y = merge(fy, uniform(y0, y1, res), res / 3)
+    # barrels that pass planes of other nets sit on a mesh node, so a small antipad isolates them
+    bx = [b['x'] for b in job['barrels'] if b.get('isolate')]
+    by = [b['y'] for b in job['barrels'] if b.get('isolate')]
+    X = merge(merge(fx, bx, res / 3), uniform(x0, x1, res), res / 3)
+    Y = merge(merge(fy, by, res / 3), uniform(y0, y1, res), res / 3)
     X = list(X) + [min(x0, gx[0]) - air, max(x1, gx[1]) + air]
     Y = list(Y) + [min(y0, gy[0]) - air, max(y1, gy[1]) + air]
     # copper sheets sit on mesh lines; at least two cells across every dielectric
@@ -113,23 +116,78 @@ def build(job, src, res, fmax, sim_path):
         mat = csx.AddMaterial(f'diel{i}', epsilon=d['epsR'], kappa=kappa)
         mat.AddLinPoly(outline, 'z', bottom, top - bottom, priority=1)
 
+    # priorities: other nets' copper 10 < isolation 15 < the source's own copper 20. At cells of
+    # 0.5–1 mm, clearances of 0.2 mm vanish: neighbouring pads, pours and planes would touch the
+    # source's nets. A ring of at least half a cell around the source's tracks and pads, and a
+    # cut around each barrel in planes of other nets, keeps them apart.
+    OTHER, ISO, OWN = 10, 15, 20
+    own = set(src.get('nets', []))
+    gap = max(0.2, 0.55 * res)
     copper = csx.AddMetal('copper')
+    copper_own = csx.AddMetal('copper_own')
+    layer_z = [l['z'] for l in job['layers']]
+
+    def eps_at(li):
+        """Permittivity at a copper sheet: mean of the materials above and below."""
+        n = len(job['layers'])
+        above = 1.0 if li == 0 else job['dielectrics'][min(li - 1, len(job['dielectrics']) - 1)]['epsR']
+        below = 1.0 if li == n - 1 else job['dielectrics'][min(li, len(job['dielectrics']) - 1)]['epsR']
+        return (above + below) / 2
+
+    cut = [csx.AddMaterial(f'clear{li}', epsilon=eps_at(li)) for li in range(len(layer_z))]
+
+    def grown(pts, d):
+        c = pts.mean(axis=0)
+        v = pts - c
+        n = np.linalg.norm(v, axis=1, keepdims=True)
+        n[n == 0] = 1
+        return pts + v / n * d * 1.414
+
     for c in job['copper']:
-        z = job['layers'][c['layer']]['z']
+        li = c['layer']
+        z = layer_z[li]
         for poly in c['polys']:
-            p = np.array(poly).T
-            if p.shape[1] >= 3:
-                copper.AddPolygon(p, 'z', z, priority=10)
-    for b in job['barrels']:
-        copper.AddCurve([[b['x'], b['x']], [b['y'], b['y']], [b['z0'], b['z1']]], priority=10)
-    # thin wires along tracks and across pads: connected even below the cell size
+            pts = np.array(poly['pts'])
+            if len(pts) < 3:
+                continue
+            mine = poly['net'] in own
+            (copper_own if mine else copper).AddPolygon(pts.T, 'z', z, priority=OWN if mine else OTHER)
+            if mine and poly['kind'] in ('pad', 'via'):
+                cut[li].AddPolygon(grown(pts, gap).T, 'z', z, priority=ISO)
     for w in job.get('wires', []):
-        z = job['layers'][w['layer']]['z']
-        if w['a'] != w['b']:
-            copper.AddCurve([[w['a'][0], w['b'][0]], [w['a'][1], w['b'][1]], [z, z]], priority=10)
+        li = w['layer']
+        z = layer_z[li]
+        if w['a'] == w['b']:
+            continue
+        mine = w['net'] in own
+        (copper_own if mine else copper).AddCurve([[w['a'][0], w['b'][0]], [w['a'][1], w['b'][1]], [z, z]], priority=OWN if mine else OTHER)
+        if mine:
+            a, b = np.array(w['a']), np.array(w['b'])
+            d = (b - a) / max(np.linalg.norm(b - a), 1e-9)
+            nrm = np.array([-d[1], d[0]])
+            h = w['width'] / 2 + gap
+            rect = np.array([a - d * h + nrm * h, b + d * h + nrm * h, b + d * h - nrm * h, a - d * h - nrm * h])
+            cut[li].AddPolygon(rect.T, 'z', z, priority=ISO)
+    for b in job['barrels']:
+        copper_own.AddCurve([[b['x'], b['x']], [b['y'], b['y']], [b['z0'], b['z1']]], priority=OWN)
+        a = max(0.75 * res, b.get('r', 0.3) + 0.2)
+        for li in b.get('isolate', []):
+            z = layer_z[li]
+            cut[li].AddBox([b['x'] - a, b['y'] - a, z], [b['x'] + a, b['y'] + a, z], priority=ISO)
 
     for k, s in enumerate(src['shorts']):
-        copper.AddCurve([[s['start'][0], s['stop'][0]], [s['start'][1], s['stop'][1]], [s['start'][2], s['stop'][2]]], priority=10)
+        copper_own.AddCurve([[s['start'][0], s['stop'][0]], [s['start'][1], s['stop'][1]], [s['start'][2], s['stop'][2]]], priority=OWN)
+    # the board's capacitors as series R-L-C (ESR 20 mΩ, ESL 0.5 nH): they tie the planes
+    # together like on the real board; a capacitor that is a strap of this hot loop stays a strap
+    strapped = {frozenset(x['label'].split('-')) for x in src['shorts']}
+    for k, c in enumerate(job.get('caps', [])):
+        if frozenset(c['label'].split('-')) in strapped:
+            continue
+        el = csx.AddLumpedElement(f'cap{k}', ny=c['dir'], caps=True, R=c.get('esr', 0.02), L=c.get('esl', 0.5e-9), C=c['c'], LEtype=1)
+        el.AddBox(c['start'], c['stop'], priority=17)
+
+    # ports and lumped parts above the isolation (it would clear their edges between two pads)
+    # and below the source copper (inside the pads the metal wins, the element sits in the gap)
     for k, l in enumerate(src['lumped']):
         kw = {}
         if l.get('r') is not None:
@@ -139,11 +197,11 @@ def build(job, src, res, fmax, sim_path):
             # a parallel bleeder so a charged load does not keep energy forever
             kw.setdefault('R', 10e3)
         el = csx.AddLumpedElement(f'lumped{k}', ny=l['dir'], caps=True, **kw)
-        el.AddBox(l['start'], l['stop'], priority=11)
+        el.AddBox(l['start'], l['stop'], priority=17)
     ports = []
     for k, p in enumerate(src['ports']):
         start, stop = list(p['start']), list(p['stop'])
-        ports.append(fd.AddLumpedPort(k + 1, p['r'], start, stop, p['dir'], excite=p['excite'], priority=11))
+        ports.append(fd.AddLumpedPort(k + 1, p['r'], start, stop, p['dir'], excite=p['excite'], priority=17))
 
     g = job['grid']
     box0 = [g['x0'], -(g['z0'] + (g['nz'] - 1) * g['dz']), g['y0']]

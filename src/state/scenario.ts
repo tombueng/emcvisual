@@ -35,7 +35,7 @@ export interface ViewSettings {
   /** Which field the volume, slice, probe and lines show. */
   fieldKind: 'H' | 'E';
   /** Speech bubbles in the 3D view. */
-  callouts: { hints: boolean; sources: boolean; hotspots: boolean; maxHints: number; inWorld: boolean };
+  callouts: { hints: boolean; sources: boolean; hotspots: boolean; maxHints: number; inWorld: boolean; spectrum: boolean };
 }
 
 export interface ScenarioSettings {
@@ -46,6 +46,45 @@ export interface ScenarioSettings {
   returnModel: 'image' | 'detour';
 }
 
+/** Where a value came from (docs/AI-PARTS-MANUAL.md), keyed "<source id>/<field path>" or "part:<ref>/<field>". */
+export interface Provenance {
+  basis: 'datasheet' | 'calculated' | 'schematic' | 'assumed';
+  ref?: string;
+  mpn?: string;
+  /** URL of the document. */
+  source?: string;
+  /** Page, table, parameter name, test condition. */
+  where?: string;
+  note?: string;
+}
+
+/** A part whose data could not be found, and what was assumed instead. */
+export interface MissingPart {
+  ref: string;
+  mpn?: string;
+  needed: string[];
+  reason?: string;
+  assumed?: string;
+}
+
+/** Capacitor data for the full-wave simulation (F, Ω, H). */
+export interface PartData {
+  ref: string;
+  c?: number;
+  esr?: number;
+  esl?: number;
+}
+
+/** Parts information that came with a scenario (usually filled in by an AI agent). */
+export interface PartsInfo {
+  parts: PartData[];
+  provenance: Record<string, Provenance>;
+  missing: MissingPart[];
+  notes: string;
+}
+
+export const EMPTY_PARTS_INFO: PartsInfo = { parts: [], provenance: {}, missing: [], notes: '' };
+
 export interface Scenario {
   kind: typeof SCENARIO_KIND;
   version: number;
@@ -53,6 +92,34 @@ export interface Scenario {
   settings: ScenarioSettings;
   sources: Source[];
   view: ViewSettings;
+  parts?: PartData[];
+  provenance?: Record<string, Provenance>;
+  missing?: MissingPart[];
+  notes?: string;
+}
+
+const BASES = new Set(['datasheet', 'calculated', 'schematic', 'assumed']);
+
+/** The parts information of a scenario, with anything malformed dropped. */
+export function partsInfoOf(sc: Scenario): PartsInfo {
+  const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
+  const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : undefined);
+  const text = (x: unknown) => (typeof x === 'string' ? x : undefined);
+  const parts = (Array.isArray(sc.parts) ? sc.parts : []).filter(isObj).flatMap((p) =>
+    text(p.ref) ? [{ ref: p.ref as string, c: num(p.c), esr: num(p.esr), esl: num(p.esl) }] : [],
+  );
+  const provenance: Record<string, Provenance> = {};
+  if (isObj(sc.provenance))
+    for (const [k, v] of Object.entries(sc.provenance)) {
+      if (!isObj(v) || !BASES.has(v.basis as string)) continue;
+      provenance[k] = { basis: v.basis as Provenance['basis'], ref: text(v.ref), mpn: text(v.mpn), source: text(v.source), where: text(v.where), note: text(v.note) };
+    }
+  const missing = (Array.isArray(sc.missing) ? sc.missing : []).filter(isObj).flatMap((m) =>
+    text(m.ref)
+      ? [{ ref: m.ref as string, mpn: text(m.mpn), needed: Array.isArray(m.needed) ? m.needed.filter((x): x is string => typeof x === 'string') : [], reason: text(m.reason), assumed: text(m.assumed) }]
+      : [],
+  );
+  return { parts, provenance, missing, notes: text(sc.notes) ?? '' };
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
@@ -73,7 +140,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   showFieldLines: false,
   showReturnPaths: true,
   fieldKind: 'H',
-  callouts: { hints: true, sources: true, hotspots: false, maxHints: 5, inWorld: false },
+  callouts: { hints: true, sources: true, hotspots: false, maxHints: 5, inWorld: false, spectrum: true },
 };
 
 export const DEFAULT_SETTINGS: ScenarioSettings = { quality: 'normal', fMax: 1e9, planeOverrides: {}, returnModel: 'detour' };
@@ -95,6 +162,10 @@ export function migrateScenario(raw: unknown): Scenario {
     settings: { ...DEFAULT_SETTINGS, ...((o.settings as Partial<ScenarioSettings>) ?? {}) },
     sources,
     view: { ...DEFAULT_VIEW, ...((o.view as Partial<ViewSettings>) ?? {}) },
+    parts: o.parts as PartData[] | undefined,
+    provenance: o.provenance as Record<string, Provenance> | undefined,
+    missing: o.missing as MissingPart[] | undefined,
+    notes: o.notes as string | undefined,
   };
 }
 

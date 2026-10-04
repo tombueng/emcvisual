@@ -10,6 +10,9 @@ import { t } from '../i18n';
 import { toWorld } from '../model/world';
 import { farMargins, gainText, rankedDiagnostics, diagnosticText, sourceName, sourceColor } from '../report/texts';
 import type { Diagnostic } from '../physics/diagnostics';
+import { cispr32ClassB } from '../physics/farfield';
+import { MAX_GAIN_DB } from '../physics/attribution';
+import { miniSpectrumSvg } from './spectrumSvg';
 
 export interface Callout {
   key: string;
@@ -23,6 +26,8 @@ export interface Callout {
   accent?: string;
   /** Full text, shown on hover. */
   more?: string;
+  /** Small 3 m far-field spectrum (SVG markup). */
+  spectrum?: string;
   onclick: () => void;
 }
 
@@ -46,6 +51,21 @@ export function buildCallouts(viewer: Viewer): Callout[] {
   const top = board.layers[0]!;
   const surface = top.y + top.thickness / 2;
   const out: Callout[] = [];
+  // 3 m spectra per source for the bubbles: as is, and for a hint with the fix applied
+  const far = c.spectrum ? new Map((engine.farReadout(3)?.sources ?? []).map((s) => [s.id, s.lines])) : new Map<string, { f: number; db: number }[]>();
+  const limits = cispr32ClassB(3);
+  const chart = (id: string, color: string, shift?: number) => {
+    const lines = far.get(id);
+    if (!lines?.length) return undefined;
+    return miniSpectrumSvg(lines, {
+      width: 196,
+      height: 58,
+      color,
+      limits,
+      shift: shift !== undefined ? Math.min(shift, MAX_GAIN_DB) : undefined,
+      labels: { left: '30 MHz', right: '1 GHz', caption: shift !== undefined ? t.callouts.chartFixed : t.callouts.chart },
+    });
+  };
   if (c.hints) {
     rankedDiagnostics()
       .slice(0, c.maxHints > 0 ? c.maxHints : undefined)
@@ -61,6 +81,7 @@ export function buildCallouts(viewer: Viewer): Callout[] {
           lines: [shortText(d)],
           accent: d.gain ? gainText(d) : margin !== null ? t.diag.margin(margin) : undefined,
           more: diagnosticText(d),
+          spectrum: chart(d.sourceId, sourceColor(d.sourceId), d.gain?.db),
           onclick: () => probeTo(w[0], w[2]),
         });
       });
@@ -80,6 +101,7 @@ export function buildCallouts(viewer: Viewer): Callout[] {
         title: s.name,
         lines: peak ? [t.callouts.peak(peak.db.toFixed(0))] : [],
         accent: f ? t.callouts.far(t.diag.margin(f.worst)) : undefined,
+        spectrum: chart(s.id, s.color),
         onclick: () => (app.selectedId = s.id),
       });
     }

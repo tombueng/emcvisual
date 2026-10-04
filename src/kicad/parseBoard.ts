@@ -156,9 +156,13 @@ export function parseBoard(text: string, fileName = 'board.kicad_pcb'): BoardMod
     };
     let ref = '';
     let value = '';
+    // the symbol fields KiCad copies onto the footprint (Datasheet, MPN, Manufacturer, …)
+    const fields: Record<string, string> = {};
     for (const p of children(fpNode, 'property')) {
-      if (str(p, 1) === 'Reference') ref = str(p, 2);
-      if (str(p, 1) === 'Value') value = str(p, 2);
+      const key = str(p, 1);
+      if (key === 'Reference') ref = str(p, 2);
+      else if (key === 'Value') value = str(p, 2);
+      else if (key && !/^(Footprint|Sheetfile|Sheetname|ki_.*|KiLib_.*)$/.test(key) && str(p, 2) && str(p, 2) !== '~') fields[key] = str(p, 2);
     }
     for (const t of children(fpNode, 'fp_text')) {
       if (str(t, 1) === 'reference' && !ref) ref = str(t, 2);
@@ -228,6 +232,7 @@ export function parseBoard(text: string, fileName = 'board.kicad_pcb'): BoardMod
       body,
       height: estimateHeight(ref, str(fpNode, 1)),
       pads: fpPads,
+      fields,
     });
   }
 

@@ -3,6 +3,7 @@
  * seo.config.json so the project name and URL live in one place (docs/RENAMING.md):
  * head tags, JSON-LD, robots.txt, sitemap.xml and llms.txt.
  */
+import { readFileSync } from 'node:fs';
 import type { Plugin } from 'vite';
 import branding from '../../branding.config.json' with { type: 'json' };
 import seo from '../../seo.config.json' with { type: 'json' };
@@ -106,6 +107,7 @@ Keywords: ${seo.keywords.join(', ')}
 - [Roadmap](${docs('docs/ROADMAP.md')}): stages, measurement hardware, openEMS (German)
 - [Field check for CI](${docs('docs/CI-FELDCHECK.md')}): command line, GitHub Actions example (German)
 - [openEMS workflow](${docs('tools/openems/README.md')}): full-wave export, run, import (German)
+- [Parts manual for AI agents](${branding.siteUrl}ai-parts-manual.md): how to fill in source values from datasheets and report missing data
 - [License: 0BSD](${docs('LICENSE')})
 - [Source code](${repoUrl})
 `;
@@ -124,6 +126,8 @@ const files: Record<string, { type: string; body: () => string }> = {
   'robots.txt': { type: 'text/plain', body: robotsTxt },
   'sitemap.xml': { type: 'application/xml', body: sitemapXml },
   'llms.txt': { type: 'text/plain; charset=utf-8', body: llmsTxt },
+  // the manual for AI agents that fill in part data (linked from the app and from llms.txt)
+  'ai-parts-manual.md': { type: 'text/markdown; charset=utf-8', body: () => readFileSync(new URL('../../docs/AI-PARTS-MANUAL.md', import.meta.url), 'utf8') },
 };
 
 export function seoPlugin(): Plugin {

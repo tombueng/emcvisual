@@ -95,6 +95,7 @@
       </span>
       {#each c.lines as l, k (k)}<span class="line">{l}</span>{/each}
       {#if c.accent}<span class="accent value">{c.accent}</span>{/if}
+      {#if c.spectrum}<span class="chart">{@html c.spectrum}</span>{/if}
       {#if c.more}<span class="more">{c.more}</span>{/if}
     </button>
   {/each}
@@ -125,6 +126,7 @@
     flex-direction: column;
     gap: 1px;
     max-width: 230px;
+    min-width: 0;
     padding: 5px 8px 6px;
     text-align: left;
     font: inherit;
@@ -172,6 +174,14 @@
   }
   .accent {
     color: var(--field);
+  }
+  .chart {
+    display: block;
+    margin-top: 4px;
+    line-height: 0;
+  }
+  .bubble:global(.pin) .chart {
+    display: none;
   }
   .more {
     display: none;

@@ -30,6 +30,8 @@
   }
 
   const changed = () => engine.sourceChanged(source.id);
+  // where the values came from, if an AI agent filled them in (docs/AI-PARTS-MANUAL.md)
+  const origin = $derived(Object.entries(app.partsInfo.provenance).filter(([k]) => k.startsWith(`${source.id}/`)).map(([k, p]) => [k.slice(source.id.length + 1), p] as const));
 
   function setLoad(model: LoadModel['model']) {
     if (source.type !== 'signal' && source.type !== 'diffpair') return;
@@ -211,9 +213,49 @@
       <p class="warn-text">{t.editor.warnings[w.split(':')[0] ?? ''] ?? w}{w.includes(':') ? ` ${w.slice(w.indexOf(':') + 1)}` : ''}</p>
     {/each}
   {/if}
+
+  {#if origin.length}
+    <div class="section-title">{t.parts.origin}</div>
+    <ul class="origin">
+      {#each origin as [field, p] (field)}
+        <li class:assumed={p.basis === 'assumed'}>
+          <span class="value">{field}</span>
+          <span class="basis">{t.parts.bases[p.basis]}{p.ref ? ` · ${p.ref}` : ''}{p.mpn ? ` (${p.mpn})` : ''}</span>
+          {#if p.where || p.note}<span class="hint">{[p.where, p.note].filter(Boolean).join(' · ')}</span>{/if}
+          {#if p.source && /^https?:\/\//.test(p.source)}<a href={p.source} target="_blank" rel="noopener">{t.parts.document}</a>{/if}
+        </li>
+      {/each}
+    </ul>
+  {/if}
 </div>
 
 <style>
+  .origin {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+  }
+  .origin li {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 3px 0 3px 8px;
+    border-left: 2px solid var(--line);
+    margin-bottom: 4px;
+  }
+  .origin li.assumed {
+    border-left-color: var(--warn);
+  }
+  .origin .basis {
+    color: var(--muted);
+  }
+  .origin .hint {
+    margin: 0;
+  }
+  .origin a {
+    color: var(--probe);
+  }
   .editor {
     padding: 4px 0 12px;
   }

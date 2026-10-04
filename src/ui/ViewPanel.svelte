@@ -175,6 +175,7 @@
       </div>
     {/if}
     <label class="check"><input type="checkbox" bind:checked={app.view.callouts.sources} onchange={() => engine.scheduleSave()} /> {t.callouts.sources}</label>
+    <label class="check"><input type="checkbox" bind:checked={app.view.callouts.spectrum} onchange={() => engine.scheduleSave()} /> {t.callouts.spectrum}</label>
     <label class="check"><input type="checkbox" bind:checked={app.view.callouts.hotspots} onchange={() => engine.scheduleSave()} /> {t.callouts.hotspots}</label>
     <label class="check" class:disabled={!htmlInCanvas}>
       <input type="checkbox" bind:checked={app.view.callouts.inWorld} disabled={!htmlInCanvas} onchange={() => engine.scheduleSave()} />

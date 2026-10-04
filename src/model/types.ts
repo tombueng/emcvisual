@@ -99,6 +99,8 @@ export interface Footprint {
   /** Estimated body height in mm (no 3D models in the browser). */
   height: number;
   pads: number[];
+  /** Further symbol fields on the footprint: Datasheet, MPN, Manufacturer, Description, … */
+  fields: Record<string, string>;
 }
 
 export interface Zone {

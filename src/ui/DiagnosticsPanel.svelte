@@ -7,6 +7,30 @@
   import { diagnosticText, farMargins, gainText, rankedDiagnostics } from '../report/texts';
   import { MAX_GAIN_DB } from '../physics/attribution';
   import { buildReport } from '../report/report';
+  import { buildAiRequest } from '../ai/request';
+  import { suggestSources } from '../physics/suggest';
+  import { branding } from '../branding';
+  import type { Source } from '../physics/sources';
+
+  const manualUrl = `${branding.siteUrl}ai-parts-manual.md`;
+
+  function exportAiRequest() {
+    if (!app.board) return;
+    const req = buildAiRequest(
+      app.board,
+      engine.scenario(),
+      suggestSources(app.board).map((x) => ({ reason: x.reason, source: x.source as Source })),
+      manualUrl,
+    );
+    const name = (app.board.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+    downloadText(`${name}.ai-request.json`, JSON.stringify(req, null, 1));
+  }
+
+  const basisCount = $derived.by(() => {
+    const c = { datasheet: 0, calculated: 0, schematic: 0, assumed: 0 };
+    for (const p of Object.values(app.partsInfo.provenance)) c[p.basis]++;
+    return c;
+  });
   import { downloadText } from '../state/persist';
 
   function saveReport() {
@@ -62,8 +86,33 @@
 
 <div class="diag">
   <div class="report">
+    <button class="btn small" onclick={exportAiRequest} disabled={!app.board} title={t.parts.exportHint}>{t.parts.export}</button>
     <button class="btn small" onclick={saveReport} disabled={!app.board} title={t.report.buttonHint}>{t.report.button}</button>
   </div>
+  <p class="hint">{t.parts.howto} <a href={manualUrl} target="_blank" rel="noopener">{t.parts.manual}</a></p>
+
+  {#if Object.keys(app.partsInfo.provenance).length || app.partsInfo.missing.length}
+    <div class="section-title">{t.parts.title}</div>
+    <p class="hint value">{t.parts.counts(basisCount.datasheet, basisCount.calculated, basisCount.schematic, basisCount.assumed)}</p>
+    {#if app.partsInfo.missing.length}
+      <div class="sub">{t.parts.missingTitle(app.partsInfo.missing.length)}</div>
+      <ul>
+        {#each app.partsInfo.missing as m, i (i)}
+          <li style:--c="var(--warn)">
+            <div class="static">
+              <span class="row"><span class="src">{m.ref}{m.mpn ? ` · ${m.mpn}` : ''}</span></span>
+              <span>{m.needed.join(', ')}</span>
+              {#if m.reason}<span class="hint">{m.reason}</span>{/if}
+              {#if m.assumed}<span class="hint">{t.parts.assumed}: {m.assumed}</span>{/if}
+            </div>
+          </li>
+        {/each}
+      </ul>
+    {:else}
+      <p class="hint">{t.parts.noneMissing}</p>
+    {/if}
+    {#if app.partsInfo.notes}<p class="hint">{app.partsInfo.notes}</p>{/if}
+  {/if}
   <div class="section-title">{t.diag.warnings}</div>
   {#if app.diagnostics.length === 0}
     <p class="hint">{t.diag.none}</p>
@@ -143,7 +192,14 @@
   .report {
     display: flex;
     justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 6px;
     margin-bottom: 4px;
+  }
+  .sub {
+    font-size: 12px;
+    color: var(--warn);
+    margin: 6px 0 4px;
   }
   ul {
     list-style: none;

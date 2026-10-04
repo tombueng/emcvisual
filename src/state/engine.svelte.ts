@@ -32,7 +32,7 @@ import { cispr32ClassB, dipoleMoment, farField, type LimitSegment } from '../phy
 import { distPointSegment } from '../model/geometry';
 import { PickIndex } from '../model/pickIndex';
 import { app, type Hotspot, type LineInfo } from './app.svelte';
-import { DEFAULT_VIEW, migrateScenario, hashText, SCENARIO_KIND, SCENARIO_VERSION, type Scenario } from './scenario';
+import { DEFAULT_VIEW, EMPTY_PARTS_INFO, partsInfoOf, migrateScenario, hashText, SCENARIO_KIND, SCENARIO_VERSION, type Scenario } from './scenario';
 import { loadLocal, saveLocal } from './persist';
 
 interface VolumeEntry {
@@ -170,6 +170,7 @@ class Engine {
       app.fMax = sc?.settings.fMax ?? 1e9;
       app.returnModel = sc?.settings.returnModel ?? 'detour';
       app.view = { ...DEFAULT_VIEW, ...(sc?.view ?? {}) };
+      app.partsInfo = sc ? partsInfoOf(sc) : EMPTY_PARTS_INFO;
       app.selectedId = keep && app.sources.some((s) => s.id === selected) ? selected : (app.sources[0]?.id ?? null);
       app.composite = null;
       app.lines = [];
@@ -456,6 +457,7 @@ class Engine {
       this.grid,
       { fileName: app.board.source.fileName, hash: app.boardHash },
       { ...DEFAULT_JOB_OPTIONS, fMax: Math.min(app.fMax, 1e9), ...opts },
+      app.partsInfo.parts,
     );
     return JSON.stringify(job);
   }
@@ -874,6 +876,10 @@ class Engine {
       settings: { quality: app.quality, fMax: app.fMax, planeOverrides: $state.snapshot(app.planeOverrides), returnModel: app.returnModel },
       sources: $state.snapshot(app.sources),
       view: $state.snapshot(app.view),
+      ...(app.partsInfo.parts.length ? { parts: app.partsInfo.parts } : {}),
+      ...(Object.keys(app.partsInfo.provenance).length ? { provenance: app.partsInfo.provenance } : {}),
+      ...(app.partsInfo.missing.length ? { missing: app.partsInfo.missing } : {}),
+      ...(app.partsInfo.notes ? { notes: app.partsInfo.notes } : {}),
     };
   }
 
@@ -885,6 +891,7 @@ class Engine {
     app.fMax = sc.settings.fMax;
     app.returnModel = sc.settings.returnModel;
     app.view = { ...sc.view };
+    app.partsInfo = partsInfoOf(sc);
     app.selectedId = app.sources[0]?.id ?? null;
     this.rebuildEverything();
     this.applyViewToViewer();

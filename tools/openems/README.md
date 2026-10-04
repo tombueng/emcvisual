@@ -30,7 +30,8 @@ cd tools/openems/src
   --python-venv-mode site --python-venv-dir "$PWD/../.venv"
 ```
 
-`src/`, `.venv/`, `runs/` und `build.log` stehen in `.gitignore`.
+`src/`, `.venv/`, `runs/` und `build.log` stehen in `.gitignore`. openEMS selbst steht unter
+GPL-3.0 und wird nur lokal installiert; `run_job.py` gehört zum Projekt (0BSD).
 
 ## Was gerechnet wird
 
@@ -39,6 +40,13 @@ cd tools/openems/src
   Drähte verschwinden Bahnen, die schmaler als eine Zelle sind, im Gitter. Vias und
   durchkontaktierte Pads werden als Drähte zwischen ihren Lagen modelliert. Die Dielektrika
   liegen zwischen den Kupferlagen; die Kupferdicke liegt weit unter der Zellgröße.
+- **Abstände bei groben Zellen:** Bei 0,5–1 mm Zellen verschwinden Abstände von 0,2 mm, und
+  Nachbarpads, Füllflächen und Lagen würden die Netze der Quelle berühren. Deshalb hat das
+  Kupfer der gerechneten Quelle Vorrang (Priorität 20). Um ihre Bahnen und Pads liegt ein
+  Freiraum von mindestens einer halben Zelle (15), der fremdes Kupfer (10) auf derselben Lage
+  zurückdrängt. Vias, die Lagen anderer Netze durchqueren, liegen auf einer eigenen
+  Gitterlinie und bekommen dort einen Freistich von mindestens ¾ Zelle. Ports und konzentrierte
+  Bauteile (17) liegen über dem Freiraum und unter dem Kupfer.
 - **Gitter:** gleichmäßig über der Platine (`res`), zusätzliche Linien an den Enden jedes
   Ports und jedes konzentrierten Bauteils, nach außen sanft gröber (Faktor ≤ 1,4) bis 4 mm,
   Luft 20–25 mm, Rand PML (8 Zellen).

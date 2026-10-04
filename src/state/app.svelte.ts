@@ -4,7 +4,7 @@ import type { PlaneLayer, PlaneOverrides } from '../model/planes';
 import type { Quality } from '../compute/grid';
 import type { Source } from '../physics/sources';
 import type { SourceModel } from '../physics/currents';
-import { DEFAULT_VIEW, type ViewSettings } from './scenario';
+import { DEFAULT_VIEW, EMPTY_PARTS_INFO, type PartsInfo, type ViewSettings } from './scenario';
 import type { ProbeReadout } from './engine.svelte';
 import type { Diagnostic } from '../physics/diagnostics';
 import type { Detour } from '../physics/returnPaths';
@@ -101,6 +101,8 @@ class AppState {
   hotspots = $state.raw<Hotspot[]>([]);
   /** Far-field share of return-path problems and plane gaps per source (attribution.ts). */
   attribution = $state.raw<Record<string, SourceAttribution>>({});
+  /** Parts data that came with the scenario: origin of values, missing parts (AI-PARTS-MANUAL.md). */
+  partsInfo = $state.raw<PartsInfo>(EMPTY_PARTS_INFO);
   spectrumMode = $state<SpectrumMode>('probe');
   rightTab = $state<'view' | 'diag' | 'scan'>('view');
   fieldLinesBusy = $state(false);

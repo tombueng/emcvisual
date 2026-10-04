@@ -219,3 +219,32 @@ test('speech bubbles inside the scene with HTML-in-Canvas', async ({ page }) => 
   await page.screenshot({ path: 'e2e/output/world-callouts.png' });
   expect(errors).toEqual([]);
 });
+
+test('parts data for AI: export, and an answer with sources of values and missing parts', async ({ page }) => {
+  await page.goto('/?demo');
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('tab', { name: /Diagnose/ }).click();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Bauteildaten für KI exportieren' }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe('demo-board.ai-request.json');
+  const req = JSON.parse(await (await import('node:fs/promises')).readFile((await file.path())!, 'utf8'));
+  expect(req.components.length).toBe(16);
+
+  // the AI's answer: the same scenario plus provenance and a missing part
+  const answer = {
+    ...req.scenario,
+    provenance: { 'clk-good/waveform.tr': { basis: 'datasheet', ref: 'Y1', source: 'https://example.org/y1.pdf', where: 'p. 3, Rise/Fall Time' } },
+    missing: [{ ref: 'U2', mpn: 'MCU (Demo)', needed: ['load.cLoad of clk-good'], reason: 'no part number', assumed: '5 pF' }],
+  };
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Szenario laden' }).click();
+  await (await chooser).setFiles({ name: 'answer.scenario.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(answer)) });
+  await expect(page.getByText('Herkunft der Bauteildaten')).toBeVisible();
+  await expect(page.getByText('1 Bauteil ohne Daten')).toBeVisible();
+  await expect(page.locator('.diag').getByText('U2 · MCU (Demo)')).toBeVisible();
+  // the source editor shows where the edge time came from
+  await page.locator('.list li').filter({ hasText: 'Takt gut' }).locator('.pick').click();
+  await expect(page.getByText('Herkunft der Werte')).toBeVisible();
+  await expect(page.locator('.origin')).toContainText('Datenblatt · Y1');
+});

@@ -220,3 +220,11 @@ input[type='checkbox'] {
 .wc-accent {
   color: var(--field);
 }
+.wc-chart {
+  margin-top: 0.35em;
+  line-height: 0;
+}
+.wc-chart svg {
+  width: 17em;
+  height: auto;
+}
