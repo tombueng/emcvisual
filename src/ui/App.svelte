@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import { branding } from '../branding';
-  import { t } from '../i18n';
+  import { t, i18n, setLang, LANGS, type Lang } from '../i18n';
   import { app } from '../state/app.svelte';
   import { engine } from '../state/engine.svelte';
   import { Viewer } from '../render/viewer';
@@ -60,7 +60,7 @@
     const base = import.meta.env.BASE_URL;
     const [pcb, scenario] = await Promise.all([
       fetch(`${base}demo/demo-board.kicad_pcb`).then((r) => r.text()),
-      fetch(`${base}demo/demo-board.scenario.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch(`${base}demo/demo-board.scenario${i18n.lang === 'de' ? '' : `.${i18n.lang}`}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ]);
     await engine.loadBoard(pcb, 'demo-board.kicad_pcb', scenario);
   }
@@ -314,6 +314,12 @@
           <option value="fine">{t.top.qualityOptions.fine}</option>
         </select>
       </label>
+      <label class="quality">
+        <span class="sr-only">{t.top.language}</span>
+        <select class="lang" value={i18n.lang} aria-label={t.top.language} onchange={(e) => setLang((e.currentTarget as HTMLSelectElement).value as Lang)}>
+          {#each LANGS as l (l)}<option value={l}>{l.toUpperCase()}</option>{/each}
+        </select>
+      </label>
       <span class="status value">
         {#if app.compute.busy}{t.top.computing} {Math.round(app.compute.progress * 100)} %{:else if app.compute.lastMs > 0}{t.top.computed(app.compute.lastMs)}{/if}
       </span>
@@ -429,6 +435,16 @@
   }
   .quality select {
     width: 140px;
+  }
+  .quality select.lang {
+    width: 58px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
   }
   .status {
     min-width: 150px;

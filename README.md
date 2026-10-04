@@ -3,6 +3,12 @@
 > Arbeitstitel. Der Name steht nur in `branding.config.json` und lässt sich mit einem Skript
 > ändern, siehe [docs/RENAMING.md](docs/RENAMING.md).
 
+**In English:** a browser tool that computes the quasi-static magnetic near field of a KiCad
+board and turns it into a 3D world you can look at and listen to: glowing field volumes,
+field lines, a virtual near-field probe with a spectrum-analyzer view, a far-field estimate
+against CISPR 32 and layout hints (return paths over plane gaps, reference changes at vias).
+The interface speaks German and English; the docs are in German.
+
 Elektromagnetische Felder einer Leiterplatte kann man nicht sehen. Dieses Werkzeug rechnet
 sie aus einer KiCad-Platine aus und macht daraus eine **begehbare 3D-Welt mit Bild und Ton**:
 Wo leuchtet es, wo brummt es, und was passiert, wenn die Flanke langsamer wird oder der
@@ -26,6 +32,7 @@ Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 - Diagnose: unterbrochene Rückstrompfade, Bezugswechsel an Vias, fehlende Stitching-Vias,
   Hotspots mit den Netzen und Bauteilen in der Nähe
 - Szenario als JSON speichern, PNG- und CSV-Export
+- Oberfläche auf Deutsch und Englisch (Auswahl oben rechts, Standard nach Browsersprache)
 
 Plan, Abnahmekriterien und Umsetzungsnotizen: [docs/stufe-1/PLAN.md](docs/stufe-1/PLAN.md).
 

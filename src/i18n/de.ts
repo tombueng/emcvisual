@@ -17,6 +17,7 @@ export const de = {
     computing: 'Feld wird berechnet',
     computed: (ms: number) => `berechnet in ${(ms / 1000).toFixed(1).replace('.', ',')} s`,
     help: 'Hilfe',
+    language: 'Sprache',
   },
   empty: {
     title: 'Ziehe eine KiCad-Platine hierher',

@@ -55,3 +55,24 @@ test('editing sources: remove one, change a rise time, show field lines', async 
   await expect(page.getByText('Feldlinien werden berechnet …')).toBeHidden({ timeout: 30_000 });
   expect(errors).toEqual([]);
 });
+
+test('switching to English keeps the board and the results', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demo-Platine laden' }).click();
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+
+  await page.getByLabel('Sprache').selectOption('en');
+  await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible();
+  await expect(page.locator('.list li')).toHaveCount(6);
+  await expect(page.getByText(/computed in \d+\.\d s/)).toBeVisible();
+  await page.getByRole('tab', { name: /Diagnostics/ }).click();
+  await expect(page.getByText(/Return path broken/).first()).toBeVisible();
+
+  // the choice sticks across a reload; the demo then comes with English source names
+  await page.reload();
+  await page.getByRole('button', { name: 'Load demo board' }).click();
+  await expect(page.locator('.list li').first()).toContainText('Buck, tight loop');
+  expect(errors).toEqual([]);
+});

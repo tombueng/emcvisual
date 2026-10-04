@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app } from '../state/app.svelte';
   import { engine } from '../state/engine.svelte';
-  import { t } from '../i18n';
+  import { t, fmtNum } from '../i18n';
   import { formatEng } from '../physics/units';
   import { downloadText } from '../state/persist';
 
@@ -239,7 +239,7 @@
         <button class="csv" onclick={exportCsv}>{t.probe.csv}</button>
         <span>{data.unit}</span>
         {#if data.limits}<span class="limit">{t.probe.limit}</span>{/if}
-        {#if peak}<span>{t.probe.peak}: {formatEng(peak.f, 'Hz', 4)}, {peak.db.toFixed(1).replace('.', ',')}</span>{/if}
+        {#if peak}<span>{t.probe.peak}: {formatEng(peak.f, 'Hz', 4)}, {fmtNum(peak.db)}</span>{/if}
       {:else}
         <span>{t.probe.noProbe}</span>
       {/if}
@@ -249,7 +249,7 @@
     <canvas bind:this={canvas} onpointermove={onMove} onpointerleave={() => (hover = null)} onclick={onClick}></canvas>
     {#if hover}
       <div class="marker value" style:left={`${hover.x}px`} style:top={`${Math.max(4, hover.y - 30)}px`}>
-        {formatEng(hover.f, 'Hz', 4)}<br />{hover.db.toFixed(1).replace('.', ',')}
+        {formatEng(hover.f, 'Hz', 4)}<br />{fmtNum(hover.db)}
       </div>
     {/if}
     </div>
@@ -263,7 +263,7 @@
         <label for="p-h">{t.probe.height}</label>
         <div class="slider">
           <input id="p-h" type="range" min="0.2" max="12" step="0.1" bind:value={app.probe.height} />
-          <span class="value">{app.probe.height.toFixed(1).replace('.', ',')} mm</span>
+          <span class="value">{fmtNum(app.probe.height)} mm</span>
         </div>
       </div>
       <div class="field">

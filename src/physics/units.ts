@@ -32,7 +32,14 @@ export function parseEng(text: string): number {
   return v * (PREFIX[m[2] ?? ''] ?? 1);
 }
 
-/** Format a value with an SI prefix: formatEng(2.5e7, 'Hz') -> "25 MHz". German decimal comma. */
+let decimalComma = true;
+
+/** Decimal separator for formatEng (set by the UI language). */
+export function setDecimalComma(on: boolean) {
+  decimalComma = on;
+}
+
+/** Format a value with an SI prefix: formatEng(2.5e7, 'Hz') -> "25 MHz" (decimal comma in German). */
 export function formatEng(v: number, unit: string, digits = 3): string {
   if (!Number.isFinite(v)) return '–';
   if (v === 0) return `0 ${unit}`;
@@ -41,6 +48,7 @@ export function formatEng(v: number, unit: string, digits = 3): string {
   const e = Math.floor(Math.log10(Math.abs(v)) / 3) * 3;
   const idx = Math.max(0, Math.min(exps.length - 1, exps.indexOf(e) === -1 ? (e < -15 ? 0 : exps.length - 1) : exps.indexOf(e)));
   const scaled = v / 10 ** exps[idx]!;
-  const txt = Number(scaled.toPrecision(digits)).toString().replace('.', ',');
+  const plain = Number(scaled.toPrecision(digits)).toString();
+  const txt = decimalComma ? plain.replace('.', ',') : plain;
   return `${txt} ${names[idx]}${unit}`;
 }

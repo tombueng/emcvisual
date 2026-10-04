@@ -1,6 +1,6 @@
 # Stufe 1: Quasistatische Nahfeld-Simulation im Browser
 
-Stand: 2026-10-04 · Status: M0–M6 umgesetzt, M7 teilweise (siehe Tabelle und §13)
+Stand: 2026-10-04 · Status: M0–M7 umgesetzt, M8 offen (siehe Tabelle und §13)
 
 Begleitdokumente:
 - [PHYSIK.md](PHYSIK.md): das physikalische Modell mit allen Formeln, Annahmen und Gültigkeitsgrenzen
@@ -130,7 +130,7 @@ Jeder Meilenstein endet mit grünen Tests, aktualisierter Doku und einem Commit.
 | M4 | Quellen-Editor, Vorschläge, Szenario speichern/laden | erledigt |
 | M5 | Virtuelle Sonde, Spektrumanzeige, Verklanglichung | erledigt |
 | M6 | Feldlinien, Hotspots, Rückstrom-Warnungen, Fernfeld-Abschätzung | erledigt |
-| M7 | Feinschliff: Ameisen-Modus, Export, Englisch, GitHub Pages, Leistung | teilweise: Ameisenblick, PNG/CSV-Export, Playwright-Tests erledigt; Englisch und Pages offen |
+| M7 | Feinschliff: Ameisen-Modus, Export, Englisch, GitHub Pages, Leistung | erledigt |
 | M8 | optional: quasistatisches E-Feld, WebGPU-Rechenkern | offen |
 
 ### M0 Grundgerüst
@@ -323,5 +323,16 @@ Stand 2026-10-04, nach dem ersten Durchgang M0–M6.
   die Platine sichtbar bleibt.
 - **Hotspots**: lokale Maxima in Sondenhöhe, höchstens zwei je dominierender Quelle, damit
   leisere Quellen in der Liste auftauchen.
-- **Offen aus M7:** englische Oberfläche (Wörterbuch-Struktur steht), GitHub Pages (braucht
-  ein öffentliches Repo oder einen Plan mit privaten Pages).
+- **Hänger mit Ton (behoben):** Der Effekt, der die Sondenwerte schreibt, rief die
+  Audio-Aktualisierung auf, die genau diese Werte liest; Svelte startete ihn immer wieder
+  (rund 5000 Audio-Updates je Mausbewegung, 3 s Stillstand). Ton läuft jetzt in einem eigenen,
+  ungetrackten Effekt, höchstens einmal pro Bild: 6 ms je Mausbewegung.
+- **Große Platinen:** Flächen-Raster mit Kanten-Eimern je Zeile (382 → 48 ms), große Zonen als
+  Textur aus dem Raster statt 120 000 Dreiecken, Picking über einen 2D-Index statt Raycasting
+  (35 → 6 ms je Mausbewegung), Laden gibt zwischendurch an den Browser zurück.
+- **Englisch:** zweites Wörterbuch mit derselben Struktur (TypeScript prüft die Vollständigkeit),
+  Auswahl in der Kopfzeile, Standard nach Browsersprache, gemerkt im Browser. Ein Sprachwechsel
+  baut die Oberfläche neu auf (Zahlenformat), Platine und Ergebnisse bleiben in der Engine.
+  Die Demo hat ein englisches Szenario mit englischen Quellennamen.
+- **GitHub Pages:** Deployment über `.github/workflows/pages.yml`, sobald das Repo öffentlich und
+  die Variable `PAGES_ENABLED` gesetzt ist.

@@ -40,3 +40,7 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     aller Quellen gleichzeitig wären unlesbar und teuer.
 16. **2026-10-04 · Playwright-Tests in der CI**, Browser nur als Headless-Shell; WebGL läuft
     dort über SwiftShader.
+17. **2026-10-04 · Oberfläche zweisprachig (Deutsch, Englisch)**, Standard nach Browsersprache;
+    die Dokumentation bleibt auf Deutsch (ergänzt Nr. 10).
+18. **2026-10-04 · Repo öffentlich, App auf GitHub Pages.** Lizenz noch offen (bis dahin gilt
+    das Urheberrecht ohne Nutzungsrechte).

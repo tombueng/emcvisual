@@ -1,7 +1,9 @@
 import { mount } from 'svelte';
-import App from './ui/App.svelte';
+import Root from './ui/Root.svelte';
+import { i18n } from './i18n';
 import './ui/global.css';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('missing #app');
-export default mount(App, { target });
+document.documentElement.lang = i18n.lang;
+export default mount(Root, { target });

@@ -23,11 +23,12 @@ index.html                  Einstieg; Titel per Vite-Plugin aus dem Branding
 src/
   main.ts                   bootet Svelte-App
   branding.ts               typisierter Zugriff auf branding.config.json
-  i18n/                     de.ts (Quelle), en.ts (M7), index.ts (t-Objekt)
+  i18n/                     de.ts (Quelle), en.ts, lang.svelte.ts (aktive Sprache, t-Proxy, fmtNum)
   kicad/
     sexpr.ts                Tokenizer + Parser → SNode-Baum
     parseBoard.ts           SNode → BoardModel (KiCad 6–10)
   model/
+    pickIndex.ts            2D-Index: Kupfer unter einem Punkt (Hover, Pad-Auswahl)
     types.ts                BoardModel, Layer, Track, Via, Pad, Zone, Footprint, Net
     geometry.ts             Vektoren, Rotation, Polygone, Bögen, Punkt-in-Polygon
     stackup.ts              z-Lagen, Standardaufbauten, Dielektrika
@@ -193,6 +194,15 @@ je Quelle: OscillatorNode(PeriodicWave aus |I_k|) ─► GainNode(Feld am Sonden
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 Schmale Fenster: Panels einklappbar, 3D-Ansicht bleibt Hauptfläche.
+
+## 7a. Sprache
+
+`t` ist ein Proxy auf das Wörterbuch der aktiven Sprache (`i18n.lang`, Svelte-State), also
+folgen Texte in Vorlagen der Sprache automatisch. Zahlen werden über `fmtNum` und `formatEng`
+formatiert; damit auch sie umschalten, montiert `Root.svelte` die App bei einem Sprachwechsel
+neu (`{#key i18n.lang}`). Die Engine hält Platine, Quellen und Volumina und hängt sich an den
+neuen Viewer. Neue Texte kommen immer in beide Wörterbücher; `en: Strings` lässt TypeScript
+fehlende Schlüssel melden.
 
 ## 8. Zustand und Persistenz
 

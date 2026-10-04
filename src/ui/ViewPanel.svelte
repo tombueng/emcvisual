@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app } from '../state/app.svelte';
   import { engine } from '../state/engine.svelte';
-  import { t } from '../i18n';
+  import { t, fmtNum } from '../i18n';
   import { BANDS } from '../physics/spectrum';
   import { C0, formatEng } from '../physics/units';
   import type { ViewMode } from '../state/scenario';
@@ -121,7 +121,7 @@
         <label for="v-slice">{t.view.sliceHeight}</label>
         <div class="slider">
           <input id="v-slice" type="range" min="0.2" max="12" step="0.1" bind:value={app.view.sliceHeight} oninput={restyle} />
-          <span class="value">{app.view.sliceHeight.toFixed(1).replace('.', ',')} mm</span>
+          <span class="value">{fmtNum(app.view.sliceHeight)} mm</span>
         </div>
       </div>
       <button class="btn small" onclick={exportSlice} disabled={!app.composite}>{t.view.sliceCsv}</button>

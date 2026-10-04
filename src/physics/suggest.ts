@@ -118,7 +118,7 @@ export function suggestSources(board: BoardModel): Suggestion[] {
       source: {
         id: `s-${crypto.randomUUID().slice(0, 8)}`,
         type: 'loop',
-        name: `${fp.ref} Eingangsschleife`,
+        name: `${fp.ref} ${vin.pinFunction}–${gnd.pinFunction}`,
         enabled: true,
         color: nextColor(),
         pads: [best.a, padName(vin), padName(gnd), best.b],
