@@ -222,6 +222,22 @@ export class Viewer {
     this.requestRender();
   }
 
+  private renderListeners = new Set<() => void>();
+
+  /** Called after every frame that was drawn (overlays that follow the camera). */
+  onRendered(fn: () => void): () => void {
+    this.renderListeners.add(fn);
+    return () => this.renderListeners.delete(fn);
+  }
+
+  /** Screen position (px in the container) of a world point; behind = not in front of the camera. */
+  project(p: readonly [number, number, number]): { x: number; y: number; behind: boolean } {
+    const v = new THREE.Vector3(p[0], p[1], p[2]).project(this.camera);
+    const w = this.container.clientWidth;
+    const h = this.container.clientHeight;
+    return { x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, behind: v.z > 1 || v.z < -1 };
+  }
+
   private render() {
     this.camera.updateMatrixWorld();
     this.renderer.setRenderTarget(this.rt);
@@ -233,6 +249,7 @@ export class Viewer {
     u.tColor!.value = this.rt.texture;
     u.tDepth!.value = this.rt.depthTexture;
     this.renderer.render(this.quadScene, this.quadCamera);
+    for (const fn of this.renderListeners) fn();
   }
 
   private frame: WorldFrame = { ox: 0, oy: 0 };

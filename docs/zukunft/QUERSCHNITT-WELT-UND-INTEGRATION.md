@@ -27,6 +27,14 @@ Stufe und können parallel wachsen.
   ergeben Schwebungen; mit Phase (Stufe 3/5) laufende Wellen.
 - Platine als Glas: Lagen halbtransparent, Rückströme darunter sichtbar (Stufe 2).
 
+- **Sprechblasen** (umgesetzt 2026-10-04): HTML über der 3D-Ansicht, an Punkte der Szene
+  geheftet und nach jedem gezeichneten Bild nachgeführt. Hinweise tragen dieselbe Nummer wie in
+  der Diagnose-Rangliste und zeigen, was die Behebung im Fernfeld bringt; Quellen zeigen
+  Nahfeld-Maximum und Abstand zum Grenzwert, Hotspots ihren Pegel. Blasen weichen einander
+  aus (höher, dann links); ohne Platz bleibt von einem Hinweis die nummerierte Nadel. Klick
+  setzt die Sonde dorthin oder wählt die Quelle. Schalter unter „Sprechblasen in 3D“
+  (`src/ui/Callouts.svelte`).
+
 ## W3 Klang (Verklanglichung)
 - **Linear/harmonisch** (Stufe 1): Takte als Töne, Schaltregler als Schnarren.
 - **Logarithmisch:** ganzer HF-Bereich auf wenige Oktaven gestaucht (Oberwellen nicht mehr

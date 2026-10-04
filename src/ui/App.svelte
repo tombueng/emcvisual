@@ -12,12 +12,13 @@
   import SourcesPanel from './SourcesPanel.svelte';
   import ViewPanel from './ViewPanel.svelte';
   import SpectrumPanel from './SpectrumPanel.svelte';
+  import Callouts from './Callouts.svelte';
   import { showMeasurement } from '../state/scanner.svelte';
   import { canWatch, dropHandles, follow, live, pickWithHandle, stopFollowing, type FileHandle } from '../state/liveFile.svelte';
   import { EXAMPLE_BOARDS } from '../examples';
 
   let viewEl: HTMLDivElement;
-  let viewer: Viewer | null = null;
+  let viewer = $state.raw<Viewer | null>(null);
   const sonifier = new Sonifier();
   let dragging = $state(false);
   /** Narrow windows: the right panel is a drawer over the viewport. */
@@ -491,6 +492,8 @@
       </div>
     {/if}
     {#if dragging}<div class="dropzone">{t.empty.drop}</div>{/if}
+
+    {#if viewer && app.board && !ant}<Callouts {viewer} />{/if}
 
     <div class="statusline value">
       {#if app.pickMode}<span class="pick">{app.pickMode.kind === 'pad' ? t.editor.picking : t.editor.pickingNet}</span>{/if}

@@ -25,8 +25,13 @@ test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
 
   // diagnostics list the built-in mistakes
   await page.getByRole('tab', { name: /Diagnose/ }).click();
-  await expect(page.getByText(/Rückstrompfad unterbrochen/).first()).toBeVisible();
-  await expect(page.getByText(/Bezugswechsel am Via/).first()).toBeVisible();
+  const diag = page.locator('.diag');
+  await expect(diag.getByText(/Rückstrompfad unterbrochen/).first()).toBeVisible();
+  await expect(diag.getByText(/Bezugswechsel am Via/).first()).toBeVisible();
+  // speech bubbles in 3D: hint 1 carries the same finding as the top of the list
+  const bubble1 = page.locator('.bubble.hint').filter({ has: page.locator('.badge', { hasText: /^1$/ }) });
+  await expect(bubble1).toContainText('Takt schlecht');
+  await expect(bubble1).toContainText(/über C2/);
   // ranked by far-field effect: the first hint is the bad clock's far transfer through C2
   await expect(page.locator('ol.ranked li').first()).toContainText('Takt schlecht');
   await expect(page.locator('ol.ranked li').first()).toContainText(/3 m: behoben 1\d,\d dB leiser/);
@@ -73,7 +78,7 @@ test('switching to English keeps the board and the results', async ({ page }) =>
   await expect(page.locator('.list li')).toHaveCount(8);
   await expect(page.getByText(/computed in \d+\.\d s/)).toBeVisible();
   await page.getByRole('tab', { name: /Diagnostics/ }).click();
-  await expect(page.getByText(/Return path broken/).first()).toBeVisible();
+  await expect(page.locator('.diag').getByText(/Return path broken/).first()).toBeVisible();
 
   // the choice sticks across a reload; the demo then comes with English source names
   await page.reload();

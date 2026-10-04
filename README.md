@@ -32,7 +32,9 @@ Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 - KiCad 6 bis 10 importieren; Bezugsflächen werden erkannt, Quellen aus Netznamen vorgeschlagen
 - Quellen: Takt- und Datenleitungen (auch über Serienwiderstände), Differenzpaare,
   Stromschleifen von Schaltreglern (Pads auch per Klick in 3D)
-- Feld als leuchtendes Volumen, Schnittebene, Feldlinien der gewählten Quelle, Ameisenblick
+- Feld als leuchtendes Volumen, Isoflächen, Schnittebene, Feldlinien der gewählten Quelle, Ameisenblick
+- Sprechblasen in 3D: die Hinweise nummeriert an ihrer Stelle auf der Platine (mit der Wirkung
+  auf das Fernfeld), Quellen mit Nahfeld und Abstand zum Grenzwert, auf Wunsch Hotspots
 - virtuelle Nahfeldsonde mit Spektrumanalysator, Fernfeld-Abschätzung gegen CISPR 32 B
 - Klang: jede Quelle klingt, laut wo das Feld stark ist
 - Diagnose: unterbrochene Rückstrompfade, Bezugswechsel an Vias, fehlende Stitching-Vias,

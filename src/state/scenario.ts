@@ -34,6 +34,8 @@ export interface ViewSettings {
   showReturnPaths: boolean;
   /** Which field the volume, slice, probe and lines show. */
   fieldKind: 'H' | 'E';
+  /** Speech bubbles in the 3D view. */
+  callouts: { hints: boolean; sources: boolean; hotspots: boolean; maxHints: number };
 }
 
 export interface ScenarioSettings {
@@ -71,6 +73,7 @@ export const DEFAULT_VIEW: ViewSettings = {
   showFieldLines: false,
   showReturnPaths: true,
   fieldKind: 'H',
+  callouts: { hints: true, sources: true, hotspots: false, maxHints: 5 },
 };
 
 export const DEFAULT_SETTINGS: ScenarioSettings = { quality: 'normal', fMax: 1e9, planeOverrides: {}, returnModel: 'detour' };

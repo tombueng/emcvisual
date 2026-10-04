@@ -158,6 +158,23 @@
         <option value="turbo">{t.view.colormaps.turbo}</option>
       </select>
     </div>
+    <div class="section-title">{t.callouts.title}</div>
+    <label class="check"><input type="checkbox" bind:checked={app.view.callouts.hints} onchange={() => engine.scheduleSave()} /> {t.callouts.hints}</label>
+    {#if app.view.callouts.hints}
+      <div class="field">
+        <label for="v-maxhints">{t.callouts.maxHints}</label>
+        <select id="v-maxhints" bind:value={app.view.callouts.maxHints} onchange={() => engine.scheduleSave()}>
+          <option value={3}>{t.callouts.top(3)}</option>
+          <option value={5}>{t.callouts.top(5)}</option>
+          <option value={10}>{t.callouts.top(10)}</option>
+          <option value={0}>{t.callouts.all}</option>
+        </select>
+      </div>
+    {/if}
+    <label class="check"><input type="checkbox" bind:checked={app.view.callouts.sources} onchange={() => engine.scheduleSave()} /> {t.callouts.sources}</label>
+    <label class="check"><input type="checkbox" bind:checked={app.view.callouts.hotspots} onchange={() => engine.scheduleSave()} /> {t.callouts.hotspots}</label>
+
+    <div class="section-title">{t.view.fieldLinesTitle}</div>
     <label class="check"><input type="checkbox" bind:checked={app.view.showFieldLines} onchange={() => { engine.updateFieldLines(); engine.scheduleSave(); }} /> {t.view.fieldLines}</label>
     {#if app.fieldLinesBusy}<p class="hint">{t.view.fieldLinesBusy}</p>{/if}
     <label class="check"><input type="checkbox" bind:checked={app.view.showSlice} onchange={restyle} /> {t.view.slice}</label>
