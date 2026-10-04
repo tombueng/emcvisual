@@ -268,6 +268,15 @@ export const en: Strings = {
     otherBoard: 'The measurement belongs to another board.',
     loadFailed: 'The file is not a measurement of this format.',
   },
+  live: {
+    badge: 'live',
+    title: 'Following the file: saving in KiCad reloads the board, sources and view stay. Click to stop.',
+    started: 'Following the file: saving in KiCad reloads the board.',
+    reloaded: 'Board reloaded (saved in KiCad)',
+    failed: 'Could not read the new version of the file; waiting for the next save.',
+    lost: 'The file is no longer reachable; stopped following.',
+    stopped: 'Stopped following the file',
+  },
   models: {
     load: 'Load 3D models (GLB)',
     hint: 'Real part models: in KiCad use “File → Export → glTF/GLB” (without board body) and drop the .glb on the window, or on the command line:',

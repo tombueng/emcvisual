@@ -122,3 +122,35 @@ test('narrow window: settings open as a drawer, no sideways scrolling', async ({
   await expect(page.getByRole('tab', { name: 'Messung' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(800);
 });
+
+test('live coupling: saving the board file again reloads it and keeps the sources', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // a fake File System Access handle stands in for the native file dialog
+  await page.addInitScript(() => {
+    const w = window as unknown as { __file: File; showOpenFilePicker: () => Promise<unknown[]> };
+    w.showOpenFilePicker = async () => [{ kind: 'file', name: w.__file.name, getFile: async () => w.__file }];
+  });
+  await page.goto('/');
+  const text = await (await page.request.get('/demo/demo-board.kicad_pcb')).text();
+  await page.evaluate((t) => {
+    (window as unknown as { __file: File }).__file = new File([t], 'demo-board.kicad_pcb', { lastModified: 1 });
+  }, text);
+  await page.getByRole('button', { name: 'Platine öffnen' }).click();
+  await expect(page.getByRole('button', { name: 'live' })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: 'Alle übernehmen' }).click();
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+  const count = await page.locator('.list li').count();
+  expect(count).toBeGreaterThan(0);
+
+  // "KiCad saves": a via moved by 1 mm
+  await page.evaluate((t) => {
+    (window as unknown as { __file: File }).__file = new File([t.replace('(at 140 125)', '(at 141 125)')], 'demo-board.kicad_pcb', { lastModified: 2 });
+  }, text);
+  await expect(page.getByText('Platine neu geladen (in KiCad gespeichert)')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('.list li')).toHaveCount(count);
+
+  await page.getByRole('button', { name: 'live' }).click();
+  await expect(page.getByRole('button', { name: 'live' })).toBeHidden();
+  expect(errors).toEqual([]);
+});

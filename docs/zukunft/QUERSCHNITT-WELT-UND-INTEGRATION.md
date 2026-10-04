@@ -30,6 +30,17 @@ Stufe und können parallel wachsen.
 - **Barrierefreiheit:** Klang als zweiter Kanal für Menschen, die Farbskalen schlecht lesen.
 
 ## W4 KiCad-Integration
+
+**Umgesetzt (2026-10-04): Live-Kopplung ohne Brücke.** In Chromium-Browsern (Chrome, Edge)
+öffnet „Platine öffnen“ die Datei über die File System Access API, ebenso beim Hineinziehen.
+Die App prüft jede Sekunde, ob sich die Datei geändert hat; speichert KiCad, wird die Platine
+neu gelesen, und Quellen, Einstellungen, Ansicht, Kamera und Bauteilmodelle bleiben. Bauteile,
+die seit dem GLB-Export verschoben oder gedreht wurden, folgen ihrem Footprint (das GLB legt
+jeden Knoten auf den Footprint-Ursprung). Ein halb geschriebener Stand wird bis zu dreimal neu
+versucht. Das Abzeichen „live“ neben dem Dateinamen beendet das Folgen. Code:
+`src/state/liveFile.svelte.ts`; E2E-Test mit einem nachgebildeten Datei-Handle. Firefox und
+Safari öffnen die Datei wie bisher einmalig.
+
 - **Live-Kopplung:** KiCad 9/10 hat eine IPC-API (Python-Bindings). Eine kleine lokale Brücke
   liest die offene Platine und streamt Änderungen an die Browser-App: Via verschieben in
   KiCad → Feld aktualisiert sich. Gleiche Brücke kann später openEMS starten (Stufe 3).

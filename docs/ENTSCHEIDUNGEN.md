@@ -63,3 +63,7 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     Installation im Browser läuft. Der OctoPrint-API-Schlüssel wird nicht gespeichert.
 24. **2026-10-04 · Messdateien zunächst als JSON** mit Rohspektren und Hintergrund; ein
     Binärformat erst, wenn die Größe stört.
+25. **2026-10-04 · KiCad-Live-Kopplung zuerst über die Datei, nicht über die IPC-API.** Die File
+    System Access API (Chromium) reicht, um auf jedes Speichern zu reagieren, ohne lokale Brücke
+    und ohne Installation; die IPC-Brücke bleibt für Live-Änderungen ohne Speichern und den
+    Rückweg nach KiCad.

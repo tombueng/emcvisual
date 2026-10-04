@@ -65,7 +65,8 @@ npm run dev
 ```
 
 Dann im Browser „Demo-Platine“ wählen oder eine eigene `.kicad_pcb` (KiCad 6 bis 10) auf das
-Fenster ziehen.
+Fenster ziehen. In Chrome und Edge folgt die App der geöffneten Datei: Jedes Speichern in KiCad
+lädt die Platine neu, Quellen und Ansicht bleiben (Abzeichen „live“ neben dem Dateinamen).
 
 Echte Bauteilmodelle: in KiCad „Datei → Exportieren → glTF/GLB“ (ohne Platinenkörper) oder
 `kicad-cli pcb export glb --no-board-body --subst-models board.kicad_pcb`, dann die `.glb`

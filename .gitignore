@@ -15,3 +15,8 @@ test-results/
 playwright-report/
 public/local/
 boards/
+tools/openems/src/
+tools/openems/build/
+tools/openems/.venv/
+tools/openems/runs/
+tools/openems/build.log

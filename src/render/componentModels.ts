@@ -19,23 +19,47 @@ export interface ComponentModels {
   total: number;
 }
 
-export async function loadComponentModels(data: ArrayBuffer, board: BoardModel, frame: WorldFrame): Promise<ComponentModels> {
+/** Footprint position (mm) and angle (degrees) at the time the GLB was exported. */
+export type FootprintPose = { x: number; y: number; angle: number };
+
+export function footprintPoses(board: BoardModel): Map<string, FootprintPose> {
+  return new Map(board.footprints.map((f) => [f.ref, { x: f.at.x, y: f.at.y, angle: f.angle }]));
+}
+
+/**
+ * With `exportPoses` (the footprints when the GLB was made), parts that were moved or turned
+ * since then follow the current board: the GLB node sits at the footprint origin with the
+ * footprint angle as a rotation about the vertical axis.
+ */
+export async function loadComponentModels(
+  data: ArrayBuffer,
+  board: BoardModel,
+  frame: WorldFrame,
+  exportPoses?: Map<string, FootprintPose>,
+): Promise<ComponentModels> {
   const gltf = await new GLTFLoader().parseAsync(data, '');
   const root = gltf.scene;
-  const sides = new Map(board.footprints.map((f) => [f.ref, f.side]));
+  const fps = new Map(board.footprints.map((f) => [f.ref, f]));
   const matched = new Set<string>();
   const topY: number[] = [];
+  const up = new THREE.Vector3(0, 1, 0);
 
   // footprint nodes may sit one or two levels below the scene root
   const visit = (node: THREE.Object3D) => {
     for (const child of [...node.children]) {
-      const side = sides.get(child.name);
-      if (side) {
+      const fp = fps.get(child.name);
+      if (fp) {
         matched.add(child.name);
-        if (side === 'top') topY.push(child.position.y);
+        if (fp.side === 'top') topY.push(child.position.y);
+        const was = exportPoses?.get(fp.ref);
+        if (was && (was.x !== fp.at.x || was.y !== fp.at.y || was.angle !== fp.angle)) {
+          child.position.x += (fp.at.x - was.x) / 1000;
+          child.position.z += (fp.at.y - was.y) / 1000;
+          child.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(up, ((fp.angle - was.angle) * Math.PI) / 180));
+        }
         continue;
       }
-      if (child.children.some((c) => sides.has(c.name))) visit(child);
+      if (child.children.some((c) => fps.has(c.name))) visit(child);
       else child.visible = false;
     }
   };

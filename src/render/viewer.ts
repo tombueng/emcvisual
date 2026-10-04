@@ -224,7 +224,8 @@ export class Viewer {
 
   private frame: WorldFrame = { ox: 0, oy: 0 };
 
-  setBoard(board: BoardModel, frame: WorldFrame) {
+  /** keepCamera: the same board reloaded after an edit, so the view stays where it was. */
+  setBoard(board: BoardModel, frame: WorldFrame, keepCamera = false) {
     this.frame = frame;
     this.setComponentModels(null);
     if (this.board) {
@@ -239,7 +240,10 @@ export class Viewer {
     this.camera.near = Math.max(0.05, r / 2000);
     this.camera.far = r * 50;
     this.home = { pos: new THREE.Vector3(r * 0.15, r * 0.75, r * 0.95), near: this.camera.near };
-    this.overview();
+    if (keepCamera) {
+      this.camera.updateProjectionMatrix();
+      this.requestRender();
+    } else this.overview();
   }
 
   private home: { pos: THREE.Vector3; near: number } | null = null;

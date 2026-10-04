@@ -15,7 +15,7 @@ import { BANDS } from '../physics/spectrum';
 import { MU0 } from '../physics/units';
 import type { Source } from '../physics/sources';
 import type { Viewer } from '../render/viewer';
-import { loadComponentModels } from '../render/componentModels';
+import { footprintPoses, loadComponentModels, type FootprintPose } from '../render/componentModels';
 import { buildFieldLines } from '../render/fieldLinesMesh';
 import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fieldlines';
 import { diagnoseSource } from '../physics/diagnostics';
@@ -101,6 +101,8 @@ class Engine {
   private detourCache = new Map<string, Detour[]>();
   /** GLB with component models (kept to re-attach after a viewer remount). */
   private modelData: ArrayBuffer | null = null;
+  /** Footprints when the GLB was loaded, so models follow parts moved since. */
+  private modelPoses: Map<string, FootprintPose> | null = null;
   private boardName = '';
 
   attach(viewer: Viewer) {
@@ -115,7 +117,15 @@ class Engine {
 
   // --- board ------------------------------------------------------------------------------------
 
-  async loadBoard(text: string, fileName: string, scenario?: Scenario | null) {
+  /**
+   * Load a board. With keep=true (the same file saved again in KiCad) the sources, settings,
+   * view, camera and component models stay; only the geometry is new.
+   */
+  async loadBoard(text: string, fileName: string, scenario?: Scenario | null, keep = false) {
+    if (keep && app.board) scenario = this.scenario();
+    const selected = app.selectedId;
+    const layerVisible = app.layerVisible;
+    const probeVisible = app.probe.visible;
     app.loading = true;
     app.error = '';
     // let the loading state paint before the synchronous work starts
@@ -133,10 +143,13 @@ class Engine {
       this.boardName = fileName;
       app.board = board;
       app.boardHash = hash;
-      app.models3d = null;
-      this.modelData = null;
+      if (!keep) {
+        app.models3d = null;
+        this.modelData = null;
+        this.modelPoses = null;
+      }
       this.pickIndex = new PickIndex(board);
-      app.layerVisible = board.layers.map(() => true);
+      app.layerVisible = keep && layerVisible.length === board.layers.length ? layerVisible : board.layers.map(() => true);
       this.frame = worldFrame(board);
       const saved = scenario ?? loadLocal<Scenario>(`scenario:${hash}`);
       const sc = saved ? safeMigrate(saved) : null;
@@ -146,15 +159,16 @@ class Engine {
       app.fMax = sc?.settings.fMax ?? 1e9;
       app.returnModel = sc?.settings.returnModel ?? 'detour';
       app.view = { ...DEFAULT_VIEW, ...(sc?.view ?? {}) };
-      app.selectedId = app.sources[0]?.id ?? null;
+      app.selectedId = keep && app.sources.some((s) => s.id === selected) ? selected : (app.sources[0]?.id ?? null);
       app.composite = null;
       app.lines = [];
       app.models = {};
       app.sourceErrors = {};
-      app.probe.visible = false;
+      app.probe.visible = keep && probeVisible;
       this.preparePlanes();
       await yieldToUi();
-      this.viewer?.setBoard(board, this.frame);
+      this.viewer?.setBoard(board, this.frame, keep);
+      if (keep && this.modelData) await this.attachModels().catch(() => undefined);
       this.viewer?.setVolume(null, null);
       this.applyViewToViewer();
       this.refreshAll();
@@ -397,13 +411,14 @@ class Engine {
   /** Component models from a KiCad GLB export; returns how many parts got a model. */
   async loadModels(data: ArrayBuffer): Promise<{ matched: number; total: number }> {
     this.modelData = data;
+    this.modelPoses = app.board ? footprintPoses(app.board) : null;
     return this.attachModels();
   }
 
   private async attachModels(): Promise<{ matched: number; total: number }> {
     if (!app.board || !this.modelData || !this.viewer) return { matched: 0, total: 0 };
     // GLTFLoader may detach the buffer: hand it a copy and keep ours for later remounts
-    const models = await loadComponentModels(this.modelData.slice(0), app.board, this.frame);
+    const models = await loadComponentModels(this.modelData.slice(0), app.board, this.frame, this.modelPoses ?? undefined);
     this.viewer.setComponentModels(models);
     app.models3d = { matched: models.matched.size, total: models.total };
     return app.models3d;

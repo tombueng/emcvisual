@@ -13,6 +13,7 @@
   import ViewPanel from './ViewPanel.svelte';
   import SpectrumPanel from './SpectrumPanel.svelte';
   import { showMeasurement } from '../state/scanner.svelte';
+  import { canWatch, dropHandles, follow, live, pickWithHandle, stopFollowing, type FileHandle } from '../state/liveFile.svelte';
 
   let viewEl: HTMLDivElement;
   let viewer: Viewer | null = null;
@@ -52,7 +53,7 @@
     }
   }
 
-  async function openBoardFile(file: File) {
+  async function openBoardFile(file: File, handle?: FileHandle | null) {
     if (/\.(glb|gltf)$/i.test(file.name)) return openModels(await file.arrayBuffer());
     if (file.name.endsWith('.json')) {
       try {
@@ -64,14 +65,22 @@
     }
     try {
       await engine.loadBoard(await file.text(), file.name);
+      // follow the file when the browser lets us: saving in KiCad reloads the board
+      if (handle) {
+        follow(handle, file);
+        app.toast = t.live.started;
+      } else stopFollowing();
     } catch {
       app.toast = t.errors.parse;
     }
   }
 
   async function openDialog() {
-    const f = await pickFile('.kicad_pcb,.json,.glb');
-    if (f) await openBoardFile(f);
+    const picked = await pickWithHandle();
+    if (picked === 'fallback') {
+      const f = await pickFile('.kicad_pcb,.json,.glb');
+      if (f) await openBoardFile(f);
+    } else if (picked) await openBoardFile(picked.file, picked.file.name.endsWith('.kicad_pcb') ? picked.handle : null);
   }
 
   async function loadDemo() {
@@ -80,6 +89,7 @@
       fetch(`${base}demo/demo-board.kicad_pcb`).then((r) => r.text()),
       fetch(`${base}demo/demo-board.scenario${i18n.lang === 'de' ? '' : `.${i18n.lang}`}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ]);
+    stopFollowing();
     await engine.loadBoard(pcb, 'demo-board.kicad_pcb', scenario);
     const glb = await fetch(`${base}demo/demo-board.glb`).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
     if (glb) await engine.loadModels(glb).catch(() => undefined);
@@ -155,8 +165,14 @@
     dragging = false;
     // board first, then models and scenarios, so several files can be dropped at once
     const rank = (f: File) => (f.name.endsWith('.kicad_pcb') ? 0 : /\.(glb|gltf)$/i.test(f.name) ? 1 : 2);
+    // handles have to be requested before the first await, while the drop data is readable
+    const handlesP = canWatch ? dropHandles(e) : Promise.resolve([]);
     const files = [...(e.dataTransfer?.files ?? [])].sort((a, b) => rank(a) - rank(b));
-    for (const f of files) await openBoardFile(f);
+    const handles = await handlesP;
+    for (const f of files) {
+      const h = f.name.endsWith('.kicad_pcb') ? (handles.find((x) => x?.name === f.name) ?? null) : null;
+      await openBoardFile(f, h);
+    }
   }
 
   async function pickModels() {
@@ -360,6 +376,9 @@
       <span class="name">{branding.displayName}</span>
       <span class="badge" title={t.app.workingTitle}>{t.app.workingTitle}</span>
       {#if app.board}<span class="file value">{app.board.source.fileName}</span>{/if}
+      {#if live.following}
+        <button class="live" title={t.live.title} onclick={() => { stopFollowing(); app.toast = t.live.stopped; }}>{t.live.badge}</button>
+      {/if}
     </div>
     <div class="actions">
       <button class="btn" onclick={openDialog}>{t.top.open}</button>
@@ -476,6 +495,28 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 0 7px;
+  }
+  .live {
+    flex: none;
+    align-self: center;
+    font: inherit;
+    font-size: 11px;
+    color: var(--probe);
+    background: none;
+    border: 1px solid currentColor;
+    border-radius: 10px;
+    padding: 0 7px;
+    cursor: pointer;
+  }
+  .live::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: 1px;
   }
   .file {
     color: var(--muted);

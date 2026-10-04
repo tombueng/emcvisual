@@ -268,6 +268,15 @@ export const de = {
     otherBoard: 'Die Messung gehört zu einer anderen Platine.',
     loadFailed: 'Die Datei ist keine Messung dieses Formats.',
   },
+  live: {
+    badge: 'live',
+    title: 'Folgt der Datei: Speichern in KiCad lädt die Platine neu, Quellen und Ansicht bleiben. Klick beendet das.',
+    started: 'Folgt der Datei: Speichern in KiCad lädt die Platine neu.',
+    reloaded: 'Platine neu geladen (in KiCad gespeichert)',
+    failed: 'Die neue Fassung der Datei ließ sich nicht lesen; warte auf das nächste Speichern.',
+    lost: 'Die Datei ist nicht mehr erreichbar; Folgen beendet.',
+    stopped: 'Folgen beendet',
+  },
   models: {
     load: '3D-Modelle (GLB) laden',
     hint: 'Echte Bauteilmodelle: in KiCad „Datei → Exportieren → glTF/GLB“ (ohne Platinenkörper) und die .glb auf das Fenster ziehen, oder per Kommandozeile:',
