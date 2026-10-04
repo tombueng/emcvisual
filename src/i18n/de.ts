@@ -36,6 +36,7 @@ export const de = {
     addDiff: 'Differenzpaar',
     addLoop: 'Stromschleife',
     suggestions: 'Vorschläge aus der Platine',
+    takeAll: 'Alle übernehmen',
     take: 'Übernehmen',
     reasons: {
       'clock-name': 'Netzname sieht nach Takt aus',
@@ -139,6 +140,10 @@ export const de = {
     planeNone: 'keine Fläche',
     substrate: 'Platine durchsichtig',
     fieldLines: 'Feldlinien der gewählten Quelle',
+    returnModel: 'Rückstrommodell',
+    returnModels: { image: 'Spiegel (Stufe 1)', detour: 'Umwege (Stufe 2)' },
+    returnPaths: 'Rückstrompfade zeigen',
+    returnHint: 'Stufe 2: Der Rückstrom geht in der Fläche um Schlitze herum und springt bei einem Bezugswechsel über die nächste Stitching-Via oder den nächsten Kondensator.',
     sliceCsv: 'Schnitt als CSV',
     fieldLinesBusy: 'Feldlinien werden berechnet …',
     components: 'Bauteile zeigen',
@@ -160,6 +165,12 @@ export const de = {
       'long-line': (d: { value: number }, f: (v: number) => string) =>
         `Leitung ist ab ${f(d.value)} elektrisch lang; Stufe 1 rechnet sie als konzentriert.`,
     },
+    detour: (d: { length: number; extraArea: number; via?: string }) =>
+      d.via && d.via !== 'via'
+        ? ` Rückweg über ${d.via}: ${d.length.toFixed(0)} mm Umweg, etwa ${d.extraArea.toFixed(0)} mm² zusätzliche Schleifenfläche.`
+        : d.via === 'via'
+          ? ` Rückweg über die nächste Via: ${d.length.toFixed(0)} mm Umweg.`
+          : ` Der Rückstrom läuft ${d.length.toFixed(0)} mm um die Lücke herum, etwa ${d.extraArea.toFixed(0)} mm² zusätzliche Schleifenfläche.`,
     hotspots: 'Hotspots in Sondenhöhe',
     hotspotsNone: 'Noch kein Feld berechnet.',
     near: 'in der Nähe',

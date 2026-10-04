@@ -1,6 +1,6 @@
 # Stufe 2: Rückströme in Flächen, Leitungseffekte, E-Feld
 
-Stand: 2026-10-04 · Status: Idee, konserviert · Voraussetzung: Stufe 1 (M2, M3)
+Stand: 2026-10-04 · Status: **2a umgesetzt** (geometrisches Umwegmodell, siehe unten); 2b–2e offen
 
 ## Ziel
 
@@ -16,7 +16,37 @@ geteilte Flächen, Lagenwechsel ohne Stitching-Via, Aussparungen. Stufe 1 meldet
 Stufe 2 zeigt den tatsächlichen Umweg des Stroms als Bild, als Schleifenfläche und als
 Feldzuwachs, also genau das, was man beim Layout lernen will.
 
-## Methode
+## Umgesetzt: 2a Geometrisches Umwegmodell (2026-10-04)
+
+Bevor der aufwendige Flächenlöser (2.1) kommt, rechnet die App mit einem geometrischen Modell,
+das die beiden häufigsten Rückstromfehler als echte Strompfade abbildet
+(`src/physics/returnPaths.ts`, Auswahl „Rückstrommodell“ in der Ansicht, Standard):
+
+- **Lücke unter einer Leiterbahn** (Schlitz, Aussparung, mit Kupfer auf beiden Seiten): Über der
+  Lücke bekommt die Leitung keinen Spiegelstrom mehr. Der Rückstrom läuft auf der Oberfläche
+  derselben Fläche auf dem kürzesten Weg durchs Kupfer um die Lücke herum (Dijkstra auf einem
+  0,4-mm-Gitter des Flächenrasters, danach geradegezogen). Kurze senkrechte Verbinder zur
+  Spiegeltiefe schließen den Stromkreis.
+- **Bezugswechsel an einem Via:** Gehören die Bezugsflächen der beiden Lagen zum selben Netz,
+  springt der Rückstrom an der nächsten Via dieses Netzes, die beide Flächen verbindet
+  (oder an einem THT-Pad). Sind es verschiedene Netze, springt er über das nächste
+  Zweipol-Bauteil zwischen diesen Netzen (Entkoppelkondensator): von der einen Fläche hoch zum
+  Kondensator, hindurch und hinunter zur anderen Fläche.
+- **Kleine Löcher** in Flächen (bis 3 mm², z. B. Via-Freistellungen) werden im Flächenraster
+  gefüllt; Schlitze und Aussparungen bleiben.
+- Die Diagnose nennt Umweglänge, zusätzliche Schleifenfläche und das Bauteil des Sprungs; die
+  Pfade erscheinen gestrichelt in der 3D-Ansicht.
+
+Grenzen von 2a: Der Rückstrom ist ein einzelner Pfad statt einer verteilten Flächenstromdichte;
+Lücken, die eine Leiterbahn nicht beidseitig umschließt (Leitung endet in der Aussparung),
+behalten das Modell aus Stufe 1; Flächenkapazität zwischen Flächen verschiedener Netze wird
+nicht berücksichtigt (bei hohen Frequenzen übernimmt sie einen Teil des Sprungs).
+
+Am Demo-Board: Der Rückstrom des schlechten Takts läuft 15 mm um das Schlitzende (etwa 13 mm²
+zusätzliche Schleifenfläche) und springt an beiden Vias über C2 (35 und 52 mm Umweg, 18 und
+31 mm²); der Hotspot wandert dadurch vom Schlitz in die Schleife zum Kondensator.
+
+## Methode (Ausbau, offen)
 
 ### 2.1 Flächen als Leiternetz (PEEC-artig, quasistatisch)
 1. **Vernetzung:** Jede Flächenlage (gefüllte Polygone) wird trianguliert oder in ein

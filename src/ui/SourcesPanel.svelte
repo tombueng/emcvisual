@@ -38,6 +38,11 @@
     engine.addSource(s);
   }
 
+  function takeAll() {
+    const start = app.sources.length;
+    engine.addSources(open.map((sg, i) => ({ ...sg.source, color: SOURCE_COLORS[(start + i) % SOURCE_COLORS.length]! })));
+  }
+
   function summary(s: Source): string {
     const f = s.type !== 'loop' && s.kind === 'data' ? formatEng(s.waveform.f0 * 2, 'bit/s') : formatEng(s.waveform.f0, 'Hz');
     return `${t.sources.types[s.type]}, ${f}, ${formatEng(s.waveform.tr, 's')}`;
@@ -84,7 +89,10 @@
     {/if}
 
     {#if open.length > 0}
-      <div class="section-title">{t.sources.suggestions}</div>
+      <div class="suggest-head">
+        <div class="section-title">{t.sources.suggestions} ({open.length})</div>
+        <button class="btn small" onclick={takeAll}>{t.sources.takeAll}</button>
+      </div>
       <ul class="suggest">
         {#each open as sg (sg.key)}
           <li>
@@ -199,6 +207,15 @@
     color: var(--warn);
     font-weight: 600;
     align-self: center;
+  }
+  .suggest-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .suggest-head .section-title {
+    margin: 14px 0 6px;
   }
   .suggest {
     list-style: none;

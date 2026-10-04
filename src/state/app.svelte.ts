@@ -7,6 +7,7 @@ import type { SourceModel } from '../physics/currents';
 import { DEFAULT_VIEW, type ViewSettings } from './scenario';
 import type { ProbeReadout } from './engine.svelte';
 import type { Diagnostic } from '../physics/diagnostics';
+import type { Detour } from '../physics/returnPaths';
 
 export type ProbeComponent = 'abs' | 'x' | 'y' | 'z';
 
@@ -60,6 +61,9 @@ class AppState {
   sources = $state<Source[]>([]);
   selectedId = $state<string | null>(null);
   quality = $state<Quality>('normal');
+  returnModel = $state<'image' | 'detour'>('detour');
+  /** Stage 2 return paths per source (gap detours and plane transfers). */
+  detours = $state.raw<Record<string, Detour[]>>({});
   fMax = $state(1e9);
   view = $state<ViewSettings>({ ...DEFAULT_VIEW });
   layerVisible = $state<boolean[]>([]);

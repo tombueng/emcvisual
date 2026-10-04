@@ -19,6 +19,7 @@ import { loadComponentModels } from '../render/componentModels';
 import { buildFieldLines } from '../render/fieldLinesMesh';
 import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fieldlines';
 import { diagnoseSource } from '../physics/diagnostics';
+import { applyReturnModel, type Detour } from '../physics/returnPaths';
 import { cispr32ClassB, dipoleMoment, farField, type LimitSegment } from '../physics/farfield';
 import { distPointSegment } from '../model/geometry';
 import { PickIndex } from '../model/pickIndex';
@@ -89,6 +90,7 @@ class Engine {
   private saveTimer = 0;
   private boardText = '';
   pickIndex: PickIndex | null = null;
+  private detourCache = new Map<string, Detour[]>();
   /** GLB with component models (kept to re-attach after a viewer remount). */
   private modelData: ArrayBuffer | null = null;
   private boardName = '';
@@ -133,6 +135,7 @@ class Engine {
       app.planeOverrides = sc?.settings.planeOverrides ?? {};
       app.quality = sc?.settings.quality ?? 'normal';
       app.fMax = sc?.settings.fMax ?? 1e9;
+      app.returnModel = sc?.settings.returnModel ?? 'detour';
       app.view = { ...DEFAULT_VIEW, ...(sc?.view ?? {}) };
       app.selectedId = app.sources[0]?.id ?? null;
       app.composite = null;
@@ -244,6 +247,14 @@ class Engine {
     this.sourceChanged(s.id);
   }
 
+  /** Add several sources at once (one rebuild instead of one per source). */
+  addSources(list: Source[]) {
+    if (list.length === 0) return;
+    app.sources = [...app.sources, ...list];
+    app.selectedId = list[0]!.id;
+    this.refreshAll();
+  }
+
   removeSource(id: string) {
     app.sources = app.sources.filter((s) => s.id !== id);
     this.jobs.get(id)?.job.cancel();
@@ -257,14 +268,23 @@ class Engine {
   private buildModel(s: Source): { model?: SourceModel; error?: string } {
     if (!this.ctx) return { error: 'no-board' };
     try {
-      return { model: buildSource(this.ctx, $state.snapshot(s)) };
+      const src = $state.snapshot(s) as Source;
+      const model = buildSource(this.ctx, src);
+      let detours: Detour[] = [];
+      if (app.returnModel === 'detour') {
+        const r = applyReturnModel(this.ctx, src, model.elements);
+        model.elements = r.elements;
+        detours = r.detours;
+      }
+      this.detourCache.set(s.id, detours);
+      return { model };
     } catch (e) {
       return { error: e instanceof SourceError ? e.message : (e as Error).message || String(e) };
     }
   }
 
   private ensureVolume(s: Source, model: SourceModel) {
-    const key = `${geometryKey(s)}|${app.quality}`;
+    const key = `${geometryKey(s)}|${app.quality}|${app.returnModel}`;
     const pack = packWithImages(model.elements, app.planes, this.frame);
     this.packs.set(s.id, pack);
     if (this.volumes.get(s.id)?.key === key) return;
@@ -477,12 +497,39 @@ class Engine {
     const board = app.board;
     if (!board) return;
     const out = [];
+    const detours: Record<string, Detour[]> = {};
     for (const s of app.sources) {
       const m = app.models[s.id];
-      if (!m || !s.enabled) continue;
-      out.push(...diagnoseSource(board, app.planes, this.frame, $state.snapshot(s) as Source, m, app.fMax));
+      if (!m) continue;
+      detours[s.id] = this.detourCache.get(s.id) ?? [];
+      if (!s.enabled) continue;
+      out.push(...diagnoseSource(board, app.planes, this.frame, $state.snapshot(s) as Source, m, app.fMax, detours[s.id]));
     }
     app.diagnostics = out;
+    app.detours = detours;
+    this.pushReturnPaths();
+  }
+
+  setReturnModel(m: 'image' | 'detour') {
+    app.returnModel = m;
+    this.refreshAll();
+  }
+
+  /** Return paths of the enabled sources as overlay lines. */
+  pushReturnPaths() {
+    const v = this.viewer;
+    const board = app.board;
+    if (!v || !board) return;
+    if (!app.view.showReturnPaths || app.returnModel !== 'detour') return v.setReturnPaths([]);
+    const lines: { points: [number, number, number][]; color: string }[] = [];
+    for (const s of app.sources) {
+      if (!s.enabled) continue;
+      for (const d of app.detours[s.id] ?? []) {
+        const y = board.layers[d.layer]?.y ?? 0;
+        lines.push({ points: d.path.map((p) => [p.x - this.frame.ox, y, p.y - this.frame.oy]), color: s.color });
+      }
+    }
+    v.setReturnPaths(lines);
   }
 
   /** Local maxima of the composite in a horizontal slice at the probe height. */
@@ -638,7 +685,7 @@ class Engine {
       kind: SCENARIO_KIND,
       version: SCENARIO_VERSION,
       board: { fileName: this.boardName, hash: app.boardHash },
-      settings: { quality: app.quality, fMax: app.fMax, planeOverrides: $state.snapshot(app.planeOverrides) },
+      settings: { quality: app.quality, fMax: app.fMax, planeOverrides: $state.snapshot(app.planeOverrides), returnModel: app.returnModel },
       sources: $state.snapshot(app.sources),
       view: $state.snapshot(app.view),
     };
@@ -650,6 +697,7 @@ class Engine {
     app.planeOverrides = sc.settings.planeOverrides;
     app.quality = sc.settings.quality;
     app.fMax = sc.settings.fMax;
+    app.returnModel = sc.settings.returnModel;
     app.view = { ...sc.view };
     app.selectedId = app.sources[0]?.id ?? null;
     this.rebuildEverything();

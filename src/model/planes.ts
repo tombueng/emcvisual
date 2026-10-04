@@ -74,7 +74,7 @@ export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, 
       net,
       y: layer.y,
       coverage: (byNet.get(net) ?? 0) / area,
-      raster: rasterize(polys, board.bbox, area),
+      raster: fillSmallHoles(rasterize(polys, board.bbox, area), 3),
       override,
     });
   }
@@ -149,4 +149,49 @@ export function coveredNear(rs: CoverageRaster, x: number, y: number, r = 0.8): 
     if (covered(rs, x + r * Math.cos(a), y + r * Math.sin(a))) return true;
   }
   return false;
+}
+
+/**
+ * Reference copper for return currents. Plane rasters have their small holes filled
+ * (fillSmallHoles), so via anti-pads count as copper while slots and cut-outs do not.
+ */
+export function referenceCopper(rs: CoverageRaster, x: number, y: number): boolean {
+  return covered(rs, x, y);
+}
+
+/**
+ * Fill enclosed holes smaller than maxArea (mm²): via anti-pads and thermal gaps carry no
+ * return-current detour worth modelling, slots and cut-outs (larger, or open to the board
+ * edge) stay. 4-connected flood fill over the uncovered cells.
+ */
+export function fillSmallHoles(r: CoverageRaster, maxArea: number): CoverageRaster {
+  const { nx, ny } = r;
+  const data = r.data.slice();
+  const seen = new Uint8Array(nx * ny);
+  const maxCells = maxArea / (r.cell * r.cell);
+  const stack: number[] = [];
+  const comp: number[] = [];
+  for (let start = 0; start < nx * ny; start++) {
+    if (data[start] || seen[start]) continue;
+    stack.length = 0;
+    comp.length = 0;
+    stack.push(start);
+    seen[start] = 1;
+    let open = false;
+    while (stack.length) {
+      const v = stack.pop()!;
+      comp.push(v);
+      const i = v % nx;
+      const j = (v - i) / nx;
+      if (i === 0 || j === 0 || i === nx - 1 || j === ny - 1) open = true;
+      const nb = [i > 0 ? v - 1 : -1, i < nx - 1 ? v + 1 : -1, j > 0 ? v - nx : -1, j < ny - 1 ? v + nx : -1];
+      for (const u of nb) {
+        if (u < 0 || data[u] || seen[u]) continue;
+        seen[u] = 1;
+        stack.push(u);
+      }
+    }
+    if (!open && comp.length <= maxCells) for (const v of comp) data[v] = 1;
+  }
+  return { ...r, data };
 }

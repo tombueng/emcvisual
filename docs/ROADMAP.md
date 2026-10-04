@@ -14,8 +14,8 @@ mit günstiger Hardware, alles in derselben Welt.
 
 | Stufe | Inhalt | Art | Status | Dokument |
 |---|---|---|---|---|
-| **1** | Quasistatische Nahfeld-Simulation im Browser, PCB-World, Klang | Software | **in Arbeit** | [stufe-1/PLAN.md](stufe-1/PLAN.md) |
-| 2 | Rückströme in Flächen, Leitungseffekte, E-Feld | Software | Idee | [zukunft/STUFE-2-FLAECHENSTROEME.md](zukunft/STUFE-2-FLAECHENSTROEME.md) |
+| **1** | Quasistatische Nahfeld-Simulation im Browser, PCB-World, Klang | Software | **umgesetzt** (M0–M7) | [stufe-1/PLAN.md](stufe-1/PLAN.md) |
+| **2** | Rückströme in Flächen, Leitungseffekte, E-Feld | Software | **in Arbeit** (2a Umwegmodell fertig) | [zukunft/STUFE-2-FLAECHENSTROEME.md](zukunft/STUFE-2-FLAECHENSTROEME.md) |
 | 3 | Vollwelle mit openEMS, Fernfeld, Kabel | Software (+ lokale Rechnung) | Idee | [zukunft/STUFE-3-VOLLWELLE.md](zukunft/STUFE-3-VOLLWELLE.md) |
 | 4 | Messung: 3D-Drucker als Nahfeld-Scanner | Hardware + Software | Idee | [zukunft/STUFE-4-MESSUNG-SCANNER.md](zukunft/STUFE-4-MESSUNG-SCANNER.md) |
 | 5 | Handsonde mit Ortung, Sonden-Array, Phase | Hardware + Software | Idee | [zukunft/STUFE-5-MESSUNG-ERWEITERT.md](zukunft/STUFE-5-MESSUNG-ERWEITERT.md) |

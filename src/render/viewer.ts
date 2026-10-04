@@ -403,6 +403,32 @@ export class Viewer {
     this.requestRender();
   }
 
+  private returnPaths: THREE.Group | null = null;
+
+  /** Stage 2 return paths drawn on top of everything (they run inside the board). */
+  setReturnPaths(lines: { points: [number, number, number][]; color: string }[]) {
+    if (this.returnPaths) {
+      this.scene.remove(this.returnPaths);
+      disposeObject(this.returnPaths);
+      this.returnPaths = null;
+    }
+    if (lines.length) {
+      const g = new THREE.Group();
+      for (const l of lines) {
+        if (l.points.length < 2) continue;
+        const geo = new THREE.BufferGeometry().setFromPoints(l.points.map((p) => new THREE.Vector3(p[0], p[1], p[2])));
+        const mat = new THREE.LineDashedMaterial({ color: l.color, dashSize: 0.8, gapSize: 0.5, depthTest: false, transparent: true, opacity: 0.95 });
+        const line = new THREE.Line(geo, mat);
+        line.computeLineDistances();
+        line.renderOrder = 11;
+        g.add(line);
+      }
+      this.returnPaths = g;
+      this.scene.add(g);
+    }
+    this.requestRender();
+  }
+
   /** Small markers (hotspots) in world coordinates. */
   setMarkers(list: { pos: [number, number, number]; color: string }[]) {
     if (this.markers) {

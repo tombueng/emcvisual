@@ -132,6 +132,16 @@
       <button class="btn small" onclick={exportSlice} disabled={!app.composite}>{t.view.sliceCsv}</button>
     {/if}
 
+    <div class="section-title">{t.view.returnModel}</div>
+    <select aria-label={t.view.returnModel} value={app.returnModel} onchange={(e) => { engine.setReturnModel((e.currentTarget as HTMLSelectElement).value as 'image' | 'detour'); engine.scheduleSave(); }}>
+      <option value="detour">{t.view.returnModels.detour}</option>
+      <option value="image">{t.view.returnModels.image}</option>
+    </select>
+    {#if app.returnModel === 'detour'}
+      <label class="check"><input type="checkbox" bind:checked={app.view.showReturnPaths} onchange={() => { engine.pushReturnPaths(); engine.scheduleSave(); }} /> {t.view.returnPaths}</label>
+      <p class="hint">{t.view.returnHint}</p>
+    {/if}
+
     <div class="section-title">{t.view.layers}</div>
     {#if app.board}
       <table class="layers">

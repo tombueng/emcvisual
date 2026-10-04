@@ -48,3 +48,9 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     Einführungstext im HTML (für Crawler ohne JavaScript), strukturierte Daten, `llms.txt`,
     Sitemap und GitHub-Topics; das `keywords`-Meta-Tag ist nur Beiwerk (Google ignoriert es).
     Solange keine Lizenz gewählt ist, steht nirgends „open source“.
+20. **2026-10-04 · Stufe 2 beginnt mit einem geometrischen Umwegmodell** statt mit dem
+    PEEC-/FastHenry-Löser: Kürzeste Wege durchs Flächenkupfer und Sprünge über Stitching-Via
+    oder Kondensator zeigen die typischen Rückstromfehler schon richtig und rechnen in
+    Millisekunden; der Flächenlöser bleibt für die genaue Stromverteilung.
+21. **2026-10-04 · Kleine Löcher in Flächen (bis 3 mm²) gelten als Kupfer** (Via-Freistellungen);
+    Schlitze und Aussparungen bleiben Lücken.

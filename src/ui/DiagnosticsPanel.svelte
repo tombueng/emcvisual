@@ -76,7 +76,7 @@
       <li style:--c={colorOf(d.sourceId)}>
         <button onclick={() => goToBoard(d.at.x, d.at.y)} title={t.diag.goTo}>
           <span class="src">{nameOf(d.sourceId)}</span>
-          <span class:warn={d.kind !== 'long-line'}>{text(d)}</span>
+          <span class:warn={d.kind !== 'long-line'}>{text(d)}{d.detour ? t.diag.detour(d.detour) : ''}</span>
         </button>
       </li>
     {/each}

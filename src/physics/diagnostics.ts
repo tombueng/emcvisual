@@ -8,6 +8,7 @@ import type { BoardModel, Vec2 } from '../model/types';
 import { toBoard, type WorldFrame } from '../model/world';
 import type { CurrentElement, SourceModel } from './currents';
 import type { Source } from './sources';
+import type { Detour } from './returnPaths';
 
 export type DiagnosticKind = 'return-gap' | 'ref-change' | 'no-stitching' | 'long-line';
 
@@ -23,6 +24,8 @@ export interface Diagnostic {
   /** Length of the gap (return-gap), mm; or a frequency (long-line), Hz. */
   value: number;
   otherNet?: string;
+  /** Stage 2: how the return current actually goes (detour length, extra loop area, link). */
+  detour?: { length: number; extraArea: number; via?: string };
 }
 
 const STEP = 0.25;
@@ -50,13 +53,15 @@ export function diagnoseSource(
   src: Source,
   model: SourceModel,
   fMax: number,
+  detours: Detour[] = [],
 ): Diagnostic[] {
   const out: Diagnostic[] = [];
   const layerByY = (y: number) => board.layers.find((l) => Math.abs(l.y - y) < 1e-6);
 
   // gaps under horizontal current paths
   for (const e of model.elements) {
-    if (e.vertical || e.layer < 0) continue;
+    // explicit return paths (stage 2) are the answer to a gap, not a signal over one
+    if (e.vertical || e.layer < 0 || e.tag === 'return') continue;
     const ref = referencePlane(board, planes, e.layer);
     if (!ref) continue;
     for (const g of gapsAlong(e, ref, frame)) {
@@ -148,7 +153,24 @@ export function diagnoseSource(
       });
     }
   }
+  // attach the stage 2 return paths to the hints they explain
+  for (const d of out) {
+    const kind = d.kind === 'return-gap' ? 'gap' : d.kind === 'ref-change' || d.kind === 'no-stitching' ? 'transfer' : null;
+    if (!kind) continue;
+    const near = (p: Vec2) => Math.hypot(p.x - d.at.x, p.y - d.at.y);
+    const best = detours
+      .filter((t) => t.kind === kind)
+      .map((t) => ({ t, dist: Math.min(...t.path.map(near)) }))
+      .sort((a, b) => a.dist - b.dist)[0];
+    if (best && best.dist < 8) d.detour = { length: pathLen(best.t.path), extraArea: best.t.extraArea, via: best.t.via };
+  }
   return merge(out);
+}
+
+function pathLen(p: Vec2[]): number {
+  let s = 0;
+  for (let k = 1; k < p.length; k++) s += Math.hypot(p[k]!.x - p[k - 1]!.x, p[k]!.y - p[k - 1]!.y);
+  return s;
 }
 
 function coveringRef(board: BoardModel, planes: PlaneLayer[], layer: number, at: Vec2): PlaneLayer | undefined {

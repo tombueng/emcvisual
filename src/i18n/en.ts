@@ -38,6 +38,7 @@ export const en: Strings = {
     addDiff: 'Differential pair',
     addLoop: 'Current loop',
     suggestions: 'Suggestions from the board',
+    takeAll: 'Add all',
     take: 'Add',
     reasons: {
       'clock-name': 'Net name looks like a clock',
@@ -141,6 +142,10 @@ export const en: Strings = {
     planeNone: 'no plane',
     substrate: 'See-through board',
     fieldLines: 'Field lines of the selected source',
+    returnModel: 'Return current model',
+    returnModels: { image: 'Mirror (stage 1)', detour: 'Detours (stage 2)' },
+    returnPaths: 'Show return paths',
+    returnHint: 'Stage 2: the return current goes around slots in the plane and, at a reference change, through the nearest stitching via or capacitor.',
     sliceCsv: 'Slice as CSV',
     fieldLinesBusy: 'Tracing field lines …',
     components: 'Show components',
@@ -160,6 +165,12 @@ export const en: Strings = {
       'no-stitching': (d) => `Layer change (${d.layer}) without a ${d.planeNet} via within ${d.value} mm.`,
       'long-line': (d, f) => `The line is electrically long above ${f(d.value)}; stage 1 treats it as lumped.`,
     },
+    detour: (d: { length: number; extraArea: number; via?: string }) =>
+      d.via && d.via !== 'via'
+        ? ` Return through ${d.via}: ${d.length.toFixed(0)} mm detour, about ${d.extraArea.toFixed(0)} mm² extra loop area.`
+        : d.via === 'via'
+          ? ` Return through the nearest via: ${d.length.toFixed(0)} mm detour.`
+          : ` The return current runs ${d.length.toFixed(0)} mm around the gap, about ${d.extraArea.toFixed(0)} mm² extra loop area.`,
     hotspots: 'Hotspots at probe height',
     hotspotsNone: 'No field computed yet.',
     near: 'near',

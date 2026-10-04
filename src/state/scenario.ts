@@ -29,12 +29,15 @@ export interface ViewSettings {
   substrateOpacity: number;
   showComponents: boolean;
   showFieldLines: boolean;
+  showReturnPaths: boolean;
 }
 
 export interface ScenarioSettings {
   quality: Quality;
   fMax: number;
   planeOverrides: PlaneOverrides;
+  /** 'image' = stage 1 mirror model, 'detour' = stage 2 return paths around gaps and through links. */
+  returnModel: 'image' | 'detour';
 }
 
 export interface Scenario {
@@ -61,9 +64,10 @@ export const DEFAULT_VIEW: ViewSettings = {
   substrateOpacity: 1,
   showComponents: true,
   showFieldLines: false,
+  showReturnPaths: true,
 };
 
-export const DEFAULT_SETTINGS: ScenarioSettings = { quality: 'normal', fMax: 1e9, planeOverrides: {} };
+export const DEFAULT_SETTINGS: ScenarioSettings = { quality: 'normal', fMax: 1e9, planeOverrides: {}, returnModel: 'detour' };
 
 export class ScenarioError extends Error {}
 

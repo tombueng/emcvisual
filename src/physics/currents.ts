@@ -24,6 +24,10 @@ export interface CurrentElement {
   net: number;
   /** 'via' for vertical copper (vias, through-hole barrels), 'return' for displacement currents. */
   tag?: 'via' | 'return';
+  /** Stage 2 return model: no mirror images for this element (its return is explicit). */
+  noImage?: boolean;
+  /** Height that decides the shielding slot instead of the element's own (image-side connectors). */
+  slotY?: number;
 }
 
 export interface SourceInfo {

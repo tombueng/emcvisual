@@ -6,7 +6,7 @@
  * into slots; a field point skips a whole slot group when a plane with copper at the
  * point's column lies between the slot and the point.
  */
-import { covered, coveredNear, type PlaneLayer } from '../model/planes';
+import { coveredNear, referenceCopper, type PlaneLayer } from '../model/planes';
 import { toBoard, type Vec3, type WorldFrame } from '../model/world';
 import type { CurrentElement } from './currents';
 
@@ -62,7 +62,7 @@ export function packWithImages(
     let best: PlaneLayer | undefined;
     for (const p of sorted) {
       if (dir > 0 ? p.y <= y + 1e-9 : p.y >= y - 1e-9) continue;
-      if (!(near ? coveredNear(p.raster, b.x, b.y) : covered(p.raster, b.x, b.y))) continue;
+      if (!(near ? coveredNear(p.raster, b.x, b.y) : referenceCopper(p.raster, b.x, b.y))) continue;
       if (!best || Math.abs(p.y - y) < Math.abs(best.y - y)) best = p;
     }
     return best;
@@ -70,6 +70,32 @@ export function packWithImages(
 
   for (const e of elements) {
     if (e.w === 0) continue;
+    if (e.noImage) {
+      // explicit return paths (stage 2): no mirrors; connectors on the image side take the
+      // slot of their signal so they count in the same half space as the images
+      if (e.slotY !== undefined) {
+        out.push({ a: e.a, b: e.b, w: e.w, r: e.r, slot: slotOf(planeY, e.slotY) });
+      } else if (e.vertical) {
+        const y0 = Math.min(e.a[1], e.b[1]);
+        const y1 = Math.max(e.a[1], e.b[1]);
+        const cuts = [y0, ...Array.from(planeY).filter((py) => py > y0 + 1e-9 && py < y1 - 1e-9), y1].sort((p, q) => p - q);
+        const up = e.b[1] > e.a[1];
+        for (let k = 0; k + 1 < cuts.length; k++) {
+          const lo = cuts[k]!;
+          const hi = cuts[k + 1]!;
+          out.push({
+            a: [e.a[0], up ? lo : hi, e.a[2]],
+            b: [e.a[0], up ? hi : lo, e.a[2]],
+            w: e.w,
+            r: e.r,
+            slot: slotOf(planeY, (lo + hi) / 2),
+          });
+        }
+      } else {
+        out.push({ a: e.a, b: e.b, w: e.w, r: e.r, slot: slotOf(planeY, e.a[1]) });
+      }
+      continue;
+    }
     if (e.vertical) {
       // split at plane heights so every piece lies in one slot
       const y0 = Math.min(e.a[1], e.b[1]);
