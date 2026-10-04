@@ -29,6 +29,12 @@ export interface CurrentElement {
   noImage?: boolean;
   /** Height that decides the shielding slot instead of the element's own (image-side connectors). */
   slotY?: number;
+  /**
+   * Elements that reach down to the mirror depth of a plane (return-model connectors and
+   * replacement images): the plane's height. For the far field the return current belongs in
+   * the plane itself (images.ts, imageAt 'plane').
+   */
+  imagePlane?: number;
 }
 
 export interface SourceInfo {
@@ -59,6 +65,8 @@ export interface SourceModel {
   info: SourceInfo;
   /** Weighted centre of the current path, world mm (used to place the sound). */
   centre: Vec3;
+  /** Dipole moment for the far field, A·m² per A (return current in the planes, farfield.ts). */
+  farMoment?: Vec3;
   /** Stage 2b: charges per volt for the electric field, and the voltage spectrum (V RMS). */
   charges?: import('./charges').ChargeElement[];
   vLines?: Line[];

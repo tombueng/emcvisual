@@ -8,8 +8,7 @@ import { covered, coveredNear, type PlaneLayer } from '../model/planes';
 import type { BoardModel, Vec2 } from '../model/types';
 import { toBoard, type WorldFrame } from '../model/world';
 import { buildSource, groundNet, type CurrentElement, type SourceModel } from './currents';
-import { dipoleMoment } from './farfield';
-import { packWithImages } from './images';
+import { farMoment } from './farfield';
 import type { Source } from './sources';
 import type { Detour } from './returnPaths';
 
@@ -36,11 +35,13 @@ export interface Diagnostic {
   /** Stage 2: how the return current actually goes (detour length, extra loop area, link). */
   detour?: { length: number; extraArea: number; via?: string };
   /**
-   * How much quieter the source's far field gets when this is fixed, dB (attribution.ts).
-   * scope 'finding': this problem alone; 'source': all plane gaps under the source together
-   * (gaps without a way around, cut-outs).
+   * Far-field figures in the differential-mode model, dB (attribution.ts). scope 'finding':
+   * `db` is the share of this problem against a source with all other returns ideal (orders
+   * the findings), `alone` what fixing only this spot changes (positive: quieter). scope
+   * 'source': all plane gaps under the source together (gaps without a way around, cut-outs);
+   * `db` is then the effect of fixing them all.
    */
-  gain?: { db: number; scope: 'finding' | 'source' };
+  gain?: { db: number; scope: 'finding' | 'source'; alone?: number };
 }
 
 const STEP = 0.25;
@@ -190,7 +191,7 @@ export function diagnoseSource(
 
   // no reference plane at all: the return runs through the ground copper wherever that is
   if ((src.type === 'signal' || src.type === 'diffpair') && planes.length === 0 && model.info.warnings.includes('unreferenced')) {
-    const now = Math.hypot(...dipoleMoment(packWithImages(model.elements, planes, frame))) * 1e6;
+    const now = Math.hypot(...farMoment(model.elements, planes, frame)) * 1e6;
     const ideal = virtualPlaneMoment(board, frame, src, fMax, model);
     out.push({
       kind: 'no-reference',
@@ -200,7 +201,7 @@ export function diagnoseSource(
       plane: '',
       planeNet: '',
       value: now,
-      ...(ideal > 0 && now > ideal ? { gain: { db: Math.min(20 * Math.log10(now / ideal), 30), scope: 'finding' as const } } : {}),
+      ...(ideal > 0 && now > ideal ? { gain: { db: Math.min(20 * Math.log10(now / ideal), 30), scope: 'finding' as const, alone: Math.min(20 * Math.log10(now / ideal), 30) } } : {}),
     });
   }
 
@@ -254,7 +255,7 @@ export function diagnoseSource(
       .sort((a, b) => a.dist - b.dist)[0];
     if (best && best.dist < 8) {
       d.detour = { length: pathLen(best.t.path), extraArea: best.t.extraArea, via: best.t.via };
-      if (best.t.gainDb !== undefined) d.gain = { db: best.t.gainDb, scope: 'finding' };
+      if (best.t.gainDb !== undefined) d.gain = { db: best.t.gainDb, scope: 'finding', alone: best.t.aloneDb };
     }
     if (!d.gain && d.kind === 'return-gap' && planeGapsDb !== undefined && planeGapsDb > 0.05) d.gain = { db: planeGapsDb, scope: 'source' };
   }
@@ -285,7 +286,7 @@ function virtualPlaneMoment(board: BoardModel, frame: WorldFrame, src: Source, f
   };
   try {
     const m = buildSource({ board, frame, planes: [plane], fMax }, src);
-    return Math.hypot(...dipoleMoment(packWithImages(m.elements, [plane], frame))) * 1e6;
+    return Math.hypot(...farMoment(m.elements, [plane], frame)) * 1e6;
   } catch {
     return 0;
   }

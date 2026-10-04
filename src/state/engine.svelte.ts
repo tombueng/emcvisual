@@ -29,7 +29,7 @@ import { eFieldAt } from '../physics/efield';
 import { packCharges } from '../physics/images';
 import { trapezoidLines, type Line } from '../physics/spectrum';
 import type { FieldKind } from '../compute/fieldKernel';
-import { dipoleCompensated, dipoleMoment, farField, type LimitSegment } from '../physics/farfield';
+import { dipoleCompensated, dipoleMoment, farField, farMoment, type LimitSegment } from '../physics/farfield';
 import { limitsFor } from '../physics/standards';
 import { distPointSegment } from '../model/geometry';
 import { PickIndex } from '../model/pickIndex';
@@ -329,6 +329,7 @@ class Engine {
       }
       // far-field share of each return-path problem and of the plane gaps under the source
       this.attribution.set(s.id, attributeSource(model.elements, base, detours, this.ctx.planes, this.frame));
+      model.farMoment = farMoment(model.elements, this.ctx.planes, this.frame);
       this.detourCache.set(s.id, detours);
       model.charges = buildCharges(this.ctx, src);
       const vw =
@@ -841,7 +842,7 @@ class Engine {
       if (!m || !pack || !s.enabled) continue;
       const fw = this.fullwaveActive() ? this.fullwave : null;
       const meta = fw?.sources.find((x) => x.id === s.id);
-      const moment = dipoleMoment(pack);
+      const moment = m.farMoment ?? dipoleMoment(pack);
       if (!meta && dipoleCompensated(m.info.loopArea, moment)) {
         sources.push({ id: s.id, name: s.name, color: s.color, lines: [], compensated: true });
         continue;

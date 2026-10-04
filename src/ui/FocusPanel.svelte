@@ -9,7 +9,7 @@
   import { t } from '../i18n';
   import { formatEng } from '../physics/units';
   import EngInput from './EngInput.svelte';
-  import { diagnosticText, farMargins, gainText, rankedDiagnostics, standardShort } from '../report/texts';
+  import { diagnosticText, farMargins, fixedShift, gainText, rankedDiagnostics, standardShort } from '../report/texts';
   import { miniSpectrumSvg } from './spectrumSvg';
   import { limitsFor } from '../physics/standards';
   import { MAX_GAIN_DB } from '../physics/attribution';
@@ -37,8 +37,8 @@
       height: 96,
       color: spec.color,
       limits: limitsFor(app.standard, 3),
-      shift: spec.diag.gain ? Math.min(spec.diag.gain.db, MAX_GAIN_DB) : undefined,
-      labels: { left: '30 MHz', right: '1 GHz', caption: spec.diag.gain ? t.callouts.chartFixed : t.callouts.chart(standardShort()) },
+      shift: fixedShift(spec.diag),
+      labels: { left: '30 MHz', right: '1 GHz', caption: fixedShift(spec.diag) !== undefined ? t.callouts.chartFixed : t.callouts.chart(standardShort()) },
     });
   });
 

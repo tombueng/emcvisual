@@ -96,3 +96,15 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     KiCads GLB-Export hat Vorrang, weil KiCad ihn selbst platziert hat. STEP wird im Browser
     gelesen (OpenCascade als WebAssembly) statt auf einem Server: Die Modelle bleiben beim
     Nutzer, und es braucht keinen Dienst.
+34. **2026-10-05 · Fernfeld mit dem Rückstrom in der Fläche, nicht in der Spiegeltiefe.** Das
+    Fachreview (docs/review/FACHREVIEW-2026-10.md, Nr. 2) hat gezeigt, dass Spiegel und
+    Bodenfaktor zusammen das Fernfeld jeder Leitung über einer Fläche um 6 dB zu hoch
+    rechneten. Spiegel bleiben für das Nahfeld (dort richtig), das Dipolmoment für das Fernfeld
+    nimmt den wirklichen Rückstrom.
+35. **2026-10-05 · Angezeigt wird die Wirkung einer einzelnen Behebung, nicht der Anteil.** Der
+    Anteil gegen eine ideale Quelle ordnet die Hinweise, die Zahl an der Blase sagt, was das
+    Beheben nur dieser Stelle im Modell ändert, auch wenn das eine Verschlechterung ist.
+36. **2026-10-05 · Prüfstand mit Fehler-Platinen.** Jede bekannte Fehlerart bekommt eine
+    erzeugte Platine mit Fehler und einen Zwilling mit der üblichen Behebung
+    (tools/emc-cases); ein Test prüft, dass die App den Fehler meldet und den Zwilling nicht.
+    Regeln, die dort nicht bestehen, werden geändert, nicht die Erwartung.

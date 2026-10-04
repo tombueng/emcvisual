@@ -5,6 +5,7 @@
  * Plain SVG markup, so it works in the HTML overlay and inside the scene (HTML-in-Canvas).
  */
 import type { LimitSegment } from '../physics/farfield';
+import { limitAt as limitAtF } from '../physics/farfield';
 
 export interface MiniSpectrumOptions {
   width: number;
@@ -37,7 +38,7 @@ export function miniSpectrumSvg(lines: { f: number; db: number }[], o: MiniSpect
   const dbBottom = dbTop - range;
   const x = (f: number) => (Math.log(f / fMin) / Math.log(fMax / fMin)) * W;
   const y = (db: number) => top + ((dbTop - Math.max(dbBottom, Math.min(dbTop, db))) / range) * plotH;
-  const limitAt = (f: number) => o.limits.find((s) => f >= s.f0 && f < s.f1)?.db ?? null;
+  const limitAt = (f: number) => limitAtF(o.limits, f);
 
   // one stem per pixel column: the strongest line there
   const cols = new Map<number, number>();

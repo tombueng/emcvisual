@@ -27,9 +27,17 @@ export interface ImageOptions {
   step: number;
   /** Coverage gaps shorter than this are bridged (via anti-pads), mm. */
   minGap: number;
+  /**
+   * 'mirror': images at the mirror depth (2·plane − y). Right for the field above a large
+   * plane (near field). 'plane': the return current in the plane itself, at its height. Right
+   * for the dipole moment of a board whose planes are much smaller than the wavelength (far
+   * field): a trace h above the plane then spans the loop h·L, not 2·h·L (Ott, eq. 12-2, which
+   * already contains the factor 2 for the ground reflection).
+   */
+  imageAt: 'mirror' | 'plane';
 }
 
-const DEFAULTS: ImageOptions = { step: 0.25, minGap: 1.0 };
+const DEFAULTS: ImageOptions = { step: 0.25, minGap: 1.0, imageAt: 'mirror' };
 
 interface Raw {
   a: Vec3;
@@ -69,8 +77,20 @@ export function packWithImages(
     return best;
   };
 
-  for (const e of elements) {
-    if (e.w === 0) continue;
+  const atPlane = o.imageAt === 'plane';
+  /** Plane mode: points beyond a connector's plane (at the mirror depth) move onto the plane. */
+  const ontoPlane = (e: CurrentElement): CurrentElement => {
+    if (!atPlane || e.imagePlane === undefined) return e;
+    const py = e.imagePlane;
+    const side = Math.sign((e.slotY ?? py) - py) || 1;
+    const fix = (p: Vec3): Vec3 => ((p[1] - py) * side < -1e-6 ? [p[0], py, p[2]] : p);
+    return { ...e, a: fix(e.a), b: fix(e.b) };
+  };
+
+  for (const e0 of elements) {
+    if (e0.w === 0) continue;
+    const e = ontoPlane(e0);
+    if (Math.hypot(e.b[0] - e.a[0], e.b[1] - e.a[1], e.b[2] - e.a[2]) < 1e-9) continue;
     if (e.noImage) {
       // explicit return paths (stage 2): no mirrors; connectors on the image side take the
       // slot of their signal so they count in the same half space as the images
@@ -113,11 +133,13 @@ export function packWithImages(
         out.push({ a, b, w: e.w, r: e.r, slot });
         // PEC image: J' = -R(J). Mirroring the end points already flips the vertical
         // direction, so the weight is negated to keep normal currents pointing the same way.
-        for (const dir of [1, -1] as const) {
-          const p = coveringPlane(e.a[0], e.a[2], mid, dir, true);
-          if (!p) continue;
-          out.push({ a: [a[0], 2 * p.y - a[1], a[2]], b: [b[0], 2 * p.y - b[1], b[2]], w: -e.w, r: e.r, slot });
-        }
+        // plane mode: the image of a vertical piece lies in the plane and has no length
+        if (!atPlane)
+          for (const dir of [1, -1] as const) {
+            const p = coveringPlane(e.a[0], e.a[2], mid, dir, true);
+            if (!p) continue;
+            out.push({ a: [a[0], 2 * p.y - a[1], a[2]], b: [b[0], 2 * p.y - b[1], b[2]], w: -e.w, r: e.r, slot });
+          }
       }
       continue;
     }
@@ -172,7 +194,8 @@ export function packWithImages(
       const sum = inv.reduce((s, v) => s + v, 0);
       ys.forEach((py, i) => {
         const share = inv[i]! / sum;
-        out.push({ a: [a[0], 2 * py - y, a[2]], b: [b[0], 2 * py - y, b[2]], w: -e.w * share, r: e.r, slot });
+        const yi = atPlane ? py : 2 * py - y;
+        out.push({ a: [a[0], yi, a[2]], b: [b[0], yi, b[2]], w: -e.w * share, r: e.r, slot });
       });
     }
   }

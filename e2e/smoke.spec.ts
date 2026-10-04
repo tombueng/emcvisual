@@ -42,7 +42,10 @@ test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
   await expect(bubble1).toContainText(/über C2/);
   // ranked by far-field effect: the first hint is the bad clock's far transfer through C2
   await expect(page.locator('ol.ranked li').first()).toContainText('Takt schlecht');
-  await expect(page.locator('ol.ranked li').first()).toContainText(/3 m: behoben 1\d,\d dB leiser/);
+  // the honest figure: what fixing only this spot changes in the model
+  await expect(page.locator('ol.ranked li').first()).toContainText(/3 m \(Modell\): nur diese Stelle behoben \d,\d dB leiser/);
+  // the second hint helps only together with the first (the two detours partly cancel)
+  await expect(page.locator('ol.ranked li').nth(1)).toContainText(/allein behoben \d,\d dB lauter/);
 
   // far field view with limit lines
   await page.getByRole('tab', { name: 'Fernfeld 3 m' }).click();
@@ -270,7 +273,7 @@ test('problem view: a click on a hint shows only what matters, with labels and e
   await page.locator('.bubble.hint').filter({ has: page.locator('.badge', { hasText: /^1$/ }) }).click();
   const card = page.locator('aside.card');
   await expect(card).toContainText('Was die Rechnung hier bemängelt');
-  await expect(card).toContainText('3 m: behoben');
+  await expect(card).toContainText('3 m (Modell): nur diese Stelle behoben');
   // the explanation: what it is, why it radiates, what helps
   await expect(card).toContainText('Warum strahlt das ab?');
   await expect(card.locator('ol.fixes li').first()).toContainText('Bezugsnetz');

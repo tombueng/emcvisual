@@ -37,8 +37,13 @@ export interface Detour {
    * via right at the layer change): elements to drop, elements to put back, elements to add.
    */
   fix?: { remove: number[]; restore: { index: number; el: CurrentElement }[]; add: CurrentElement[] };
-  /** How much quieter the source's far field gets when this is fixed, dB (set by attribution). */
+  /**
+   * Share of this problem: how much louder it makes the source when all other return paths
+   * are ideal, dB (set by attribution). Orders the findings; not the effect of fixing it alone.
+   */
   gainDb?: number;
+  /** Effect of fixing only this spot, dB (positive: quieter; can be negative when detours cancel). */
+  aloneDb?: number;
 }
 
 export interface ReturnResult {
@@ -93,7 +98,7 @@ export function applyReturnModel(ctx: Ctx, src: Source, elements: CurrentElement
       out.push({ ...e, a: A, b: B, noImage: true });
       const first = out.length;
       // image arrives at B' → up to the plane surface → around the gap → down to A'
-      out.push(vertical(B, yImg, ys, e.w, e.r, e.net, yL));
+      out.push(vertical(B, yImg, ys, e.w, e.r, e.net, yL, ref.y));
       for (let k = 1; k < path.length; k++) {
         out.push({
           a: toWorld(ctx.frame, path[k - 1]!, ys),
@@ -107,7 +112,7 @@ export function applyReturnModel(ctx: Ctx, src: Source, elements: CurrentElement
           tag: 'return',
         });
       }
-      out.push(vertical(A, ys, yImg, e.w, e.r, e.net, yL));
+      out.push(vertical(A, ys, yImg, e.w, e.r, e.net, yL, ref.y));
       // fixed: the return runs right under the trace, as the mirror image of the crossing
       const image: CurrentElement = {
         a: [A[0], yImg, A[2]],
@@ -119,6 +124,7 @@ export function applyReturnModel(ctx: Ctx, src: Source, elements: CurrentElement
         net: ref.net,
         noImage: true,
         slotY: yL,
+        imagePlane: ref.y,
       };
       detours.push({
         kind: 'gap',
@@ -218,12 +224,12 @@ function transferAtVias(ctx: Ctx, out: CurrentElement[], detours: Detour[]) {
     for (const i of sp.idx) out[i] = { ...out[i]!, noImage: true };
     const first = out.length;
     // image of the "to" side arrives at V → plane surface → to the link
-    out.push(vertical(V, imgTo, sTo, w, 0.15, pTo.net, toL.y));
+    out.push(vertical(V, imgTo, sTo, w, 0.15, pTo.net, toL.y, pTo.y));
     pushPath(out, frame, pathTo, sTo, w, pTo);
     // through the link: stitching via, or up to the capacitor, across it and down
     for (const seg of link.segments(sTo, sFrom)) out.push({ ...seg, w, noImage: true, tag: 'return' });
     pushPath(out, frame, pathFrom, sFrom, w, pFrom);
-    out.push(vertical(V, sFrom, imgFrom, w, 0.15, pFrom.net, fromL.y));
+    out.push(vertical(V, sFrom, imgFrom, w, 0.15, pFrom.net, fromL.y, pFrom.y));
 
     const loop = [...pathTo, ...pathFrom.slice(1)];
     detours.push({
@@ -334,8 +340,8 @@ function lerp(a: Vec3, b: Vec3, t: number): Vec3 {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }
 
-function vertical(p: Vec3, y0: number, y1: number, w: number, r: number, net: number, slotY: number): CurrentElement {
-  return { a: [p[0], y0, p[2]], b: [p[0], y1, p[2]], w, r, vertical: true, layer: -1, net, noImage: true, slotY, tag: 'return' };
+function vertical(p: Vec3, y0: number, y1: number, w: number, r: number, net: number, slotY: number, imagePlane: number): CurrentElement {
+  return { a: [p[0], y0, p[2]], b: [p[0], y1, p[2]], w, r, vertical: true, layer: -1, net, noImage: true, slotY, imagePlane, tag: 'return' };
 }
 
 function pushPath(out: CurrentElement[], frame: WorldFrame, path: Vec2[], y: number, w: number, plane: PlaneLayer) {

@@ -83,11 +83,26 @@ export function sourceSeverityOf(id: string): Severity {
   return sourceSeverity(farMargins().find((f) => f.id === id)?.worst ?? null);
 }
 
-/** "fixing this: 11 dB quieter at 3 m" and the like. */
+const dbText = (v: number) => (v >= MAX_GAIN_DB - 0.05 ? t.diag.gainMore(MAX_GAIN_DB) : t.diag.gainDb(v));
+
+/**
+ * What fixing a finding changes at 3 m in the differential-mode model: this spot alone, or
+ * (when it hardly helps alone) its share, which only counts together with the other hints.
+ */
 export function gainText(d: Diagnostic): string {
   if (!d.gain) return '';
-  const v = d.gain.db >= MAX_GAIN_DB - 0.05 ? t.diag.gainMore(MAX_GAIN_DB) : t.diag.gainDb(d.gain.db);
-  return d.gain.scope === 'source' ? t.diag.gainSource(v) : t.diag.gainFinding(v);
+  if (d.gain.scope === 'source') return t.diag.gainSource(dbText(d.gain.db));
+  const alone = d.gain.alone ?? d.gain.db;
+  if (alone >= 0.5) return t.diag.gainAlone(dbText(alone));
+  if (alone <= -0.5) return t.diag.gainAloneWorse(dbText(-alone));
+  return t.diag.gainShare(dbText(d.gain.db));
+}
+
+/** dB the dashed "fixed" spectrum lies lower: the effect of fixing this spot (never negative). */
+export function fixedShift(d: Diagnostic): number | undefined {
+  if (!d.gain) return undefined;
+  const v = d.gain.scope === 'source' ? d.gain.db : (d.gain.alone ?? d.gain.db);
+  return v > 0.05 ? Math.min(v, MAX_GAIN_DB) : undefined;
 }
 
 /** Short name of the selected emission standard, e.g. "CISPR 32 B". */

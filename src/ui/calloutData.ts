@@ -10,7 +10,7 @@ import { app } from '../state/app.svelte';
 import { engine } from '../state/engine.svelte';
 import { t } from '../i18n';
 import { toWorld } from '../model/world';
-import { farMargins, gainText, rankedDiagnostics, diagnosticText, sourceName, sourceColor, sourceSeverityOf, standardShort } from '../report/texts';
+import { farMargins, fixedShift, gainText, rankedDiagnostics, diagnosticText, sourceName, sourceColor, sourceSeverityOf, standardShort } from '../report/texts';
 import { severityColor, type SeverityLevel } from '../physics/severity';
 import type { Diagnostic } from '../physics/diagnostics';
 import { limitsFor } from '../physics/standards';
@@ -83,7 +83,7 @@ export function buildCallouts(viewer: Viewer): Callout[] {
       height: 58,
       color,
       limits,
-      shift: shift !== undefined ? Math.min(shift, MAX_GAIN_DB) : undefined,
+      shift,
       labels: { left: '30 MHz', right: '1 GHz', caption: shift !== undefined ? t.callouts.chartFixed : t.callouts.chart(standardShort()) },
     });
   };
@@ -102,7 +102,7 @@ export function buildCallouts(viewer: Viewer): Callout[] {
           lines: [shortText(d)],
           accent: d.gain ? gainText(d) : margin !== null ? t.diag.margin(margin) : undefined,
           more: diagnosticText(d),
-          spectrum: chart(d.sourceId, sourceColor(d.sourceId), d.gain?.db),
+          spectrum: chart(d.sourceId, sourceColor(d.sourceId), fixedShift(d)),
           severity: severityColor(severity.score),
           severityLabel: t.severity[severity.level],
           level: severity.level,

@@ -29,18 +29,24 @@ export function marginScore(margin: number | null): number {
  * quantifiable (a flat loop over a solid plane cancels its own dipole in the model), so the
  * area counts on its own; a known far-field margin can only raise the rating.
  */
+/** Below this far-field margin (dB) a gap under the source is left to the normal rating. */
+export const GAP_RELEVANT = -30;
+
 export function hotLoopScore(area: number): number {
   return clamp(Math.log10(area / 20), 0, 1);
 }
 
 export function findingSeverity(margin: number | null, gain: number | null, kind: DiagnosticKind, value?: number): Severity {
   // share of the problem: full from 6 dB gain on; unquantified hints in between
-  let share = gain !== null ? clamp(gain / 6, 0.15, 1) : kind === 'long-line' ? 0.3 : 0.4;
-  // a gap under the return path also drives the plane halves and cables against each other
-  // (common mode, not in the gain figure): at least a large share
-  if (kind === 'return-gap') share = Math.max(share, 0.6);
+  const share = gain !== null ? clamp(gain / 6, 0.15, 1) : kind === 'long-line' ? 0.3 : 0.4;
   let score = marginScore(margin) * (0.35 + 0.65 * share);
   if (kind === 'hot-loop' && value !== undefined) score = Math.max(score, hotLoopScore(value));
+  // a gap in the return plane under a source with spectrum in the measured range: the voltage
+  // across the gap drives the plane halves and cables against each other (common mode), which
+  // the differential-mode figures do not contain. The literature treats it as one of the most
+  // common reasons for failed tests (LearnEMC: "Don't split, gap or cut the signal return
+  // plane"), so it is at least high priority.
+  if (kind === 'return-gap' && margin !== null && margin > GAP_RELEVANT) score = Math.max(score, 0.6);
   return { score, level: level(score) };
 }
 

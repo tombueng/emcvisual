@@ -13,7 +13,7 @@ import { engine } from '../state/engine.svelte';
 import { limitAt } from '../physics/farfield';
 import { limitsFor } from '../physics/standards';
 import { findingSeverity, type Severity } from '../physics/severity';
-import { standardShort } from './texts';
+import { gainText, standardShort } from './texts';
 import { C0 } from '../physics/units';
 
 export interface Explanation {
@@ -92,7 +92,13 @@ export function explain(d: Diagnostic): Explanation {
   }
   if (m?.info.series?.length && s && s.type === 'signal' && m.info.trEff !== undefined && m.info.trEff > s.waveform.tr * 1.05)
     figures.push(E.fig.series(m.info.series.map((r) => `${r.ref} (${fmtNum(r.ohms, 0)} Ω)`).join(', '), formatEng(s.waveform.tr, 's', 2), formatEng(m.info.trEff, 's', 2)));
-  if (gain) figures.push(d.gain!.scope === 'source' ? E.fig.gainSource(gain) : E.fig.gain(gain));
+  const att0 = app.attribution[d.sourceId];
+  const dbs = (v: number) => (v >= MAX_GAIN_DB - 0.05 ? t.diag.gainMore(MAX_GAIN_DB) : t.diag.gainDb(Math.abs(v)));
+  if (d.gain?.scope === 'source') figures.push(E.fig.gainSource(gain!));
+  else if (d.gain) {
+    const alone = d.gain.alone ?? d.gain.db;
+    figures.push(E.fig.gain(alone >= 0 ? E.fig.quieter(dbs(alone)) : E.fig.louder(dbs(alone)), gain!, att0 && att0.returnPathsDb > 0.05 ? dbs(att0.returnPathsDb) : ''));
+  }
   // every text takes the figures; some ignore them (fewer parameters is fine in TypeScript)
   type Texts = {
     what: (x: typeof p) => string;
@@ -123,11 +129,11 @@ export function explain(d: Diagnostic): Explanation {
   calc.push(C.formula);
   if (worst) calc.push(C.worst(standardShort(), formatEng(worst.f, 'Hz', 3), fmtNum(worst.db, 1), fmtNum(worst.lim, 0), t.diag.margin(worst.db - worst.lim)));
   if (d.gain && att && worst) {
-    const g = Math.min(d.gain.db, MAX_GAIN_DB);
+    // what fixing this spot alone changes (for all gaps of a source: all of them together)
+    const g = Math.min(d.gain.scope === 'source' ? d.gain.db : (d.gain.alone ?? d.gain.db), MAX_GAIN_DB);
     const fixed = d.gain.scope === 'source' ? att.momentSolid : att.momentNow / 10 ** (g / 20);
-    calc.push(
-      (d.gain.scope === 'source' ? C.fixedSolid : C.fixed)(mm2(fixed), gain ?? '', fmtNum(worst.db - g, 1), t.diag.margin(worst.db - g - worst.lim)),
-    );
+    const gTxt = g >= 0 ? dbs(g) : `−${dbs(g)}`;
+    calc.push((d.gain.scope === 'source' ? C.fixedSolid : C.fixed)(mm2(fixed), gTxt, fmtNum(worst.db - g, 1), t.diag.margin(worst.db - g - worst.lim)));
   }
 
   // --- why it could be wrong here -----------------------------------------------------------------
@@ -162,7 +168,7 @@ export function explain(d: Diagnostic): Explanation {
   // --- severity -------------------------------------------------------------------------------------
   const margin = worst ? worst.db - worst.lim : null;
   const severity = findingSeverity(margin, d.gain?.db ?? null, d.kind, d.value);
-  const reason = t.severity.reason(margin !== null ? `${t.diag.margin(margin)} (${formatEng(worst!.f, 'Hz', 3)})` : '–', gain ? (d.gain!.scope === 'source' ? E.fig.gainSource(gain) : gainTextShort(gain)) : t.severity.noGain);
+  const reason = t.severity.reason(margin !== null ? `${t.diag.margin(margin)} (${formatEng(worst!.f, 'Hz', 3)})` : '–', gain ? gainText(d) : t.severity.noGain);
 
   return {
     what: text.what(p),
@@ -180,6 +186,3 @@ export function explain(d: Diagnostic): Explanation {
   };
 }
 
-function gainTextShort(g: string): string {
-  return t.explain.fig.gainShort(g);
-}

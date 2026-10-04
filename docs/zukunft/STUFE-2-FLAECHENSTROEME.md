@@ -63,11 +63,18 @@ Leitung, für einen Lagenwechsel als Stitching-Via direkt neben der Via. Daraus 
   Weg drumherum und für Aussparungen unter einer Quelle. Anzeige begrenzt auf „mehr als 30 dB“:
   Über einer idealen Fläche verschwindet das senkrechte Moment einer flachen Schleife fast ganz.
 - **Reihenfolge** (Reiter Diagnose, Bericht, Feldcheck): zuerst die Quelle mit dem kleinsten
-  Abstand zum Grenzwert in 3 m, darin die Behebung mit der größten Wirkung.
+  Abstand zum Grenzwert in 3 m, darin der Hinweis mit dem größten Anteil.
+- **Angezeigt** wird seit 2026-10-05 (Fachreview Nr. 1) nicht mehr der Anteil als „behoben …
+  leiser“, sondern was das Beheben **nur dieser Stelle** ändert, 20·log10(|m_jetzt| /
+  |m_k behoben|), samt Vorzeichen: Ein Hinweis, der allein behoben die Quelle lauter macht, sagt
+  das („hilft nur zusammen mit den anderen Hinweisen“). Der Anteil steht in der Erklärung und
+  ordnet die Liste.
 
-Demo-Platine: schlechter Takt (0 dB unter dem Grenzwert) mit fernem Sprung über C2 11,1 dB,
-nahem Sprung 3,3 dB und Schlitz 0,9 dB, zusammen 7,9 dB. Die Aussparung unter dem schlechten
-Buck kostet mehr als 30 dB; der gute Buck hat nichts.
+Demo-Platine (Stand 2026-10-05, Rückstrom für das Fernfeld in der Fläche): schlechter Takt
+(0,4 dB unter dem Grenzwert) mit fernem Sprung über C2 (Anteil 18,8 dB, allein behoben 7,1 dB
+leiser), nahem Sprung (Anteil 11,8 dB, allein behoben 3,9 dB lauter) und Schlitz (Anteil 4,1 dB,
+allein 1,9 dB leiser), alle Rückwege zusammen 16 dB. Die Aussparung unter dem schlechten Buck
+kostet mehr als 30 dB; der gute Buck hat nichts.
 
 ## Umgesetzt: 2b Quasistatisches E-Feld (2026-10-04)
 

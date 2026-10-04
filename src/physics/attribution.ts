@@ -14,8 +14,7 @@
 import type { PlaneLayer } from '../model/planes';
 import type { WorldFrame } from '../model/world';
 import type { CurrentElement } from './currents';
-import { dipoleMoment } from './farfield';
-import { packWithImages } from './images';
+import { farMoment } from './farfield';
 import { withFixed, type Detour } from './returnPaths';
 
 type V3 = [number, number, number];
@@ -47,7 +46,8 @@ export function solidPlanes(planes: PlaneLayer[]): PlaneLayer[] {
  * `elements`: the source with its detours (stage 2); `base`: the stage 1 elements (no detours).
  */
 export function attributeSource(elements: CurrentElement[], base: CurrentElement[], detours: Detour[], planes: PlaneLayer[], frame: WorldFrame): SourceAttribution {
-  const moment = (els: CurrentElement[], pl = planes): V3 => dipoleMoment(packWithImages(els, pl, frame));
+  // far-field moments: the return current in the planes themselves (farfield.ts)
+  const moment = (els: CurrentElement[], pl = planes): V3 => farMoment(els, pl, frame);
   const now = moment(elements);
   const nNow = norm(now);
   const solid = moment(base, solidPlanes(planes));
@@ -62,8 +62,10 @@ export function attributeSource(elements: CurrentElement[], base: CurrentElement
   const ideal = moment([...all, ...fixes.flatMap((d) => d.fix!.add)]);
   const nIdeal = norm(ideal);
   for (const d of fixes) {
-    const share = sub(now, moment(withFixed(elements, d)));
+    const fixedOnly = moment(withFixed(elements, d));
+    const share = sub(now, fixedOnly);
     d.gainDb = Math.max(0, db(norm(add(ideal, share)), nIdeal));
+    d.aloneDb = norm(fixedOnly) > 0 ? db(nNow, norm(fixedOnly)) : 0;
   }
   return { returnPathsDb: Math.max(0, db(nNow, nIdeal)), planeGapsDb, momentNow: nNow, momentIdeal: nIdeal, momentSolid: norm(solid) };
 }

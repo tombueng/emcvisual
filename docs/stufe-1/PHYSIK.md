@@ -254,7 +254,12 @@ Schaltknoten (SW) und Hochspannungsflanken, die im H-Feld unauffällig sind.
 ## 11. Fernfeld-Orientierung
 
 Für elektrisch kleine Strukturen ist das magnetische Dipolmoment der vollständigen,
-quellenfreien Stromverteilung (Elemente **und** Spiegel) maßgeblich:
+quellenfreien Stromverteilung maßgeblich. Der Rückstrom liegt dafür **in der Fläche selbst**,
+nicht in der Spiegeltiefe (2026-10-05, Fachreview Nr. 2): Spiegelung ersetzt eine Fläche nur
+für das Feld über einer Fläche, die viel größer ist als der Abstand (Nahfeld). Für das
+Fernfeld ist eine Platinenfläche bei 30–300 MHz viel kleiner als λ; es zählt der wirkliche
+Rückstrom, eine Leiterbahn in Höhe h über der Fläche spannt h·L auf, nicht 2·h·L
+(`packWithImages(…, { imageAt: 'plane' })`, `farMoment()`):
 
     m = ½ · Σ_e  g_e · (A_e × B_e)          [A·m² je A Referenzstrom]
 
@@ -262,18 +267,26 @@ Freiraum-Fernfeld in Hauptstrahlrichtung (Jackson, magnetische Dipolstrahlung):
 
     E = η0 · k² · |m| / (4π·r) = 1,316·10⁻¹⁴ · f² · |m| / r        [V/m]
 
-Messplatz mit leitendem Boden: Faktor 2 (Ott, *EMC Engineering*, Gl. 12-2:
-E = 263·10⁻¹⁶ · f²·A·I / r). Angezeigt wird E in 3 m und 10 m gegen die Grenzwerte
-**CISPR 32 Klasse B** (Quasi-Peak): 3 m: 40 dBµV/m (30–230 MHz), 47 dBµV/m (230–1000 MHz);
-10 m: 30 bzw. 37 dBµV/m.
+Messplatz mit leitendem Boden: Faktor 2 im ungünstigsten Fall (Ott, *EMC Engineering*,
+Gl. 12-2: E = 263·10⁻¹⁶ · f²·A·I / r, A die wirkliche Schleifenfläche). Angezeigt wird E in
+3 m und 10 m gegen den gewählten Grenzwert (standards.ts). An einer Stufe zwischen zwei
+Bändern gilt der strengere Wert (CISPR 32 Anhang A, CISPR 11 §6.1, 47 CFR §15.109): Eine
+Linie auf genau 230 MHz oder 1 GHz wird mit dem niedrigeren verglichen. Bei 30 MHz in 3 m ist
+k·r ≈ 1,9; das Nahfeldglied des Dipols (Faktor √(1 + 1/(k·r)²), etwa +1 dB) fehlt in der
+Formel.
 
-Eigenschaften, die das Modell richtig wiedergibt: Eine flache Schleife über einer Fläche hat
-ein senkrechtes Moment, das ihr Spiegel aufhebt (leise); eine Leiterbahn mit Rückstrom in der
-Fläche bildet eine senkrechte Schleife, deren Moment sich mit dem Spiegel verdoppelt.
+Eigenschaften, die das Modell wiedergibt: Eine flache Schleife über einer Fläche hat ein
+senkrechtes Moment, das der Rückstrom in der Fläche fast aufhebt (dann zeigt die App keine
+Fernfeld-Zahl, `dipoleCompensated`, sondern bewertet die Schleifenfläche); eine Leiterbahn
+mit Rückstrom in der Fläche bildet eine senkrechte Schleife der Fläche h·L.
 
-**Grenzen:** Das ist die Gegentakt-Abstrahlung der Platine allein. In der Praxis dominieren
-oft Gleichtaktströme auf Kabeln; die kennt Stufe 1 nicht. Ab einer Strukturgröße von etwa
-λ/4 überschätzt die f²-Formel (keine Sättigung); diese Bereiche werden schraffiert.
+**Grenzen:** Das ist die Gegentakt-Abstrahlung der Platine allein. Prüfungen scheitern meist
+an Gleichtaktströmen (auf Kabeln, aber auch über den Spannungsabfall an der Fläche und die
+Kopplung an Kühlkörper und Gehäuse; Paul 1989, Hockanson/Hubing 1996); die rechnet das Modell
+nicht, und sie übertreffen die Gegentaktabstrahlung oft um 20 dB und mehr. Ab einer
+Strukturgröße von etwa λ/4 gilt die f²-Formel nicht mehr (keine Sättigung, keine Resonanz);
+die App kennzeichnet diesen Bereich im Spektrum nicht, die Erklärung eines Hinweises warnt,
+wenn die stärkste Linie dort liegt.
 
 ## 11a. Diagnose-Regeln
 

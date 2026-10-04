@@ -3,7 +3,10 @@
  * E = 2 · η0 k² |m| / (4π r): free-space broadside field doubled for a reflecting test-site
  * floor (Ott, eq. 12-2). Differential mode of the board only; cables are not modelled.
  */
-import { STRIDE, type ElementPack } from './images';
+import { packWithImages, STRIDE, type ElementPack } from './images';
+import type { CurrentElement } from './currents';
+import type { PlaneLayer } from '../model/planes';
+import type { WorldFrame } from '../model/world';
 import type { Line } from './spectrum';
 
 /** η0·(2π/c)²/(4π) in V/m per (A·m² · Hz² / m). */
@@ -30,6 +33,14 @@ export function dipoleMoment(pack: ElementPack): [number, number, number] {
     mz += 0.5 * w * (ax * by - ay * bx);
   }
   return [mx * 1e-6, my * 1e-6, mz * 1e-6]; // mm² -> m²
+}
+
+/**
+ * Dipole moment for the far field, A·m² per A: the return current in the planes themselves
+ * (images.ts, imageAt 'plane'), not at the mirror depth used for the near field.
+ */
+export function farMoment(elements: CurrentElement[], planes: PlaneLayer[], frame: WorldFrame): [number, number, number] {
+  return dipoleMoment(packWithImages(elements, planes, frame, { imageAt: 'plane' }));
 }
 
 /**
@@ -78,9 +89,15 @@ export function cispr32ClassB(distance: 3 | 10): LimitSegment[] {
       ];
 }
 
+/**
+ * Limit at a frequency. At a step between two segments the standards apply the tighter value
+ * (CISPR 32 annex A, CISPR 11 §6.1, 47 CFR §15.109), so a line on 230 MHz or 1 GHz is
+ * compared with the lower one.
+ */
 export function limitAt(limits: LimitSegment[], f: number): number | null {
-  const s = limits.find((x) => f >= x.f0 && f < x.f1);
-  return s ? s.db : null;
+  let best: number | null = null;
+  for (const x of limits) if (f >= x.f0 && f <= x.f1 && (best === null || x.db < best)) best = x.db;
+  return best;
 }
 
 /** Largest dimension of a pack's real extent (for the λ/4 validity marker), mm. */

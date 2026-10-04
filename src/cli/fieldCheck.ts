@@ -12,7 +12,7 @@ import { buildSource, SourceError, type PhysicsContext } from '../physics/curren
 import { applyReturnModel, type Detour } from '../physics/returnPaths';
 import { packWithImages } from '../physics/images';
 import { fieldAt, slotMaskTable } from '../physics/biotsavart';
-import { dipoleCompensated, dipoleMoment, farField, limitAt } from '../physics/farfield';
+import { dipoleCompensated, farField, farMoment, limitAt } from '../physics/farfield';
 import { limitsFor } from '../physics/standards';
 import { diagnoseSource } from '../physics/diagnostics';
 import { attributeSource } from '../physics/attribution';
@@ -57,7 +57,8 @@ export interface SourceCheck {
   /** Strongest near field over all bands, dBµA/m (also for sources whose far field is not quantifiable). */
   nearMax?: number;
   /** Far-field gain when fixed, dB (scope 'source': all plane gaps under the source together). */
-  hints: { kind: string; x: number; y: number; layer: string; value?: number; gainDb?: number; gainScope?: 'finding' | 'source' }[];
+  /** gainDb: share against ideal returns (orders the hints); aloneDb: effect of fixing only this spot. */
+  hints: { kind: string; x: number; y: number; layer: string; value?: number; gainDb?: number; gainScope?: 'finding' | 'source'; aloneDb?: number }[];
   /** All return-path problems / all plane gaps of the source: louder at 3 m by this much, dB. */
   returnPathsDb: number;
   planeGapsDb: number;
@@ -134,7 +135,7 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
       }
       let worst = -Infinity;
       let fw = 0;
-      const moment = dipoleMoment(pack);
+      const moment = farMoment(model.elements, planes, frame);
       const compensated = dipoleCompensated(model.info.loopArea, moment);
       if (compensated) res.farNote = 'compensated';
       res.nearMax = res.near['all']?.db;
@@ -153,7 +154,7 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
           y: round(d.at.y),
           layer: d.layer,
           value: round(d.value, 3),
-          ...(d.gain ? { gainDb: round(d.gain.db), gainScope: d.gain.scope } : {}),
+          ...(d.gain ? { gainDb: round(d.gain.db), gainScope: d.gain.scope, ...(d.gain.alone !== undefined ? { aloneDb: round(d.gain.alone) } : {}) } : {}),
         }))
         .sort((a, b) => (b.gainDb ?? -1) - (a.gainDb ?? -1));
     } catch (e) {
