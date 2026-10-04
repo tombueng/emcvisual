@@ -10,12 +10,14 @@ import { circlePoints, padOutline, rotateKicad } from '../model/geometry';
 import type { BoardModel, Vec2 } from '../model/types';
 import type { WorldFrame } from '../model/world';
 import type { FocusSpec } from '../ui/focusData';
+import { colormapLut } from './colormaps';
+import { t, fmtNum } from '../i18n';
 
 export interface FocusAnchor {
   pos: [number, number, number];
   text: string;
   sub?: string;
-  kind: 'net' | 'plane' | 'part' | 'note' | 'dim';
+  kind: 'net' | 'plane' | 'part' | 'note' | 'dim' | 'fix';
   color?: string;
 }
 
@@ -206,6 +208,86 @@ export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: Focu
     line(circlePoints(c.c, c.r, 48).map((q) => w(q, yOf(c.layer) + lift)), onTop(new THREE.LineDashedMaterial({ color: warn, dashSize: size / 100, gapSize: size / 160 })), 9, true);
     anchors.push({ pos: w({ x: c.c.x, y: c.c.y - c.r }, yOf(c.layer) + lift).toArray() as [number, number, number], text: c.text, kind: 'dim', color: 'var(--warn)' });
   }
+  // --- where the problem adds field: a coloured map just above the top copper -----------------------
+  const fm = spec.field;
+  if (fm && fm.nx > 1 && fm.ny > 1) {
+    const data = new Uint8Array(fm.nx * fm.ny * 4);
+    const lut = colormapLut('inferno');
+    for (let k = 0; k < fm.values.length; k++) {
+      const v = fm.values[k]!;
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let a = 0;
+      if (Number.isFinite(v)) {
+        if (fm.mode === 'added') {
+          // transparent where nothing is added, amber → red where much is
+          // scaled to this case: at least 15 dB, else up to the strongest addition
+          const x = Math.max(0, Math.min(1, v / Math.max(15, fm.max.value)));
+          r = 242 + (255 - 242) * x;
+          g = 163 - 100 * x;
+          b = 58 - 20 * x;
+          a = x < 0.03 ? 0 : 40 + 190 * x;
+        } else {
+          const x = Math.max(0, Math.min(1, (v + 30) / 30));
+          const i4 = Math.round(x * 255) * 4;
+          r = lut[i4]!;
+          g = lut[i4 + 1]!;
+          b = lut[i4 + 2]!;
+          a = x < 0.05 ? 0 : 30 + 170 * x;
+        }
+      }
+      data.set([r, g, b, a], k * 4);
+    }
+    const tex = new THREE.DataTexture(data, fm.nx, fm.ny, THREE.RGBAFormat);
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearFilter;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+    const wR = fm.region.x1 - fm.region.x0;
+    const hR = fm.region.y1 - fm.region.y0;
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(wR, hR), onTop(new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })));
+    // texture row 0 is region.y0 (KiCad y down = world +z); the plane's v runs along -z after rotation
+    plane.rotation.x = Math.PI / 2;
+    plane.position.copy(w({ x: (fm.region.x0 + fm.region.x1) / 2, y: (fm.region.y0 + fm.region.y1) / 2 }, top + ribbonH * 2));
+    plane.renderOrder = 6;
+    group.add(plane);
+    if (Number.isFinite(fm.max.value))
+      anchors.push({
+        pos: w({ x: fm.max.x, y: fm.max.y }, top + ribbonH * 2).toArray() as [number, number, number],
+        text: fm.mode === 'added' ? t.focus.fieldAdded(fmtNum(fm.max.value, 1), fmtNum(fm.height, 0)) : t.focus.fieldSource(fmtNum(fm.height, 0)),
+        kind: 'dim',
+        color: fm.mode === 'added' ? 'var(--warn)' : 'var(--field)',
+      });
+  }
+
+  // --- the best fix, in green at its place -------------------------------------------------------------
+  const ok = new THREE.Color('#6ee7a8');
+  const ghost = onTop(new THREE.MeshStandardMaterial({ color: ok, emissive: ok, emissiveIntensity: 0.6, transparent: true, opacity: 0.75 }));
+  for (const sg of spec.suggestions) {
+    const y = sg.kind === 'area' ? yOf(sg.layer) + lift : top;
+    if (sg.kind === 'area' && sg.poly) {
+      flat(sg.poly, yOf(sg.layer) + lift * 2, onTop(new THREE.MeshBasicMaterial({ color: ok, transparent: true, opacity: 0.18, side: THREE.DoubleSide })), 8);
+      line(sg.poly.map((q) => w(q, yOf(sg.layer) + lift * 2)), onTop(new THREE.LineDashedMaterial({ color: ok, dashSize: size / 90, gapSize: size / 150 })), 9, true);
+    } else {
+      const s = Math.max(1, size / 40);
+      const geo =
+        sg.kind === 'via'
+          ? new THREE.CylinderGeometry(0.3 * s, 0.3 * s, Math.max(0.5, yOf(0) - yOf(L.length - 1)), 16)
+          : new THREE.BoxGeometry(1.0 * s, 0.5 * s, 0.5 * s);
+      const mesh = new THREE.Mesh(geo, ghost);
+      mesh.position.copy(w(sg.at, sg.kind === 'via' ? (yOf(0) + yOf(L.length - 1)) / 2 : top + 0.25 * s));
+      mesh.renderOrder = 10;
+      group.add(mesh);
+      const ringG = new THREE.Mesh(new THREE.RingGeometry(0.9 * s, 1.1 * s, 32), onTop(new THREE.MeshBasicMaterial({ color: ok, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })));
+      ringG.rotation.x = -Math.PI / 2;
+      ringG.position.copy(w(sg.at, top + 0.02));
+      ringG.renderOrder = 10;
+      group.add(ringG);
+    }
+    anchors.push({ pos: w(sg.at, y).toArray() as [number, number, number], text: sg.text, kind: 'fix', color: 'var(--ok)' });
+  }
+
   // the spot itself: a ring at the finding, on the source's layer
   const spotY = yOf(L.findIndex((l) => l.name === spec.diag.layer.split(' ')[0]) >= 0 ? L.findIndex((l) => l.name === spec.diag.layer.split(' ')[0]) : 0) + lift * 4;
   const ring = new THREE.Mesh(new THREE.RingGeometry(size / 60, size / 45, 40), onTop(new THREE.MeshBasicMaterial({ color: warn, side: THREE.DoubleSide })));

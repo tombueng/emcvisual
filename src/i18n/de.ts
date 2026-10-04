@@ -406,6 +406,18 @@ export const de = {
     noPlane: (mm: string) => `${mm} mm ohne Bezugsfläche darunter`,
     noStitch: (net: string, mm: string) => `kein ${net}-Via im Umkreis von ${mm} mm`,
     longLine: (f: string) => `ab ${f} elektrisch lang (λ/10)`,
+    suggest: {
+      capPlanes: (a: string, b: string) => `Vorschlag: 100 nF zwischen ${a} und ${b} hier, weniger als 2 mm von der Via`,
+      stitchVia: (net: string) => `Vorschlag: ${net}-Stitching-Via hier`,
+      bridgeCap: 'Vorschlag: Leitung umlegen; sonst Brücken-C 100 nF über die Lücke hier',
+      closePlane: (net: string, layer: string) => `Vorschlag: ${net}-Fläche auf ${layer} unter der Schleife schließen`,
+      seriesR: (pad: string) => `Vorschlag: Serienwiderstand 22–33 Ω direkt an ${pad}`,
+    },
+    fieldAdded: (db: string, h: string) => `+${db} dB Feld durch dieses Problem, ${h} mm über der Platine`,
+    fieldSource: (h: string) => `stärkstes Feld der Quelle, ${h} mm über der Platine`,
+    fieldMap: 'Feldkarte',
+    fieldMapAdded: (h: string) => `Die farbige Fläche zeigt, wo dieses Problem zusätzliches Magnetfeld erzeugt: gerechnet ${h} mm über der Platine, einmal wie gebaut und einmal behoben, angezeigt ist der Unterschied (durchsichtig = kein Unterschied, rot = viel).`,
+    fieldMapSource: (h: string) => `Die farbige Fläche zeigt das Magnetfeld der Quelle ${h} mm über der Platine (für diesen Hinweis gibt es keine berechenbare Behebung zum Vergleichen).`,
     fields: {
       f0: 'Frequenz',
       bitrate: 'Bitrate',

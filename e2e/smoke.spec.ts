@@ -270,6 +270,8 @@ test('problem view: a click on a hint shows only what matters, with labels and e
   await expect(page.locator('.labels .label.net')).toContainText('CLK_BAD');
   await expect(page.locator('.labels')).toContainText('GND · In1.Cu');
   await expect(page.locator('.labels')).toContainText('C2');
+  // the best fix, drawn in at its place
+  await expect(page.locator('.labels .label.fix')).toContainText('100 nF zwischen GND und +3V3');
   // the bubbles of the whole board are gone while the problem view is open
   await expect(page.locator('.bubble')).toHaveCount(0);
   // correcting an input reruns the calculation: slower edges, less emission

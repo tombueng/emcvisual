@@ -14,6 +14,7 @@ import type { Detour } from '../physics/returnPaths';
 import type { Source } from '../physics/sources';
 import type { BBox2, BoardModel, Vec2 } from '../model/types';
 import { covered } from '../model/planes';
+import { computeFieldMap, type FieldMap } from './focusField';
 
 export interface FocusLabel {
   at: Vec2;
@@ -51,6 +52,10 @@ export interface FocusSpec {
   areas: { poly: Vec2[]; layer: number; text: string }[];
   circles: { c: Vec2; r: number; layer: number; text: string }[];
   paths: { pts: Vec2[]; layer: number; text: string }[];
+  /** The best fix, drawn in green at its place. */
+  suggestions: { at: Vec2; layer: number; kind: 'cap' | 'via' | 'res' | 'area'; poly?: Vec2[]; text: string }[];
+  /** Where this finding adds field (or the source's field), on a plane above the board. */
+  field: FieldMap | null;
 }
 
 export const diagKey = (d: Diagnostic) => `${d.sourceId}|${d.kind}|${d.at.x.toFixed(2)},${d.at.y.toFixed(2)}`;
@@ -234,5 +239,34 @@ export function buildFocus(d: Diagnostic): FocusSpec | null {
   }
   if (d.kind === 'long-line') labels.push({ at: d.at, layer: trackLayer, text: t.focus.longLine(formatEng(d.value, 'Hz')), kind: 'note', color: 'var(--warn)' });
 
-  return { key: diagKey(d), diag: d, source: s, color, nets, path, planes, parts: [...parts], vias, stitchVias, detour, region, labels, dims, areas, circles, paths };
+  // --- the best fix, at its place ----------------------------------------------------------------
+  const suggestions: FocusSpec['suggestions'] = [];
+  const topLayer = trackLayer;
+  if (d.kind === 'ref-change') suggestions.push({ at: { x: d.at.x + 1.5, y: d.at.y }, layer: 0, kind: 'cap', text: t.focus.suggest.capPlanes(d.planeNet, d.otherNet ?? '?') });
+  else if (d.kind === 'no-stitching') suggestions.push({ at: { x: d.at.x + 1.0, y: d.at.y }, layer: 0, kind: 'via', text: t.focus.suggest.stitchVia(d.planeNet || 'GND') });
+  else if (d.kind === 'return-gap' && detour) {
+    const a = detour.path[detour.path.length - 1]!;
+    const b = detour.path[0]!;
+    suggestions.push({ at: { x: (a.x + b.x) / 2 + 1, y: (a.y + b.y) / 2 + 1 }, layer: topLayer, kind: 'cap', text: t.focus.suggest.bridgeCap });
+  } else if (d.kind === 'return-gap' && path.length) {
+    const xs = path.flatMap((e) => [e.a.x, e.b.x]);
+    const ys = path.flatMap((e) => [e.a.y, e.b.y]);
+    const b = { x0: Math.min(...xs) - 1.5, y0: Math.min(...ys) - 1.5, x1: Math.max(...xs) + 1.5, y1: Math.max(...ys) + 1.5 };
+    const plane = planes[0];
+    suggestions.push({
+      at: { x: b.x1, y: b.y0 },
+      layer: plane?.layer ?? 1,
+      kind: 'area',
+      poly: [{ x: b.x0, y: b.y0 }, { x: b.x1, y: b.y0 }, { x: b.x1, y: b.y1 }, { x: b.x0, y: b.y1 }],
+      text: t.focus.suggest.closePlane(board.nets[plane?.net ?? 0] || 'GND', board.layers[plane?.layer ?? 1]?.name ?? ''),
+    });
+  } else if (d.kind === 'long-line' && model?.info.driver) {
+    const pi = findPad(board, model.info.driver);
+    if (pi >= 0) suggestions.push({ at: { x: board.pads[pi]!.at.x + 1.2, y: board.pads[pi]!.at.y }, layer: 0, kind: 'res', text: t.focus.suggest.seriesR(model.info.driver) });
+  }
+
+  // --- where this finding adds field --------------------------------------------------------------
+  const field = computeFieldMap(s.id, detour, d.kind === 'return-gap' && !detour, region, frame);
+
+  return { key: diagKey(d), diag: d, source: s, color, nets, path, planes, parts: [...parts], vias, stitchVias, detour, region, labels, dims, areas, circles, paths, suggestions, field };
 }

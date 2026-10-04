@@ -90,6 +90,10 @@
     <div class="section-title">{t.explain.sections.figures}</div>
     <ul class="figs">{#each ex.figures as f, i (i)}<li>{f}</li>{/each}</ul>
   {/if}
+  {#if spec.field}
+    <div class="section-title">{t.focus.fieldMap}</div>
+    <p class="text hint">{spec.field.mode === 'added' ? t.focus.fieldMapAdded(String(spec.field.height)) : t.focus.fieldMapSource(String(spec.field.height))}</p>
+  {/if}
   <div class="section-title">{t.explain.sections.fixes}</div>
   <ol class="fixes">{#each ex.fixes as f, i (i)}<li>{f}</li>{/each}</ol>
   <div class="section-title">{t.explain.sections.avoid}</div>

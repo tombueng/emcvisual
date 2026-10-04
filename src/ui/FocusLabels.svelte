@@ -135,4 +135,13 @@
   .label.note {
     border-color: var(--c);
   }
+  .label.fix {
+    border-color: var(--ok);
+    border-style: dashed;
+    background: color-mix(in srgb, #0b0f14 88%, var(--ok));
+    white-space: normal;
+  }
+  .label.fix .text {
+    white-space: normal;
+  }
 </style>

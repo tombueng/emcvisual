@@ -406,6 +406,18 @@ export const en: Strings = {
     noPlane: (mm: string) => `${mm} mm without a reference plane underneath`,
     noStitch: (net: string, mm: string) => `no ${net} via within ${mm} mm`,
     longLine: (f: string) => `electrically long from ${f} (λ/10)`,
+    suggest: {
+      capPlanes: (a: string, b: string) => `Suggestion: 100 nF between ${a} and ${b} here, less than 2 mm from the via`,
+      stitchVia: (net: string) => `Suggestion: ${net} stitching via here`,
+      bridgeCap: 'Suggestion: reroute the line; otherwise a 100 nF bridge across the gap here',
+      closePlane: (net: string, layer: string) => `Suggestion: close the ${net} plane on ${layer} under the loop`,
+      seriesR: (pad: string) => `Suggestion: series resistor 22–33 Ω right at ${pad}`,
+    },
+    fieldAdded: (db: string, h: string) => `+${db} dB field from this problem, ${h} mm above the board`,
+    fieldSource: (h: string) => `strongest field of the source, ${h} mm above the board`,
+    fieldMap: 'Field map',
+    fieldMapAdded: (h: string) => `The coloured area shows where this problem adds magnetic field: computed ${h} mm above the board, once as built and once fixed; shown is the difference (transparent = no difference, red = much).`,
+    fieldMapSource: (h: string) => `The coloured area shows the source's magnetic field ${h} mm above the board (this hint has no computable fix to compare with).`,
     fields: {
       f0: 'Frequency',
       bitrate: 'Bit rate',
