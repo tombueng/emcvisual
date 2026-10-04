@@ -22,6 +22,8 @@ export interface CurrentElement {
   /** Copper layer of horizontal elements, -1 for vertical ones. */
   layer: number;
   net: number;
+  /** 'via' for vertical copper (vias, through-hole barrels), 'return' for displacement currents. */
+  tag?: 'via' | 'return';
 }
 
 export interface SourceInfo {
@@ -168,6 +170,7 @@ function stepElement(ctx: PhysicsContext, g: NetGraph, s: Step, w: number): Curr
         vertical: true,
         layer: -1,
         net: e.net,
+        tag: 'via',
       };
     }
     return {
@@ -201,6 +204,7 @@ function verticalTo(ctx: PhysicsContext, x: number, y: number, fromY: number, to
     vertical: true,
     layer: -1,
     net,
+    tag: 'return',
   };
 }
 

@@ -17,8 +17,17 @@
   const F_MIN = 1e5;
   const PAD = { l: 44, r: 10, t: 10, b: 20 };
 
+  // what the screen shows: the probe spectrum, or the far-field estimate with limit lines
+  const data = $derived.by(() => {
+    if (app.spectrumMode === 'probe') return app.readout ? { ...app.readout, limits: null } : null;
+    void app.models;
+    void app.sources.map((s) => [s.enabled, s.waveform.f0, s.waveform.tr, s.waveform.amplitude, s.waveform.duty]);
+    const r = engine.farReadout(app.spectrumMode === 'far3' ? 3 : 10);
+    return r ? { sources: r.sources.map((s) => ({ ...s, h: 0 })), total: r.total, unit: 'dBµV/m', limits: r.limits } : null;
+  });
+
   const peak = $derived.by(() => {
-    const r = app.readout;
+    const r = data;
     if (!r || r.total.length === 0) return null;
     return r.total.reduce((a, b) => (b.db > a.db ? b : a));
   });
@@ -38,10 +47,10 @@
   const yOf = (db: number, h: number) => PAD.t + ((refLevel - db) / 100) * (h - PAD.t - PAD.b);
 
   $effect(() => {
-    draw(app.readout, size.w, size.h, refLevel, app.view.mode, app.view.lineF, fMax);
+    draw(data, size.w, size.h, refLevel, app.view.mode, app.view.lineF, fMax);
   });
 
-  function draw(r: typeof app.readout, w: number, h: number, ref: number, mode: string, lineF: number, fm: number) {
+  function draw(r: typeof data, w: number, h: number, ref: number, mode: string, lineF: number, fm: number) {
     if (!canvas) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.max(1, Math.floor(w * dpr));
@@ -156,6 +165,19 @@
     g.globalAlpha = 1;
     g.lineWidth = 1;
 
+    if (r.limits) {
+      g.strokeStyle = col('--warn');
+      g.lineWidth = 1.5;
+      for (const seg of r.limits) {
+        if (seg.f0 > fm) continue;
+        g.beginPath();
+        g.moveTo(xOf(seg.f0, w), clampY(seg.db));
+        g.lineTo(xOf(Math.min(seg.f1, fm), w), clampY(seg.db));
+        g.stroke();
+      }
+      g.lineWidth = 1;
+    }
+
     if (mode === 'line' && lineF > 0) {
       const x = Math.round(xOf(lineF, w)) + 0.5;
       g.strokeStyle = col('--probe');
@@ -169,7 +191,7 @@
   }
 
   function nearestLine(clientX: number): { f: number; db: number } | null {
-    const r = app.readout;
+    const r = data;
     if (!r || r.total.length === 0) return null;
     const rect = canvas.getBoundingClientRect();
     const f = fOf(clientX - rect.left, size.w);
@@ -200,9 +222,15 @@
 <section class="analyzer">
   <div class="screen" bind:this={wrap}>
     <canvas bind:this={canvas} onpointermove={onMove} onpointerleave={() => (hover = null)} onclick={onClick}></canvas>
+    <div class="modes" role="tablist">
+      {#each ['probe', 'far3', 'far10'] as const as m (m)}
+        <button role="tab" aria-selected={app.spectrumMode === m} class:active={app.spectrumMode === m} onclick={() => (app.spectrumMode = m)}>{t.probe.modes[m]}</button>
+      {/each}
+    </div>
     <div class="legend value">
-      {#if app.readout}
-        <span>{app.readout.unit}</span>
+      {#if data}
+        <span>{data.unit}</span>
+        {#if data.limits}<span class="limit">{t.probe.limit}</span>{/if}
         {#if peak}<span>{t.probe.peak}: {formatEng(peak.f, 'Hz', 4)}, {peak.db.toFixed(1).replace('.', ',')}</span>{/if}
       {:else}
         <span>{t.probe.noProbe}</span>
@@ -277,6 +305,31 @@
     width: 100%;
     height: 100%;
     cursor: crosshair;
+  }
+  .modes {
+    position: absolute;
+    top: 5px;
+    left: 48px;
+    display: flex;
+    gap: 2px;
+    z-index: 1;
+  }
+  .modes button {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--faint);
+    font-size: 12px;
+    padding: 1px 8px;
+    border-radius: var(--radius-s);
+    cursor: pointer;
+  }
+  .modes button.active {
+    color: var(--probe);
+    border-color: rgba(76, 201, 240, 0.35);
+    background: rgba(76, 201, 240, 0.06);
+  }
+  .limit {
+    color: var(--warn);
   }
   .legend {
     position: absolute;

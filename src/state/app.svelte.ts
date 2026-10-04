@@ -6,6 +6,7 @@ import type { Source } from '../physics/sources';
 import type { SourceModel } from '../physics/currents';
 import { DEFAULT_VIEW, type ViewSettings } from './scenario';
 import type { ProbeReadout } from './engine.svelte';
+import type { Diagnostic } from '../physics/diagnostics';
 
 export type ProbeComponent = 'abs' | 'x' | 'y' | 'z';
 
@@ -28,6 +29,19 @@ export interface ComputeState {
   message: string;
   lastMs: number;
 }
+
+export interface Hotspot {
+  /** World position (mm). */
+  x: number;
+  y: number;
+  z: number;
+  db: number;
+  sourceId: string;
+  nets: string[];
+  parts: string[];
+}
+
+export type SpectrumMode = 'probe' | 'far3' | 'far10';
 
 export interface LineInfo {
   f: number;
@@ -62,6 +76,11 @@ class AppState {
   pickMode = $state<null | { kind: 'pad' | 'net'; onPick: (value: string) => void }>(null);
   toast = $state('');
   readout = $state.raw<ProbeReadout | null>(null);
+  diagnostics = $state.raw<Diagnostic[]>([]);
+  hotspots = $state.raw<Hotspot[]>([]);
+  spectrumMode = $state<SpectrumMode>('probe');
+  rightTab = $state<'view' | 'diag'>('view');
+  fieldLinesBusy = $state(false);
 
   get selected(): Source | undefined {
     return this.sources.find((s) => s.id === this.selectedId);

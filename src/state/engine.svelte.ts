@@ -15,7 +15,12 @@ import { BANDS } from '../physics/spectrum';
 import { MU0 } from '../physics/units';
 import type { Source } from '../physics/sources';
 import type { Viewer } from '../render/viewer';
-import { app, type LineInfo } from './app.svelte';
+import { buildFieldLines } from '../render/fieldLinesMesh';
+import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fieldlines';
+import { diagnoseSource } from '../physics/diagnostics';
+import { cispr32ClassB, dipoleMoment, farField, type LimitSegment } from '../physics/farfield';
+import { distPointSegment } from '../model/geometry';
+import { app, type Hotspot, type LineInfo } from './app.svelte';
 import { DEFAULT_VIEW, migrateScenario, hashText, SCENARIO_KIND, SCENARIO_VERSION, type Scenario } from './scenario';
 import { loadLocal, saveLocal } from './persist';
 
@@ -37,6 +42,13 @@ export interface ProbeReadout {
   /** Power sum per frequency over all sources. */
   total: ProbeLine[];
   unit: 'dBµA/m' | 'dBµV';
+}
+
+export interface FarReadout {
+  sources: { id: string; name: string; color: string; lines: ProbeLine[] }[];
+  total: ProbeLine[];
+  limits: LimitSegment[];
+  distance: 3 | 10;
 }
 
 export function geometryKey(s: Source): string {
@@ -186,6 +198,7 @@ class Engine {
     app.models = models;
     app.sourceErrors = errors;
     for (const s of app.sources) if (models[s.id]) this.ensureVolume(s, models[s.id]!);
+    this.updateDiagnostics();
     this.queueRecompose();
     this.scheduleSave();
   }
@@ -207,6 +220,7 @@ class Engine {
     app.sourceErrors = errs;
     if (r.model) this.ensureVolume(s, r.model);
     else this.volumes.delete(id);
+    this.updateDiagnostics();
     this.queueRecompose();
     this.scheduleSave();
   }
@@ -313,11 +327,14 @@ class Engine {
     if (vols.length === 0) {
       this.composite = null;
       app.composite = null;
+      app.hotspots = [];
       this.viewer?.setVolume(null, null);
+      this.viewer?.setMarkers([]);
       return;
     }
     this.composite = compose(vols, weights, n, this.composite ?? undefined);
     app.composite = { maxDb: this.composite.maxDb, minDb: this.composite.minDb };
+    this.findHotspots(vols, weights);
     if (app.view.autoWindow && this.composite.maxDb > 0) {
       app.view.dbHigh = Math.round(this.composite.maxDb);
       app.view.dbLow = Math.round(this.composite.maxDb - 60);
@@ -363,7 +380,7 @@ class Engine {
       enabled: app.view.showVolume,
       window: [toNorm(app.view.dbLow), toNorm(app.view.dbHigh)],
       density: app.view.density,
-      gamma: 1.6,
+      gamma: 2.2,
       colormap: app.view.colormap,
     });
     v.setSlice({ enabled: app.view.showSlice, height: app.view.sliceHeight, opacity: 0.9 });
@@ -422,6 +439,139 @@ class Engine {
 
   planesAtProbe(): PlaneLayer[] {
     return app.planes;
+  }
+
+  // --- diagnostics, hotspots, far field, field lines --------------------------------------------
+
+  updateDiagnostics() {
+    const board = app.board;
+    if (!board) return;
+    const out = [];
+    for (const s of app.sources) {
+      const m = app.models[s.id];
+      if (!m || !s.enabled) continue;
+      out.push(...diagnoseSource(board, app.planes, this.frame, $state.snapshot(s) as Source, m, app.fMax));
+    }
+    app.diagnostics = out;
+  }
+
+  /** Local maxima of the composite in a horizontal slice at the probe height. */
+  private findHotspots(vols: Float32Array[], weights: number[]) {
+    const g = this.grid;
+    const c = this.composite;
+    const board = app.board;
+    if (!g || !c || !board) return;
+    const iy = Math.max(0, Math.min(g.ny - 1, Math.round((app.probe.height - g.y0) / g.dy)));
+    const at = (ix: number, iz: number) => c.power[ix + g.nx * (iy + g.ny * iz)]!;
+    let max = 0;
+    for (let iz = 0; iz < g.nz; iz++) for (let ix = 0; ix < g.nx; ix++) max = Math.max(max, at(ix, iz));
+    if (!(max > 0)) {
+      app.hotspots = [];
+      return;
+    }
+    const floor = max * 10 ** (-50 / 10);
+    const R = Math.max(2, Math.round(3 / g.dx));
+    const found: { ix: number; iz: number; p: number }[] = [];
+    for (let iz = R; iz < g.nz - R; iz++) {
+      for (let ix = R; ix < g.nx - R; ix++) {
+        const p = at(ix, iz);
+        if (p < floor) continue;
+        let peak = true;
+        for (let dz = -R; dz <= R && peak; dz++) for (let dx = -R; dx <= R; dx++) if ((dx || dz) && at(ix + dx, iz + dz) > p) { peak = false; break; }
+        if (peak) found.push({ ix, iz, p });
+      }
+    }
+    found.sort((a, b) => b.p - a.p);
+    const enabled = app.sources.filter((s) => this.volumes.has(s.id) && app.models[s.id] && s.enabled);
+    const describe = ({ ix, iz, p }: { ix: number; iz: number; p: number }): Hotspot => {
+      const x = g.x0 + ix * g.dx;
+      const z = g.z0 + iz * g.dz;
+      const b = toBoard(this.frame, x, z);
+      const idx = ix + g.nx * (iy + g.ny * iz);
+      let best = 0;
+      let sourceId = '';
+      vols.forEach((v, k) => {
+        const contrib = (weights[k] ?? 0) * v[idx]!;
+        if (contrib > best) {
+          best = contrib;
+          sourceId = enabled[k]?.id ?? '';
+        }
+      });
+      const nets = new Set<string>();
+      for (const t of board.tracks) if (t.net > 0 && distPointSegment(b, t.a, t.b) < 2) nets.add(board.nets[t.net]!);
+      const parts = board.footprints
+        .filter((f) => Math.hypot(f.body.center.x - b.x, f.body.center.y - b.y) < Math.max(4, Math.max(f.body.size.x, f.body.size.y) / 2 + 1))
+        .map((f) => f.ref);
+      return { x, y: g.y0 + iy * g.dy, z, db: 10 * Math.log10(p) + 120, sourceId, nets: [...nets].slice(0, 4), parts: parts.slice(0, 4) };
+    };
+    // strongest first, at most two per dominating source, so quieter sources still show up
+    const perSource = new Map<string, number>();
+    const spots: Hotspot[] = [];
+    for (const f of found) {
+      const h = describe(f);
+      const n = perSource.get(h.sourceId) ?? 0;
+      if (n >= 2) continue;
+      perSource.set(h.sourceId, n + 1);
+      spots.push(h);
+      if (spots.length >= 8) break;
+    }
+    app.hotspots = spots;
+    this.viewer?.setMarkers(spots.map((h) => ({ pos: [h.x, h.y, h.z] as [number, number, number], color: '#f2a33a' })));
+  }
+
+  farReadout(distance: 3 | 10): FarReadout | null {
+    if (!app.board) return null;
+    const sources: FarReadout['sources'] = [];
+    const totals = new Map<number, number>();
+    for (const s of app.sources) {
+      const m = app.models[s.id];
+      const pack = this.packs.get(s.id);
+      if (!m || !pack || !s.enabled) continue;
+      const lines = farField(dipoleMoment(pack), m.lines, distance);
+      for (const l of lines) totals.set(Math.round(l.f), (totals.get(Math.round(l.f)) ?? 0) + 10 ** (l.db / 10));
+      sources.push({ id: s.id, name: s.name, color: s.color, lines });
+    }
+    const total = [...totals.entries()].sort((a, b) => a[0] - b[0]).map(([f, p]) => ({ f, db: 10 * Math.log10(p) }));
+    return { sources, total, limits: cispr32ClassB(distance), distance };
+  }
+
+  private linesWorker: Worker | null = null;
+  private linesJob = 0;
+
+  /** Field lines of the selected source (when enabled in the view). */
+  updateFieldLines() {
+    const v = this.viewer;
+    if (!v) return;
+    const s = app.selected;
+    const pack = s ? this.packs.get(s.id) : undefined;
+    if (!app.view.showFieldLines || !s || !pack || !this.grid) {
+      v.setFieldLines(null);
+      app.fieldLinesBusy = false;
+      return;
+    }
+    if (!this.linesWorker) {
+      this.linesWorker = new Worker(new URL('../compute/fieldlines.worker.ts', import.meta.url), { type: 'module' });
+      this.linesWorker.onmessage = (ev: MessageEvent<{ id: number; out: TracedLines }>) => {
+        if (ev.data.id !== this.linesJob) return;
+        app.fieldLinesBusy = false;
+        const src = app.selected;
+        this.viewer?.setFieldLines(src ? buildFieldLines(ev.data.out, src.color) : null);
+      };
+    }
+    const g = this.grid;
+    const rasters = [...app.planes].sort((p, q) => q.y - p.y).map((p) => p.raster);
+    const input: LineTraceInput = {
+      pack,
+      rasters,
+      frame: { ...this.frame },
+      seeds: seedsFor(pack),
+      min: [g.x0, g.y0, g.z0],
+      max: [g.x0 + (g.nx - 1) * g.dx, g.y0 + (g.ny - 1) * g.dy, g.z0 + (g.nz - 1) * g.dz],
+      step: 0.2,
+      maxSteps: 900,
+    };
+    app.fieldLinesBusy = true;
+    this.linesWorker.postMessage({ id: ++this.linesJob, input });
   }
 
   // --- persistence ------------------------------------------------------------------------------

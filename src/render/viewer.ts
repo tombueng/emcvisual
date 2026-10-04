@@ -54,6 +54,10 @@ export class Viewer {
   private overlays = new THREE.Group();
   private raycaster = new THREE.Raycaster();
   private animating = 0;
+  private fieldLines: THREE.LineSegments | null = null;
+  private stopLinesAnim: (() => void) | null = null;
+  private markers: THREE.InstancedMesh | null = null;
+  private time = 0;
   onFrame?: (dt: number) => void;
 
   constructor(private container: HTMLElement) {
@@ -151,8 +155,10 @@ export class Viewer {
       const dt = (now - last) / 1000;
       last = now;
       const moving = this.controls.update();
-      if (this.animating > 0 && this.onFrame) {
-        this.onFrame(dt);
+      if (this.animating > 0) {
+        this.time += dt;
+        if (this.fieldLines) (this.fieldLines.material as THREE.ShaderMaterial).uniforms.time!.value = this.time;
+        this.onFrame?.(dt);
         this.needsRender = true;
       }
       if (this.needsRender || moving) {
@@ -323,6 +329,59 @@ export class Viewer {
       this.probe.scale.setScalar(radius);
       (this.probe.userData.stem as THREE.Mesh).scale.y = 30 / radius;
     }
+    this.requestRender();
+  }
+
+  setFieldLines(lines: THREE.LineSegments | null) {
+    if (this.fieldLines) {
+      this.scene.remove(this.fieldLines);
+      this.fieldLines.geometry.dispose();
+      (this.fieldLines.material as THREE.Material).dispose();
+    }
+    this.fieldLines = lines;
+    if (lines) {
+      this.scene.add(lines);
+      if (!this.stopLinesAnim) this.stopLinesAnim = this.startAnimation();
+    } else if (this.stopLinesAnim) {
+      this.stopLinesAnim();
+      this.stopLinesAnim = null;
+    }
+    this.requestRender();
+  }
+
+  /** Small markers (hotspots) in world coordinates. */
+  setMarkers(list: { pos: [number, number, number]; color: string }[]) {
+    if (this.markers) {
+      this.scene.remove(this.markers);
+      this.markers.geometry.dispose();
+      (this.markers.material as THREE.Material).dispose();
+      this.markers = null;
+    }
+    if (list.length) {
+      const mesh = new THREE.InstancedMesh(
+        new THREE.OctahedronGeometry(0.55, 0),
+        new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthTest: false }),
+        list.length,
+      );
+      const m = new THREE.Matrix4();
+      list.forEach((it, i) => {
+        m.makeTranslation(it.pos[0], it.pos[1], it.pos[2]);
+        mesh.setMatrixAt(i, m);
+        mesh.setColorAt(i, new THREE.Color(it.color));
+      });
+      mesh.renderOrder = 10;
+      this.markers = mesh;
+      this.scene.add(mesh);
+    }
+    this.requestRender();
+  }
+
+  /** Point the camera at a world position, keeping the current distance. */
+  focus(x: number, y: number, z: number) {
+    const offset = this.camera.position.clone().sub(this.controls.target);
+    this.controls.target.set(x, y, z);
+    this.camera.position.copy(this.controls.target).add(offset);
+    this.controls.update();
     this.requestRender();
   }
 

@@ -95,7 +95,8 @@ void main() {
     }
     t += stepSize;
   }
-  fragColor = vec4(toSRGB(scene.rgb * (1.0 - alpha) + acc), 1.0);
+  // mostly emissive: the glow adds light and only partly hides what is behind it
+  fragColor = vec4(toSRGB(scene.rgb * (1.0 - 0.55 * alpha) + acc), 1.0);
 }
 `;
 
@@ -124,7 +125,7 @@ void main() {
   float v = texture(tVolume, tc).r;
   float x = clamp((v - window.x) / max(window.y - window.x, 1e-3), 0.0, 1.0);
   vec3 c = texture(tLut, vec2(x, 0.5)).rgb;
-  float a = opacity * smoothstep(0.0, 0.08, x);
+  float a = opacity * smoothstep(0.02, 0.45, x);
   fragColor = vec4(c, a);
 }
 `;

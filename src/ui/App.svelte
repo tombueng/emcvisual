@@ -187,6 +187,15 @@
   });
 
   $effect(() => {
+    // field lines follow the selected source and its geometry
+    void app.selectedId;
+    void app.models;
+    void app.view.showFieldLines;
+    void app.planes;
+    engine.updateFieldLines();
+  });
+
+  $effect(() => {
     void [app.audio.volume, app.audio.pitchAt25MHz, app.audio.enabled];
     updateAudio();
   });

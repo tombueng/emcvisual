@@ -126,9 +126,34 @@ export const de = {
     planeAuto: 'erkannt',
     planeNone: 'keine Fläche',
     substrate: 'Platine durchsichtig',
+    fieldLines: 'Feldlinien der gewählten Quelle',
+    fieldLinesBusy: 'Feldlinien werden berechnet …',
     components: 'Bauteile zeigen',
     fMax: 'Spektrum bis',
     validity: (f: string) => `Quasistatik gilt im Gitter bis etwa ${f}`,
+  },
+  diag: {
+    tab: 'Diagnose',
+    viewTab: 'Ansicht',
+    warnings: 'Hinweise zum Layout',
+    none: 'Keine Auffälligkeiten bei den aktiven Quellen.',
+    kinds: {
+      'return-gap': (d: { layer: string; plane: string; planeNet: string; value: number }) =>
+        `Rückstrompfad unterbrochen: ${d.layer} läuft ${d.value.toFixed(1).replace('.', ',')} mm über eine Lücke in ${d.planeNet} (${d.plane}).`,
+      'ref-change': (d: { layer: string; planeNet: string; otherNet?: string }) =>
+        `Bezugswechsel am Via (${d.layer}): von ${d.planeNet} nach ${d.otherNet ?? '?'}. Der Rückstrom muss über einen Kondensator springen.`,
+      'no-stitching': (d: { layer: string; planeNet: string; value: number }) =>
+        `Lagenwechsel (${d.layer}) ohne ${d.planeNet}-Via im Umkreis von ${d.value} mm.`,
+      'long-line': (d: { value: number }, f: (v: number) => string) =>
+        `Leitung ist ab ${f(d.value)} elektrisch lang; Stufe 1 rechnet sie als konzentriert.`,
+    },
+    hotspots: 'Hotspots in Sondenhöhe',
+    hotspotsNone: 'Noch kein Feld berechnet.',
+    near: 'in der Nähe',
+    far: 'Fernfeld-Orientierung (CISPR 32 B, 3 m)',
+    farHint: 'Nur Gegentakt der Platine, ohne Kabel. Grobe Orientierung, keine Prüfaussage.',
+    margin: (db: number) => (db >= 0 ? `${db.toFixed(0)} dB über Grenzwert` : `${(-db).toFixed(0)} dB Abstand`),
+    goTo: 'Sonde hierher',
   },
   probe: {
     title: 'Sonde',
@@ -140,6 +165,8 @@ export const de = {
     components: { abs: '|H| (dreiachsig)', x: 'Hx', y: 'Hy (senkrecht)', z: 'Hz' },
     asVoltage: 'als Sondenspannung (dBµV)',
     hint: 'Fahre mit der Maus über die Platine. Klick hält die Sonde fest.',
+    modes: { probe: 'Sonde', far3: 'Fernfeld 3 m', far10: 'Fernfeld 10 m' },
+    limit: 'CISPR 32 Klasse B',
     noProbe: 'Keine Sonde über der Platine',
     total: 'Summe',
     peak: 'Höchste Linie',

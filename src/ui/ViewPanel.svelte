@@ -5,6 +5,7 @@
   import { BANDS } from '../physics/spectrum';
   import { C0, formatEng } from '../physics/units';
   import type { ViewMode } from '../state/scenario';
+  import DiagnosticsPanel from './DiagnosticsPanel.svelte';
 
   const modes: ViewMode[] = ['all', 'band', 'line'];
 
@@ -31,7 +32,17 @@
 </script>
 
 <section class="panel">
-  <header><h2>{t.view.title}</h2></header>
+  <header>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected={app.rightTab === 'view'} class:active={app.rightTab === 'view'} onclick={() => (app.rightTab = 'view')}>{t.diag.viewTab}</button>
+      <button role="tab" aria-selected={app.rightTab === 'diag'} class:active={app.rightTab === 'diag'} onclick={() => (app.rightTab = 'diag')}>
+        {t.diag.tab}{#if app.diagnostics.length}<span class="count value">{app.diagnostics.length}</span>{/if}
+      </button>
+    </div>
+  </header>
+  {#if app.rightTab === 'diag'}
+    <div class="scroll body"><DiagnosticsPanel /></div>
+  {:else}
   <div class="scroll body">
     <div class="section-title">{t.view.frequency}</div>
     <div class="seg" role="radiogroup" aria-label={t.view.frequency}>
@@ -96,6 +107,8 @@
         <option value="turbo">{t.view.colormaps.turbo}</option>
       </select>
     </div>
+    <label class="check"><input type="checkbox" bind:checked={app.view.showFieldLines} onchange={() => { engine.updateFieldLines(); engine.scheduleSave(); }} /> {t.view.fieldLines}</label>
+    {#if app.fieldLinesBusy}<p class="hint">{t.view.fieldLinesBusy}</p>{/if}
     <label class="check"><input type="checkbox" bind:checked={app.view.showSlice} onchange={restyle} /> {t.view.slice}</label>
     {#if app.view.showSlice}
       <div class="field">
@@ -149,6 +162,7 @@
       <p class="hint">{t.view.validity(formatEng(fQs, 'Hz', 2))}</p>
     {/if}
   </div>
+  {/if}
 </section>
 
 <style>
@@ -159,13 +173,34 @@
     min-height: 0;
   }
   header {
-    padding: 10px 12px 8px;
+    padding: 8px 12px 0;
     border-bottom: 1px solid var(--line-soft);
   }
-  h2 {
-    font-size: 14px;
+  .tabs {
+    display: flex;
+    gap: 14px;
+  }
+  .tabs button {
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: 4px 0 7px;
     font-weight: 600;
-    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .tabs button.active {
+    color: var(--text);
+    border-bottom-color: var(--field);
+  }
+  .count {
+    margin-left: 6px;
+    font-size: 11px;
+    color: #1b1206;
+    background: var(--field);
+    border-radius: 8px;
+    padding: 0 6px;
   }
   .body {
     padding: 8px 12px 16px;
