@@ -132,7 +132,8 @@ test('live coupling: saving the board file again reloads it and keeps the source
     w.showOpenFilePicker = async () => [{ kind: 'file', name: w.__file.name, getFile: async () => w.__file }];
   });
   await page.goto('/');
-  const text = await (await page.request.get('/demo/demo-board.kicad_pcb')).text();
+  // relative to the page: on CI the app lives under the repository path
+  const text = await page.evaluate(() => fetch(new URL('demo/demo-board.kicad_pcb', document.baseURI)).then((r) => r.text()));
   await page.evaluate((t) => {
     (window as unknown as { __file: File }).__file = new File([t], 'demo-board.kicad_pcb', { lastModified: 1 });
   }, text);
