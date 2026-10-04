@@ -52,6 +52,10 @@ cd tools/openems/src
     klingt der Schleifenstrom (L/R) so lange nach, dass der Lauf ein Vielfaches dauert.
     Kondensatoren in der Schleife sind Kurzschlüsse.
   - Spulen: nicht in der Vollwelle; sie bleiben aus dem schnellen Modell.
+- **Puls:** Ableitung eines Gaußpulses, also ohne Gleichanteil, mit −20 dB bei 1,5·f_max.
+  Ein gewöhnlicher Gaußpuls ab 0 Hz treibt durch jede geschlossene Schleife aus idealem Metall
+  (Flächen, Vias, Kurzschlüsse) einen bleibenden Strom. Dann klingt die Feldenergie nie ab, und
+  der Lauf endet erst an der Schrittgrenze. Abbruch bei −30 dB Restenergie.
 - **Ausgabe:** H im Frequenzbereich bei 12 Frequenzen (20 MHz bis f_max, logarithmisch), geteilt
   durch den Port-Strom und auf das Gitter der App umgerechnet. Die App multipliziert das mit
   dem Stromspektrum ihres eigenen Quellenmodells, Änderungen am Spektrum (Flanken, Frequenz)

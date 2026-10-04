@@ -84,7 +84,15 @@ def mesh_lines(job, src, res):
 
 def build(job, src, res, fmax, sim_path):
     fd = openEMS(NrTS=int(job['maxSteps']), EndCriteria=10 ** (job['endCriteriaDb'] / 10))
-    fd.SetGaussExcite(0, fmax)
+    # derivative of a Gaussian: no DC part. A plain Gaussian from 0 Hz drives a lasting current
+    # through every closed loop of ideal metal (planes, vias, straps), so the field energy
+    # never decays and the run cannot stop. Spectrum ∝ f·exp(-(π f τ)²), peak at fe/2.78 and
+    # -20 dB at fe = 1.5·fmax, so the top frequency is not at the edge; about -24 dB at 20 MHz
+    # for 1 GHz (fine: results are per ampere of port current).
+    fp = 1.5 * fmax / 2.78
+    tau = 1 / (np.pi * fp * np.sqrt(2))
+    t0 = 4 * tau
+    fd.SetCustomExcite(f'-(t-{t0:.6e})/{tau:.6e}*exp(-((t-{t0:.6e})/{tau:.6e})^2)', 1.5 * fmax, 1.5 * fmax)
     fd.SetBoundaryCond(['PML_8'] * 6)
     csx = ContinuousStructure()
     fd.SetCSX(csx)
