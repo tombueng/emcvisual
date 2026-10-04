@@ -1,12 +1,44 @@
 # Stufe 3: Vollwellen-Simulation (openEMS) und Fernfeld
 
-Stand: 2026-10-04 · Status: Idee, konserviert · Voraussetzung: Stufe 1; Stufe 2 hilfreich
+Stand: 2026-10-04 · Status: 3a umgesetzt (Offline-Workflow mit openEMS) · Voraussetzung: Stufe 1; Stufe 2 hilfreich
 
 ## Ziel
 
 Die Maxwell-Gleichungen ohne Näherung lösen: Resonanzen, Abstrahlung von Plattenkanten,
 Schlitzantennen, Laufzeiten, echtes Fernfeld. Ergebnisse als Volumina mit Frequenzachse und
 Phase in die PCB-World laden, neben Stufe 1/2 und neben Messungen.
+
+## Umgesetzt: 3a Offline-Workflow mit openEMS (2026-10-04)
+
+Weg 1 aus 3.1: Die App exportiert einen Job, ein Python-Skript rechnet ihn lokal mit openEMS,
+die App lädt das Ergebnis. Bedienung, Einrichtung und Modellannahmen:
+[tools/openems/README.md](../../tools/openems/README.md).
+
+| Teil | Datei |
+|---|---|
+| Job aus BoardModel und Quellen (Kupfer, Drähte, Vias, Ports, Lasten, Kurzschlüsse, Frequenzen, Gitter) | `src/fullwave/job.ts` |
+| Modellaufbau, Gitter, Lauf je Quelle, H je Ampere Port-Strom auf das App-Gitter, Fernfeld 3 m | `tools/openems/run_job.py` |
+| Ergebnisdatei lesen, Frequenzgewichte, Abtasten, Umrechnen auf ein anderes Gitter | `src/fullwave/result.ts` |
+| „Magnetfeld aus: Schnell / Vollwelle“, Sonde, Scan, Fernfeld aus dem openEMS-Ergebnis | `src/state/engine.svelte.ts`, `src/ui/ViewPanel.svelte` |
+
+**Linearität (3.3) genutzt:** Gespeichert wird |H|² je A² Port-Strom bei 12 Frequenzen. Die App
+verteilt jede Spektrallinie ihres Quellenmodells auf die zwei benachbarten Frequenzen (linear in
+log f) und setzt daraus das Volumen zusammen. Flanken und Frequenzen bleiben einstellbar, ohne
+neu zu rechnen. Quellen ohne Vollwellen-Ergebnis (Spulen) bleiben aus dem schnellen Modell.
+
+**Vergleich mit Stufe 1 (Quasistatik-Grenzfall):** Bei der schlechten Buck-Schleife der
+Demo-Platine (Gitter 1 mm, nur 30 000 Zeitschritte) weicht die Vollwelle 3 mm und mehr über der
+Platine im Median um −0,7 dB ab (10–90 %: −2,7 bis +0,1 dB), und zwar dort, wo das Feld weniger
+als 30 dB unter seinem Maximum liegt. Die Übereinstimmung hält bis etwa 700 MHz innerhalb ±3 dB;
+bei 1 GHz liegt die Vollwelle um 4 dB höher. An der Sonde 3 mm über der Schleife:
+113,8 (schnell) und 112,9 dBµA/m (Vollwelle) bei 30 MHz, 74,2 und 74,1 dBµA/m bei 500 MHz. Der Test
+`tests/fullwave.test.ts` prüft das, wenn ein Ergebnis unter `tools/openems/runs/` liegt.
+
+**Rechenzeit:** etwa 70 Mio. Zellupdates/s auf 16 Kernen. Eine Quelle der Demo-Platine braucht
+bei 1 mm Zellen etwa 2 min, bei 0,6 mm etwa 10–15 min.
+
+Noch offen: lokale Brücke (Weg 2), Phase und animierte Wellen, Richtdiagramm, Kabel und
+Gehäuse (3.4), E-Feld-Dumps, Spulen als Vollwellenquelle, adaptives Gitter.
 
 ## Warum
 

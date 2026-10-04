@@ -67,3 +67,13 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     System Access API (Chromium) reicht, um auf jedes Speichern zu reagieren, ohne lokale Brücke
     und ohne Installation; die IPC-Brücke bleibt für Live-Änderungen ohne Speichern und den
     Rückweg nach KiCad.
+26. **2026-10-04 · Stufe 3 zuerst als Offline-Workflow** (Job exportieren, lokal rechnen, Ergebnis
+    laden) statt mit einer lokalen Brücke: keine dauerhaft laufende Software, keine offenen
+    Ports, und das Ergebnis lässt sich weitergeben.
+27. **2026-10-04 · Vollwellen-Ergebnisse je Ampere Port-Strom bei wenigen Frequenzen.** Die App
+    multipliziert mit dem Stromspektrum ihres Quellenmodells. So bleibt das Spektrum
+    interaktiv, und der Vergleich mit Stufe 1 trennt Feldverteilung und Quellenmodell.
+28. **2026-10-04 · Schmale Leiterbahnen zusätzlich als dünne Drähte.** Bei Zellen von 0,5–1 mm
+    fallen 0,2-mm-Bahnen und kleine Pads sonst durch das Gitter, und Schleifen bleiben offen.
+29. **2026-10-04 · Eigenes Ergebnisformat (int16 centi-dB) statt HDF5 im Browser:** klein, ohne
+    zusätzliche Bibliothek (h5wasm) lesbar, auf das Gitter der App umgerechnet.

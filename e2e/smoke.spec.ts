@@ -154,3 +154,17 @@ test('live coupling: saving the board file again reloads it and keeps the source
   await expect(page.getByRole('button', { name: 'live' })).toBeHidden();
   expect(errors).toEqual([]);
 });
+
+test('full wave: the openEMS job export holds the simulated sources', async ({ page }) => {
+  await page.goto('/?demo');
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Job exportieren' }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe('demo-board.openems-job.json');
+  const job = JSON.parse(await (await import('node:fs/promises')).readFile((await file.path())!, 'utf8'));
+  expect(job.kind).toBe('pcb-field-fullwave-job');
+  // six sources; the two inductors stay with the fast model
+  expect(job.sources).toHaveLength(6);
+  expect(job.skipped).toHaveLength(2);
+});

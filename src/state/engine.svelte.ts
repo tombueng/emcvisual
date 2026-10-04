@@ -16,6 +16,8 @@ import { MU0 } from '../physics/units';
 import type { Source } from '../physics/sources';
 import type { Viewer } from '../render/viewer';
 import { footprintPoses, loadComponentModels, type FootprintPose } from '../render/componentModels';
+import { frequencyWeights, fullwaveVolume, parseFullwave, resampleBlocks, sampleAt, valueAtFrequency, type FullwaveResult } from '../fullwave/result';
+import { buildJob, DEFAULT_JOB_OPTIONS, type JobOptions } from '../fullwave/job';
 import { buildFieldLines } from '../render/fieldLinesMesh';
 import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fieldlines';
 import { diagnoseSource } from '../physics/diagnostics';
@@ -104,6 +106,9 @@ class Engine {
   /** Footprints when the GLB was loaded, so models follow parts moved since. */
   private modelPoses: Map<string, FootprintPose> | null = null;
   private boardName = '';
+  /** Stage 3: openEMS result and its blocks on the current grid. */
+  private fullwave: FullwaveResult | null = null;
+  private fwBlocks: Map<string, Int16Array[]> | null = null;
 
   attach(viewer: Viewer) {
     this.viewer = viewer;
@@ -147,6 +152,10 @@ class Engine {
         app.models3d = null;
         this.modelData = null;
         this.modelPoses = null;
+        this.fullwave = null;
+        this.fwBlocks = null;
+        app.fullwave = null;
+        app.fieldOrigin = 'fast';
       }
       this.pickIndex = new PickIndex(board);
       app.layerVisible = keep && layerVisible.length === board.layers.length ? layerVisible : board.layers.map(() => true);
@@ -186,6 +195,7 @@ class Engine {
     if (!board) return;
     app.planes = detectPlanes(board, { ...app.planeOverrides });
     this.grid = makeGrid(board, this.frame, { quality: app.quality });
+    this.fwBlocks = this.fullwave ? resampleBlocks(this.fullwave, this.grid) : null;
     this.cover = coverColumns(this.grid, app.planes, this.frame);
     this.ctx = { board, frame: this.frame, planes: app.planes, fMax: app.fMax };
   }
@@ -424,6 +434,52 @@ class Engine {
     return app.models3d;
   }
 
+  // --- stage 3: openEMS ---------------------------------------------------------------------------
+
+  /** The full-wave field is shown (H only; openEMS results carry no electric field yet). */
+  fullwaveActive(): boolean {
+    return app.fieldOrigin === 'fullwave' && !!this.fullwave && !!this.fwBlocks && app.view.fieldKind === 'H';
+  }
+
+  /** Job file for tools/openems/run_job.py with the enabled sources and the current grid. */
+  exportFullwaveJob(opts: Partial<JobOptions> = {}): string | null {
+    if (!app.board || !this.ctx || !this.grid) return null;
+    const job = buildJob(
+      this.ctx,
+      $state.snapshot(app.sources) as Source[],
+      app.models,
+      this.grid,
+      { fileName: app.board.source.fileName, hash: app.boardHash },
+      { ...DEFAULT_JOB_OPTIONS, fMax: Math.min(app.fMax, 1e9), ...opts },
+    );
+    return JSON.stringify(job);
+  }
+
+  loadFullwave(buf: ArrayBuffer, fileName: string) {
+    if (!app.board || !this.grid) throw new Error('no-board');
+    const r = parseFullwave(buf);
+    this.fullwave = r;
+    this.fwBlocks = resampleBlocks(r, this.grid);
+    app.fullwave = {
+      fileName,
+      sources: r.sources.map((s) => ({ id: s.id, name: s.name, seconds: s.seconds })),
+      skipped: r.skipped,
+      fMin: r.freqs[0]!,
+      fMax: r.freqs[r.freqs.length - 1]!,
+      nFreqs: r.freqs.length,
+      res: r.solver.res,
+      seconds: r.solver.seconds,
+      otherBoard: r.board.hash !== app.boardHash,
+    };
+    app.fieldOrigin = 'fullwave';
+    this.queueRecompose();
+  }
+
+  setFieldOrigin(o: 'fast' | 'fullwave') {
+    app.fieldOrigin = o;
+    this.queueRecompose();
+  }
+
   // --- composition ------------------------------------------------------------------------------
 
   queueRecompose() {
@@ -441,10 +497,21 @@ class Engine {
     const sel = selectionFromView();
     const vols: Float32Array[] = [];
     const weights: number[] = [];
+    const fw = this.fullwaveActive() ? this.fullwave : null;
     for (const s of app.sources) {
-      const v = this.volumeOf(s.id);
       const m = app.models[s.id];
-      if (!v || !m || !s.enabled) continue;
+      if (!m || !s.enabled) continue;
+      const blocks = fw ? this.fwBlocks?.get(s.id) : undefined;
+      if (fw && blocks) {
+        // openEMS: the pattern changes with frequency; each line is split between the two
+        // neighbouring dumped frequencies
+        vols.push(fullwaveVolume(blocks, frequencyWeights(fw.freqs, m.lines, sel), n));
+        weights.push(1);
+        continue;
+      }
+      // sources openEMS did not simulate (inductors) stay from the fast model
+      const v = this.volumeOf(s.id);
+      if (!v) continue;
       vols.push(v.data);
       weights.push(selectionWeight(this.linesOf(m), sel));
     }
@@ -544,18 +611,28 @@ class Engine {
     const area = Math.PI * (app.probe.radius / 1000) ** 2;
     const sources: ProbeReadout['sources'] = [];
     const totals = new Map<number, number>();
+    const fw = this.fullwaveActive() ? this.fullwave : null;
     for (const s of app.sources) {
       const m = app.models[s.id];
       const isE = app.view.fieldKind === 'E';
       const pack = isE ? this.ePacks.get(s.id) : this.packs.get(s.id);
       if (!m || !pack || !s.enabled) continue;
-      (isE ? eFieldAt : fieldAt)(pack, slotMaskTable(pack.planeY.length), P[0], P[1], P[2], bits, h);
-      const comp = app.probe.component;
-      const hv = comp === 'x' ? Math.abs(h[0]!) : comp === 'y' ? Math.abs(h[1]!) : comp === 'z' ? Math.abs(h[2]!) : Math.hypot(h[0]!, h[1]!, h[2]!);
+      const blocks = fw && this.grid ? this.fwBlocks?.get(s.id) : undefined;
+      // openEMS: |h| per ampere at each dumped frequency (magnitude only, no components)
+      const fwValues = fw && blocks ? sampleAt(fw, blocks, this.grid!, P[0], P[1], P[2]) : null;
+      let hv = 0;
+      if (!fwValues) {
+        (isE ? eFieldAt : fieldAt)(pack, slotMaskTable(pack.planeY.length), P[0], P[1], P[2], bits, h);
+        const comp = app.probe.component;
+        hv = comp === 'x' ? Math.abs(h[0]!) : comp === 'y' ? Math.abs(h[1]!) : comp === 'z' ? Math.abs(h[2]!) : Math.hypot(h[0]!, h[1]!, h[2]!);
+      }
       const lines: ProbeLine[] = [];
       let power = 0;
+      let hRef = hv;
       for (const l of this.linesOf(m)) {
-        let a = l.amp * hv;
+        const hl = fwValues ? Math.sqrt(valueAtFrequency(fw!.freqs, fwValues, l.f)) : hv;
+        if (fwValues && hRef === 0) hRef = hl;
+        let a = l.amp * hl;
         if (asV && !isE) a *= 2 * Math.PI * l.f * MU0 * area;
         if (!(a > 0)) continue;
         lines.push({ f: l.f, db: 20 * Math.log10(a) + 120 });
@@ -563,7 +640,7 @@ class Engine {
         const key = Math.round(l.f);
         totals.set(key, (totals.get(key) ?? 0) + a * a);
       }
-      sources.push({ id: s.id, name: s.name, color: s.color, lines, h: hv, db: power > 0 ? 10 * Math.log10(power) + 120 : -200 });
+      sources.push({ id: s.id, name: s.name, color: s.color, lines, h: hRef, db: power > 0 ? 10 * Math.log10(power) + 120 : -200 });
     }
     const total = [...totals.entries()].sort((a, b) => a[0] - b[0]).map(([f, p]) => ({ f, db: 10 * Math.log10(p) + 120 }));
     return { sources, total, unit: app.view.fieldKind === 'E' ? 'dBµV/m' : asV ? 'dBµV' : 'dBµA/m' };
@@ -695,7 +772,16 @@ class Engine {
       const m = app.models[s.id];
       const pack = this.packs.get(s.id);
       if (!m || !pack || !s.enabled) continue;
-      const lines = farField(dipoleMoment(pack), m.lines, distance);
+      const fw = this.fullwaveActive() ? this.fullwave : null;
+      const meta = fw?.sources.find((x) => x.id === s.id);
+      // openEMS: strongest direction at 3 m per ampere; 10 m scales with 1/r
+      const lines =
+        fw && meta
+          ? m.lines
+              .map((l) => ({ f: l.f, e: l.amp * valueAtFrequency(fw.freqs, meta.farE3mPerA, l.f) * (3 / distance) }))
+              .filter((l) => l.e > 0)
+              .map((l) => ({ f: l.f, db: 20 * Math.log10(l.e) + 120 }))
+          : farField(dipoleMoment(pack), m.lines, distance);
       for (const l of lines) totals.set(Math.round(l.f), (totals.get(Math.round(l.f)) ?? 0) + 10 ** (l.db / 10));
       sources.push({ id: s.id, name: s.name, color: s.color, lines });
     }

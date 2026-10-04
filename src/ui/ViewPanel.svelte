@@ -7,7 +7,7 @@
   import type { ViewMode } from '../state/scenario';
   import DiagnosticsPanel from './DiagnosticsPanel.svelte';
   import ScannerPanel from './ScannerPanel.svelte';
-  import { downloadText } from '../state/persist';
+  import { downloadText, pickFile } from '../state/persist';
 
   interface Props {
     onpickmodels: () => void;
@@ -20,6 +20,24 @@
   }
 
   const modes: ViewMode[] = ['all', 'band', 'line'];
+
+  // --- stage 3: openEMS -------------------------------------------------------------------------
+  const baseName = () => (app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+  function exportJob() {
+    const json = engine.exportFullwaveJob();
+    if (!json) return;
+    downloadText(`${baseName()}.openems-job.json`, json);
+  }
+  async function loadResult() {
+    const f = await pickFile('.bin');
+    if (!f) return;
+    try {
+      engine.loadFullwave(await f.arrayBuffer(), f.name);
+    } catch {
+      app.toast = t.fullwave.failed;
+    }
+  }
+  const hasExportable = $derived(app.sources.some((s) => s.enabled && s.type !== 'inductor' && app.models[s.id]));
 
   const reselect = () => {
     engine.recompose();
@@ -66,6 +84,15 @@
       {/each}
     </div>
     {#if app.view.fieldKind === 'E'}<p class="hint">{t.view.fieldKindHint}</p>{/if}
+    {#if app.fullwave}
+      <div class="section-title">{t.fullwave.origin}</div>
+      <div class="seg two" role="radiogroup" aria-label={t.fullwave.origin}>
+        {#each ['fast', 'fullwave'] as const as o (o)}
+          <button role="radio" aria-checked={app.fieldOrigin === o} class:active={app.fieldOrigin === o} onclick={() => engine.setFieldOrigin(o)}>{t.fullwave.origins[o]}</button>
+        {/each}
+      </div>
+      {#if app.fieldOrigin === 'fullwave' && app.view.fieldKind === 'E'}<p class="hint">{t.fullwave.eOnly}</p>{/if}
+    {/if}
 
     <div class="section-title">{t.view.frequency}</div>
     <div class="seg" role="radiogroup" aria-label={t.view.frequency}>
@@ -200,6 +227,20 @@
     </select>
     {#if fQs > 0}
       <p class="hint">{t.view.validity(formatEng(fQs, 'Hz', 2))}</p>
+    {/if}
+
+    <div class="section-title">{t.fullwave.title}</div>
+    <p class="hint">{t.fullwave.hint}</p>
+    <div class="models">
+      <button class="btn small" onclick={exportJob} disabled={!app.board || !hasExportable}>{t.fullwave.exportJob}</button>
+      <button class="btn small" onclick={loadResult} disabled={!app.board}>{t.fullwave.loadResult}</button>
+    </div>
+    <code class="cmd">python tools/openems/run_job.py {baseName()}.openems-job.json</code>
+    {#if app.fullwave}
+      <p class="hint value">{t.fullwave.loaded(app.fullwave.sources.length, formatEng(app.fullwave.fMin, 'Hz', 2), formatEng(app.fullwave.fMax, 'Hz', 2), app.fullwave.nFreqs)}</p>
+      <p class="hint value">{t.fullwave.solver(fmtNum(app.fullwave.res, 2), fmtNum(app.fullwave.seconds / 60, 1))}</p>
+      {#if app.fullwave.otherBoard}<p class="hint warn-text">{t.fullwave.otherBoard}</p>{/if}
+      {#if app.fullwave.skipped.length}<p class="hint">{t.fullwave.skipped(app.fullwave.skipped.map((s) => s.name).join(', '))}</p>{/if}
     {/if}
   </div>
   {/if}

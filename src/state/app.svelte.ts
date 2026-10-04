@@ -44,6 +44,20 @@ export interface Hotspot {
 
 export type SpectrumMode = 'probe' | 'far3' | 'far10';
 
+/** A loaded openEMS result (stage 3), as shown in the view panel. */
+export interface FullwaveInfo {
+  fileName: string;
+  sources: { id: string; name: string; seconds: number }[];
+  skipped: { id: string; name: string; reason: string }[];
+  fMin: number;
+  fMax: number;
+  nFreqs: number;
+  res: number;
+  seconds: number;
+  /** The result was computed for another version of the board. */
+  otherBoard: boolean;
+}
+
 export interface LineInfo {
   f: number;
   /** Peak field of this line anywhere in the volume, dBµA/m. */
@@ -87,6 +101,9 @@ class AppState {
   spectrumMode = $state<SpectrumMode>('probe');
   rightTab = $state<'view' | 'diag' | 'scan'>('view');
   fieldLinesBusy = $state(false);
+  fullwave = $state.raw<FullwaveInfo | null>(null);
+  /** Where the magnetic field comes from: the fast model (stages 1–2) or openEMS (stage 3). */
+  fieldOrigin = $state<'fast' | 'fullwave'>('fast');
 
   get selected(): Source | undefined {
     return this.sources.find((s) => s.id === this.selectedId);

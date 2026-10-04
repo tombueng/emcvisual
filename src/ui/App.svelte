@@ -55,6 +55,14 @@
 
   async function openBoardFile(file: File, handle?: FileHandle | null) {
     if (/\.(glb|gltf)$/i.test(file.name)) return openModels(await file.arrayBuffer());
+    if (file.name.endsWith('.fullwave.bin')) {
+      try {
+        engine.loadFullwave(await file.arrayBuffer(), file.name);
+      } catch {
+        app.toast = t.fullwave.failed;
+      }
+      return;
+    }
     if (file.name.endsWith('.json')) {
       try {
         engine.applyScenario(JSON.parse(await file.text()));
@@ -260,6 +268,7 @@
     void app.models;
     void [app.probe.x, app.probe.z, app.probe.height, app.probe.component, app.probe.asVoltage, app.probe.visible, app.probe.radius];
     void app.sources.map((s) => s.enabled);
+    void [app.fieldOrigin, app.fullwave];
     app.readout = engine.probeReadout();
     viewer?.setProbe(app.probe.visible ? [app.probe.x, app.probe.height, app.probe.z] : null, app.probe.radius);
   });

@@ -181,7 +181,7 @@ export function lineParams(ctx: PhysicsContext, layer: number, width: number): L
  * that has copper under the point; otherwise the nearest plane layer; otherwise the
  * opposite outer layer (flagged by the caller).
  */
-function returnHeight(ctx: PhysicsContext, layer: number, x: number, y: number): { y: number; referenced: boolean } {
+export function returnHeight(ctx: PhysicsContext, layer: number, x: number, y: number): { y: number; referenced: boolean } {
   const ly = ctx.board.layers[layer]!.y;
   const cands = ctx.planes.filter((p) => p.layer !== layer);
   const coveringNear = cands
@@ -297,7 +297,22 @@ interface NetCurrents {
   warnings: string[];
 }
 
-function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string, load: LoadModel): NetCurrents {
+/** Driver, receivers and the net graph of a signal (shared with the full-wave export). */
+export interface NetTerminals {
+  g: NetGraph;
+  tree: ReturnType<typeof shortestTree>;
+  /** Pad index of the driver. */
+  driver: number;
+  /** Pad indices of the receivers (one per pin, series parts excluded). */
+  loads: number[];
+  /** Graph node of a pad (top or bottom copper by the footprint side). */
+  pickNode: (pi: number) => number;
+  root: number;
+  bridgePads: Set<number>;
+  warnings: string[];
+}
+
+export function netTerminals(ctx: PhysicsContext, netNames: string[], driverRef: string): NetTerminals {
   const { board } = ctx;
   const nets = netIndices(board, netNames);
   if (!board.tracks.some((t) => nets.includes(t.net))) throw new SourceError('not-routed');
@@ -333,6 +348,21 @@ function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string,
     seenPins.add(pin);
     loads.push(pi);
   }
+  return { g, tree, driver, loads, pickNode, root, bridgePads, warnings };
+}
+
+/** The termination pad of a terminated line: the given one, else the farthest receiver. */
+export function terminationPad(ctx: PhysicsContext, t: NetTerminals, endPad: string): number {
+  let end = endPad ? findPad(ctx.board, endPad) : -1;
+  if (end < 0 || !t.g.padNodes.has(end)) {
+    end = t.loads.map((pi) => ({ pi, d: t.tree.dist[t.pickNode(pi)]! })).filter((x) => Number.isFinite(x.d)).sort((a, b) => b.d - a.d)[0]?.pi ?? -1;
+  }
+  return end;
+}
+
+function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string, load: LoadModel): NetCurrents {
+  const { board } = ctx;
+  const { g, tree, driver, loads, pickNode, root, warnings } = netTerminals(ctx, netNames, driverRef);
 
   // line length, capacitance and Z0 along the tree
   const n = g.nodes.length;
@@ -397,10 +427,7 @@ function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string,
   }
 
   // terminated: constant current along driver -> termination
-  let end = load.endPad ? findPad(board, load.endPad) : -1;
-  if (end < 0 || !g.padNodes.has(end)) {
-    end = loads.map((pi) => ({ pi, d: tree.dist[pickNode(pi)]! })).filter((x) => Number.isFinite(x.d)).sort((a, b) => b.d - a.d)[0]?.pi ?? -1;
-  }
+  const end = terminationPad(ctx, { g, tree, driver, loads, pickNode, root, bridgePads: new Set(), warnings }, load.endPad);
   if (end < 0) throw new SourceError('no-termination');
   const path = pathTo(tree, pickNode(end)) ?? [];
   let pathLen = 0;

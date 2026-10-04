@@ -66,6 +66,9 @@ src/
     colormaps.ts            Inferno/Turbo (Polynom-Fits) als LUT
   audio/
     sonifier.ts             Web-Audio-Graph je Quelle
+  fullwave/                 Stufe 3: openEMS
+    job.ts                  Job-Export (Kupfer, Drähte, Vias, Ports, Lasten, Frequenzen, Gitter)
+    result.ts               Ergebnisdatei, Frequenzgewichte, Abtasten, Umrechnen aufs Gitter
   scanner/                  Stufe 4: Nahfeld-Scanner (Drucker + Empfänger)
     types.ts                Positioner, Receiver, Messformat
     registration.ts         Platine ↔ Drucker (Kabsch, mit Spiegelung)
@@ -87,6 +90,7 @@ src/
     DiagnosticsPanel, ScannerPanel, SpectrumPanel (Analysator, Sonde, Ton)
 public/demo/                Demo-Platine + Szenario
 tools/demo-board/           pcbnew-Skript für die Demo-Platine, Referenzdaten-Export
+tools/openems/              run_job.py (Vollwelle, Stufe 3), README mit Einrichtung
 tests/                      Vitest (Kern), fixtures/ (pcbnew-Referenzen)
 e2e/                        Playwright-Smoke-Tests (WebGL über SwiftShader)
 scripts/                    check-codename.mjs, rename.mjs

@@ -1,4 +1,4 @@
-import type { BBox2, Vec2 } from './types';
+import type { BBox2, Pad, Vec2 } from './types';
 
 export const DEG = Math.PI / 180;
 
@@ -201,4 +201,43 @@ export function chainRings(polylines: Vec2[][], tol = 0.01): { rings: Vec2[][]; 
     }
   }
   return { rings, open };
+}
+
+/** Regular n-gon on a circle. */
+export function circlePoints(c: Vec2, r: number, n: number): Vec2[] {
+  const pts: Vec2[] = [];
+  for (let k = 0; k < n; k++) {
+    const a = (2 * Math.PI * k) / n;
+    pts.push({ x: c.x + r * Math.cos(a), y: c.y + r * Math.sin(a) });
+  }
+  return pts;
+}
+
+/** Pad copper outline in board coordinates (round shapes as polygons). */
+export function padOutline(p: Pad): Vec2[] {
+  const hx = p.size.x / 2;
+  const hy = p.size.y / 2;
+  let local: Vec2[];
+  if (p.shape === 'circle') {
+    local = circlePoints({ x: 0, y: 0 }, hx, 20);
+  } else if (p.shape === 'oval') {
+    const r = Math.min(hx, hy);
+    const ax = hx - r;
+    const ay = hy - r;
+    local = [];
+    for (let k = 0; k <= 10; k++) {
+      const a = -Math.PI / 2 + (Math.PI * k) / 10;
+      local.push(hx >= hy ? { x: ax + r * Math.cos(a), y: r * Math.sin(a) } : { x: r * Math.sin(a), y: ay + r * Math.cos(a) });
+    }
+    for (let k = 0; k <= 10; k++) {
+      const a = Math.PI / 2 + (Math.PI * k) / 10;
+      local.push(hx >= hy ? { x: -ax + r * Math.cos(a), y: r * Math.sin(a) } : { x: r * Math.sin(a), y: -ay + r * Math.cos(a) });
+    }
+  } else {
+    local = [{ x: -hx, y: -hy }, { x: hx, y: -hy }, { x: hx, y: hy }, { x: -hx, y: hy }];
+  }
+  return local.map((q) => {
+    const r = rotateKicad(q, p.angle);
+    return { x: p.at.x + r.x, y: p.at.y + r.y };
+  });
 }

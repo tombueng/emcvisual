@@ -10,7 +10,8 @@ board and turns it into a 3D world you can look at and listen to: glowing field 
 field lines, a virtual near-field probe with a spectrum-analyzer view, a far-field estimate
 against CISPR 32 and layout hints (return paths over plane gaps, reference changes at vias).
 Return currents detour around plane slots and jump through stitching vias or capacitors, the
-electric field can be shown as well, and a near-field scanner (a 3D printer moving a probe,
+electric field can be shown as well, a full-wave openEMS run can be exported, computed locally and
+loaded as a second field source, and a near-field scanner (a 3D printer moving a probe,
 tinySA as receiver; a virtual rig for trying it without hardware) compares measurements with
 the simulation. The interface speaks German and English; the docs are in German.
 
@@ -47,6 +48,12 @@ einem Lagenwechsel über die nächste Stitching-Via oder den nächsten Kondensat
 in 3D gezeigt); elektrisches Feld aus Leitungs- und Knotenladungen; Streufeld offener und
 geschirmter Speicherdrosseln. Details: [docs/zukunft/STUFE-2-FLAECHENSTROEME.md](docs/zukunft/STUFE-2-FLAECHENSTROEME.md).
 
+**Stufe 3 (in Arbeit):** Vollwelle mit openEMS. Die App exportiert einen Job,
+`tools/openems/run_job.py` rechnet ihn lokal, und das Ergebnis lässt sich als zweite Feldquelle
+neben das schnelle Modell legen: Volumen, Sonde, Scan und Fernfeld. Im quasistatischen Bereich
+stimmen beide auf etwa 1 dB überein. Details: [tools/openems/README.md](tools/openems/README.md),
+[docs/zukunft/STUFE-3-VOLLWELLE.md](docs/zukunft/STUFE-3-VOLLWELLE.md).
+
 **Stufe 4 (in Arbeit):** Reiter „Messung“: Ein 3D-Drucker fährt eine Nahfeldsonde über die
 Platine, ein Empfänger misst je Punkt ein Spektrum, das Ergebnis erscheint als Schnitt in
 Messhöhe und als Differenz zur Simulation. Ein virtueller Prüfstand misst die Simulation und
@@ -54,7 +61,7 @@ zeigt die ganze Kette ohne Hardware; die Treiber für OctoPrint, G-Code über US
 sind geschrieben, aber noch an keinem Gerät erprobt. Details:
 [docs/zukunft/STUFE-4-MESSUNG-SCANNER.md](docs/zukunft/STUFE-4-MESSUNG-SCANNER.md).
 
-Was später kommt (Flächenlöser, Vollwelle mit openEMS, Handsonde, VR):
+Was später kommt (Flächenlöser, Phase und Wellen, Handsonde, VR):
 [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Loslegen

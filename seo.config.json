@@ -16,6 +16,7 @@
     "Layout hints: return paths over plane gaps, reference changes at vias, missing stitching vias, hotspots",
     "Return currents that detour around plane slots and jump through stitching vias or decoupling capacitors",
     "Quasi-static electric field and inductor stray fields (open and shielded)",
+    "Full-wave check with openEMS: export a job, run it locally, load the result next to the fast model (field, probe, far field)",
     "Near-field scanner: a 3D printer (OctoPrint or USB G-code) moves the probe, a tinySA measures; results compared with the simulation",
     "Runs entirely in the browser; the board file never leaves the computer",
     "English and German user interface"
@@ -71,6 +72,9 @@
     "tinySA",
     "OctoPrint",
     "EMC measurement",
-    "electric field"
+    "electric field",
+    "openEMS",
+    "FDTD",
+    "full-wave simulation"
   ]
 }
