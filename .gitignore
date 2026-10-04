@@ -9,3 +9,4 @@ tools/**/__pycache__/
 *.kicad_prl
 *-backups/
 fp-info-cache
+.claude/

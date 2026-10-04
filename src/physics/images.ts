@@ -1,0 +1,175 @@
+/**
+ * Mirror images in reference planes and shielding slots (docs/stufe-1/PHYSIK.md §8).
+ *
+ * Output is a packed element list for the field kernel: 8 numbers per element
+ * (ax, ay, az, bx, by, bz, weight, core radius), grouped by slot. Planes split the height
+ * into slots; a field point skips a whole slot group when a plane with copper at the
+ * point's column lies between the slot and the point.
+ */
+import { covered, coveredNear, type PlaneLayer } from '../model/planes';
+import { toBoard, type Vec3, type WorldFrame } from '../model/world';
+import type { CurrentElement } from './currents';
+
+export const STRIDE = 8;
+
+export interface ElementPack {
+  data: Float64Array;
+  /** slotStart[s]..slotStart[s+1] are the element indices of slot s. */
+  slotStart: Int32Array;
+  /** Plane heights, top to bottom (world mm). */
+  planeY: Float64Array;
+  count: number;
+}
+
+export interface ImageOptions {
+  /** Sampling step along horizontal elements for the coverage test, mm. */
+  step: number;
+  /** Coverage gaps shorter than this are bridged (via anti-pads), mm. */
+  minGap: number;
+}
+
+const DEFAULTS: ImageOptions = { step: 0.25, minGap: 1.0 };
+
+interface Raw {
+  a: Vec3;
+  b: Vec3;
+  w: number;
+  r: number;
+  slot: number;
+}
+
+/** Slot of a height: number of planes strictly above it. Planes sorted top to bottom. */
+export function slotOf(planeY: ArrayLike<number>, y: number): number {
+  let s = 0;
+  for (let i = 0; i < planeY.length; i++) if (planeY[i]! > y + 1e-9) s++;
+  return s;
+}
+
+export function packWithImages(
+  elements: CurrentElement[],
+  planes: PlaneLayer[],
+  frame: WorldFrame,
+  opts: Partial<ImageOptions> = {},
+): ElementPack {
+  const o = { ...DEFAULTS, ...opts };
+  const sorted = [...planes].sort((p, q) => q.y - p.y);
+  const planeY = Float64Array.from(sorted.map((p) => p.y));
+  const out: Raw[] = [];
+
+  /** Nearest plane in direction dir (+1 up, -1 down) from height y with copper at (x, z). */
+  const coveringPlane = (x: number, z: number, y: number, dir: 1 | -1, near = false): PlaneLayer | undefined => {
+    const b = toBoard(frame, x, z);
+    let best: PlaneLayer | undefined;
+    for (const p of sorted) {
+      if (dir > 0 ? p.y <= y + 1e-9 : p.y >= y - 1e-9) continue;
+      if (!(near ? coveredNear(p.raster, b.x, b.y) : covered(p.raster, b.x, b.y))) continue;
+      if (!best || Math.abs(p.y - y) < Math.abs(best.y - y)) best = p;
+    }
+    return best;
+  };
+
+  for (const e of elements) {
+    if (e.w === 0) continue;
+    if (e.vertical) {
+      // split at plane heights so every piece lies in one slot
+      const y0 = Math.min(e.a[1], e.b[1]);
+      const y1 = Math.max(e.a[1], e.b[1]);
+      const cuts = [y0, ...Array.from(planeY).filter((py) => py > y0 + 1e-9 && py < y1 - 1e-9), y1].sort((p, q) => p - q);
+      const up = e.b[1] > e.a[1];
+      for (let k = 0; k + 1 < cuts.length; k++) {
+        const lo = cuts[k]!;
+        const hi = cuts[k + 1]!;
+        const mid = (lo + hi) / 2;
+        const a: Vec3 = [e.a[0], up ? lo : hi, e.a[2]];
+        const b: Vec3 = [e.a[0], up ? hi : lo, e.a[2]];
+        const slot = slotOf(planeY, mid);
+        out.push({ a, b, w: e.w, r: e.r, slot });
+        // PEC image: J' = -R(J). Mirroring the end points already flips the vertical
+        // direction, so the weight is negated to keep normal currents pointing the same way.
+        for (const dir of [1, -1] as const) {
+          const p = coveringPlane(e.a[0], e.a[2], mid, dir, true);
+          if (!p) continue;
+          out.push({ a: [a[0], 2 * p.y - a[1], a[2]], b: [b[0], 2 * p.y - b[1], b[2]], w: -e.w, r: e.r, slot });
+        }
+      }
+      continue;
+    }
+
+    // horizontal: walk along and find the image plane(s) per sample, then merge runs
+    const len = Math.hypot(e.b[0] - e.a[0], e.b[2] - e.a[2]);
+    const n = Math.max(1, Math.ceil(len / o.step));
+    const y = e.a[1];
+    const slot = slotOf(planeY, y);
+    const keyAt = (t: number) => {
+      const x = e.a[0] + (e.b[0] - e.a[0]) * t;
+      const z = e.a[2] + (e.b[2] - e.a[2]) * t;
+      const up = coveringPlane(x, z, y, 1);
+      const dn = coveringPlane(x, z, y, -1);
+      return `${up ? up.y : 'n'}|${dn ? dn.y : 'n'}`;
+    };
+    const keys: string[] = [];
+    for (let k = 0; k < n; k++) keys.push(keyAt((k + 0.5) / n));
+    // bridge short gaps: a run shorter than minGap takes the key of its longer neighbour
+    const minRun = Math.max(1, Math.round(o.minGap / (len / n)));
+    const runs: { k0: number; k1: number; key: string }[] = [];
+    for (let k = 0; k < n; k++) {
+      const last = runs[runs.length - 1];
+      if (last && last.key === keys[k]) last.k1 = k;
+      else runs.push({ k0: k, k1: k, key: keys[k]! });
+    }
+    for (let i = 0; i < runs.length; i++) {
+      const r = runs[i]!;
+      if (r.k1 - r.k0 + 1 >= minRun || runs.length === 1) continue;
+      const prev = runs[i - 1];
+      const next = runs[i + 1];
+      const take = !prev ? next : !next ? prev : prev.k1 - prev.k0 >= next.k1 - next.k0 ? prev : next;
+      if (take) r.key = take.key;
+    }
+    const merged: { k0: number; k1: number; key: string }[] = [];
+    for (const r of runs) {
+      const last = merged[merged.length - 1];
+      if (last && last.key === r.key) last.k1 = r.k1;
+      else merged.push({ ...r });
+    }
+    for (const r of merged) {
+      const t0 = r.k0 / n;
+      const t1 = (r.k1 + 1) / n;
+      const a: Vec3 = [e.a[0] + (e.b[0] - e.a[0]) * t0, y, e.a[2] + (e.b[2] - e.a[2]) * t0];
+      const b: Vec3 = [e.a[0] + (e.b[0] - e.a[0]) * t1, y, e.a[2] + (e.b[2] - e.a[2]) * t1];
+      out.push({ a, b, w: e.w, r: e.r, slot });
+      const [upS, dnS] = r.key.split('|');
+      const ys = [upS, dnS].filter((s) => s !== 'n').map(Number);
+      // PEC image J' = -R(J): tangential currents reverse. With planes on both sides the
+      // return current splits roughly in proportion to 1/h.
+      const inv = ys.map((py) => 1 / Math.max(Math.abs(py - y), 1e-3));
+      const sum = inv.reduce((s, v) => s + v, 0);
+      ys.forEach((py, i) => {
+        const share = inv[i]! / sum;
+        out.push({ a: [a[0], 2 * py - y, a[2]], b: [b[0], 2 * py - y, b[2]], w: -e.w * share, r: e.r, slot });
+      });
+    }
+  }
+
+  const slots = planeY.length + 1;
+  out.sort((p, q) => p.slot - q.slot);
+  const data = new Float64Array(out.length * STRIDE);
+  const slotStart = new Int32Array(slots + 1);
+  out.forEach((r, i) => {
+    const o8 = i * STRIDE;
+    data[o8] = r.a[0];
+    data[o8 + 1] = r.a[1];
+    data[o8 + 2] = r.a[2];
+    data[o8 + 3] = r.b[0];
+    data[o8 + 4] = r.b[1];
+    data[o8 + 5] = r.b[2];
+    data[o8 + 6] = r.w;
+    data[o8 + 7] = r.r;
+  });
+  let k = 0;
+  for (let s = 0; s <= slots; s++) {
+    while (k < out.length && out[k]!.slot < s) k++;
+    slotStart[s] = k;
+  }
+  slotStart[slots] = out.length;
+  return { data, slotStart, planeY, count: out.length };
+}

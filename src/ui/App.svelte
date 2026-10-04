@@ -1,12 +1,526 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { branding } from '../branding';
+  import { t } from '../i18n';
+  import { app } from '../state/app.svelte';
+  import { engine } from '../state/engine.svelte';
+  import { Viewer } from '../render/viewer';
+  import { Sonifier, type Voice } from '../audio/sonifier';
+  import { downloadDataUrl, downloadText, pickFile } from '../state/persist';
+  import { toBoard } from '../model/world';
+  import { dist } from '../model/geometry';
+  import type { Quality } from '../compute/grid';
+  import SourcesPanel from './SourcesPanel.svelte';
+  import ViewPanel from './ViewPanel.svelte';
+  import SpectrumPanel from './SpectrumPanel.svelte';
+
+  let viewEl: HTMLDivElement;
+  let viewer: Viewer | null = null;
+  const sonifier = new Sonifier();
+  let dragging = $state(false);
+  let down: { x: number; y: number } | null = null;
+
+  onMount(() => {
+    viewer = new Viewer(viewEl);
+    engine.attach(viewer);
+    viewer.controls.addEventListener('change', () => updateAudio());
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') app.pickMode = null;
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      sonifier.dispose();
+      viewer?.dispose();
+    };
+  });
+
+  // --- loading ------------------------------------------------------------------------------------
+  async function openBoardFile(file: File) {
+    if (file.name.endsWith('.json')) {
+      try {
+        engine.applyScenario(JSON.parse(await file.text()));
+      } catch {
+        app.toast = t.errors.scenario;
+      }
+      return;
+    }
+    try {
+      await engine.loadBoard(await file.text(), file.name);
+    } catch {
+      app.toast = t.errors.parse;
+    }
+  }
+
+  async function openDialog() {
+    const f = await pickFile('.kicad_pcb,.json');
+    if (f) await openBoardFile(f);
+  }
+
+  async function loadDemo() {
+    const base = import.meta.env.BASE_URL;
+    const [pcb, scenario] = await Promise.all([
+      fetch(`${base}demo/demo-board.kicad_pcb`).then((r) => r.text()),
+      fetch(`${base}demo/demo-board.scenario.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+    await engine.loadBoard(pcb, 'demo-board.kicad_pcb', scenario);
+  }
+
+  async function loadScenario() {
+    const f = await pickFile('.json');
+    if (!f) return;
+    try {
+      const raw = JSON.parse(await f.text());
+      if (raw?.board?.hash && raw.board.hash !== app.boardHash) app.toast = t.errors.scenarioOtherBoard;
+      engine.applyScenario(raw);
+    } catch {
+      app.toast = t.errors.scenario;
+    }
+  }
+
+  function saveScenario() {
+    const name = (app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+    downloadText(`${name}.scenario.json`, JSON.stringify(engine.scenario(), null, 2));
+  }
+
+  function snapshot() {
+    if (viewer) downloadDataUrl(`${(app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '')}.png`, viewer.snapshot());
+  }
+
+  function onDrop(e: DragEvent) {
+    e.preventDefault();
+    dragging = false;
+    const f = e.dataTransfer?.files?.[0];
+    if (f) void openBoardFile(f);
+  }
+
+  // --- pointer: probe, picking ------------------------------------------------------------------
+  function inGrid(x: number, z: number) {
+    const g = engine.grid;
+    return !!g && x >= g.x0 && x <= g.x0 + (g.nx - 1) * g.dx && z >= g.z0 && z <= g.z0 + (g.nz - 1) * g.dz;
+  }
+
+  let lastHover = 0;
+  function onPointerMove(e: PointerEvent) {
+    if (!viewer || !app.board) return;
+    if (app.probe.follow && !app.pickMode && e.buttons === 0) {
+      const p = viewer.pickPlane(e.clientX, e.clientY, app.probe.height);
+      if (p && inGrid(p.x, p.z)) {
+        app.probe.x = p.x;
+        app.probe.z = p.z;
+        app.probe.visible = true;
+      }
+    }
+    const now = performance.now();
+    if (now - lastHover > 60) {
+      lastHover = now;
+      const hit = viewer.pick(e.clientX, e.clientY);
+      app.hoverNet = hit && hit.net > 0 ? `${app.board.nets[hit.net]} (${app.board.layers[hit.layer]!.name})` : '';
+    }
+  }
+
+  function onPointerDown(e: PointerEvent) {
+    down = { x: e.clientX, y: e.clientY };
+  }
+
+  function onPointerUp(e: PointerEvent) {
+    if (!down || !viewer || !app.board) return;
+    const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+    down = null;
+    if (moved > 4) return;
+    const board = app.board;
+    if (app.pickMode) {
+      const hit = viewer.pick(e.clientX, e.clientY);
+      const mode = app.pickMode;
+      if (hit) {
+        if (mode.kind === 'net' && hit.net > 0) {
+          mode.onPick(board.nets[hit.net]!);
+          app.pickMode = null;
+        } else if (mode.kind === 'pad') {
+          const b = toBoard(engine.frame, hit.world.x, hit.world.z);
+          let best = -1;
+          let bd = 2.5;
+          board.pads.forEach((p, i) => {
+            if (!p.layers.includes(hit.layer)) return;
+            const d = dist(p.at, b);
+            if (d < bd) {
+              bd = d;
+              best = i;
+            }
+          });
+          if (best >= 0) {
+            const p = board.pads[best]!;
+            mode.onPick(`${p.ref}.${p.number}`);
+            app.pickMode = null;
+          }
+        }
+      }
+      return;
+    }
+    // plain click toggles between following the mouse and a pinned probe
+    app.probe.follow = !app.probe.follow;
+  }
+
+  // --- reactions --------------------------------------------------------------------------------
+  $effect(() => {
+    // re-read probe readout when the probe, the sources or their models change
+    void app.models;
+    void [app.probe.x, app.probe.z, app.probe.height, app.probe.component, app.probe.asVoltage, app.probe.visible, app.probe.radius];
+    void app.sources.map((s) => s.enabled);
+    app.readout = engine.probeReadout();
+    viewer?.setProbe(app.probe.visible ? [app.probe.x, app.probe.height, app.probe.z] : null, app.probe.radius);
+    updateAudio();
+  });
+
+  $effect(() => {
+    const s = app.selected;
+    const b = app.board;
+    if (!viewer || !b) return;
+    const names = !s ? [] : s.type === 'signal' ? s.nets : s.type === 'diffpair' ? [s.netP, s.netN] : [];
+    const pads = s?.type === 'loop' ? s.pads : [];
+    const ids = new Set(names.map((n) => b.nets.indexOf(n)).filter((i) => i > 0));
+    for (const pr of pads) {
+      const p = b.pads.find((q) => `${q.ref}.${q.number}` === pr);
+      if (p && p.net > 0) ids.add(p.net);
+    }
+    viewer.highlight(ids.size ? ids : null);
+  });
+
+  $effect(() => {
+    void [app.audio.volume, app.audio.pitchAt25MHz, app.audio.enabled];
+    updateAudio();
+  });
+
+  function updateAudio() {
+    if (!app.audio.enabled || !viewer) return;
+    const r = app.readout;
+    const voices: Voice[] = [];
+    if (r) {
+      for (const s of r.sources) {
+        const src = app.sources.find((x) => x.id === s.id);
+        const m = app.models[s.id];
+        if (!src || !m) continue;
+        let p = 0;
+        for (const l of s.lines) p += 10 ** (l.db / 10);
+        voices.push({
+          id: s.id,
+          f0: src.waveform.f0,
+          lines: m.lines,
+          db: p > 0 ? 10 * Math.log10(p) : -200,
+          position: [m.centre[0] - app.probe.x, m.centre[1] - app.probe.height, m.centre[2] - app.probe.z],
+        });
+      }
+    }
+    const cam = viewer.camera;
+    const fwd = cam.getWorldDirection(cam.position.clone().set(0, 0, 0));
+    sonifier.update(voices, {
+      volume: app.audio.volume,
+      pitchAt25MHz: app.audio.pitchAt25MHz,
+      dbLow: app.view.dbLow,
+      dbHigh: app.view.dbHigh,
+      listenerForward: [fwd.x, fwd.y, fwd.z],
+      listenerUp: [cam.up.x, cam.up.y, cam.up.z],
+    });
+  }
+
+  async function toggleAudio() {
+    if (app.audio.enabled) {
+      app.audio.enabled = false;
+      await sonifier.stop();
+    } else {
+      await sonifier.start();
+      app.audio.enabled = true;
+      updateAudio();
+    }
+  }
+
+  $effect(() => {
+    if (!app.toast) return;
+    const id = setTimeout(() => (app.toast = ''), 5000);
+    return () => clearTimeout(id);
+  });
 </script>
 
-<main>
-  <h1>{branding.displayName}</h1>
-  <p>{branding.tagline}</p>
-</main>
+<div
+  class="app"
+  role="application"
+  ondragover={(e) => {
+    e.preventDefault();
+    dragging = true;
+  }}
+  ondragleave={(e) => {
+    if (e.target === e.currentTarget) dragging = false;
+  }}
+  ondrop={onDrop}
+>
+  <header class="top">
+    <div class="brand">
+      <span class="name">{branding.displayName}</span>
+      <span class="badge" title={t.app.workingTitle}>{t.app.workingTitle}</span>
+      {#if app.board}<span class="file value">{app.board.source.fileName}</span>{/if}
+    </div>
+    <div class="actions">
+      <button class="btn" onclick={openDialog}>{t.top.open}</button>
+      <button class="btn" onclick={loadDemo}>{t.top.demo}</button>
+      <button class="btn" onclick={saveScenario} disabled={!app.board}>{t.top.saveScenario}</button>
+      <button class="btn" onclick={loadScenario} disabled={!app.board}>{t.top.loadScenario}</button>
+      <button class="btn" onclick={snapshot} disabled={!app.board}>{t.top.snapshot}</button>
+      <label class="quality">
+        <span>{t.top.quality}</span>
+        <select value={app.quality} onchange={(e) => engine.setQuality((e.currentTarget as HTMLSelectElement).value as Quality)}>
+          <option value="preview">{t.top.qualityOptions.preview}</option>
+          <option value="normal">{t.top.qualityOptions.normal}</option>
+          <option value="fine">{t.top.qualityOptions.fine}</option>
+        </select>
+      </label>
+      <span class="status value">
+        {#if app.compute.busy}{t.top.computing} {Math.round(app.compute.progress * 100)} %{:else if app.compute.lastMs > 0}{t.top.computed(app.compute.lastMs)}{/if}
+      </span>
+    </div>
+  </header>
+
+  <aside class="left">
+    <SourcesPanel />
+  </aside>
+
+  <main class="view">
+    {#if app.compute.busy}<div class="progress" style:width={`${app.compute.progress * 100}%`}></div>{/if}
+    <div
+      class="canvas"
+      class:picking={!!app.pickMode}
+      bind:this={viewEl}
+      onpointermove={onPointerMove}
+      onpointerdown={onPointerDown}
+      onpointerup={onPointerUp}
+      role="presentation"
+    ></div>
+
+    {#if !app.board}
+      <div class="empty">
+        <h1>{app.loading ? t.empty.loading : t.empty.title}</h1>
+        <p>{t.empty.body}</p>
+        <div class="row">
+          <button class="btn primary" onclick={loadDemo}>{t.empty.demo}</button>
+          <button class="btn" onclick={openDialog}>{t.empty.open}</button>
+        </div>
+        <p class="hint">{t.empty.demoHint}</p>
+      </div>
+    {/if}
+    {#if dragging}<div class="dropzone">{t.empty.drop}</div>{/if}
+
+    <div class="statusline value">
+      {#if app.pickMode}<span class="pick">{app.pickMode.kind === 'pad' ? t.editor.picking : t.editor.pickingNet}</span>{/if}
+      {#if app.hoverNet}<span>{app.hoverNet}</span>{/if}
+      {#if app.board && app.probe.visible}<span class="probe">{app.probe.follow ? t.probe.follow : t.probe.pinned}</span>{/if}
+    </div>
+    {#if app.toast}<div class="toast" role="status">{app.toast}</div>{/if}
+  </main>
+
+  <aside class="right">
+    <ViewPanel />
+  </aside>
+
+  <footer class="spectrum">
+    <SpectrumPanel ontoggleaudio={toggleAudio} />
+  </footer>
+</div>
 
 <style>
-  main { padding: 2rem; }
+  .app {
+    display: grid;
+    height: 100%;
+    grid-template-columns: 300px minmax(0, 1fr) 270px;
+    grid-template-rows: 46px minmax(0, 1fr) 220px;
+    grid-template-areas:
+      'top top top'
+      'left view right'
+      'left spec right';
+  }
+  .top {
+    grid-area: top;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 12px;
+    background: var(--plate);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+  .name {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.01em;
+  }
+  .badge {
+    font-size: 11px;
+    color: var(--faint);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0 7px;
+  }
+  .file {
+    color: var(--muted);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .quality {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 6px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .quality select {
+    width: 140px;
+  }
+  .status {
+    min-width: 150px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: right;
+  }
+  .left {
+    grid-area: left;
+    background: var(--plate);
+    border-right: 1px solid var(--line);
+    min-height: 0;
+  }
+  .right {
+    grid-area: right;
+    background: var(--plate);
+    border-left: 1px solid var(--line);
+    min-height: 0;
+  }
+  .view {
+    grid-area: view;
+    position: relative;
+    min-height: 0;
+    background: var(--viewport);
+  }
+  .canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .canvas.picking {
+    cursor: crosshair;
+  }
+  .progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: var(--field);
+    z-index: 2;
+    transition: width 120ms linear;
+  }
+  .spectrum {
+    grid-area: spec;
+    background: var(--plate);
+    border-top: 1px solid var(--line);
+    min-height: 0;
+  }
+  .empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    pointer-events: none;
+  }
+  .empty > * {
+    pointer-events: auto;
+  }
+  .empty h1 {
+    font-size: 22px;
+    font-weight: 500;
+    margin: 0 0 6px;
+  }
+  .empty p {
+    max-width: 52ch;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  .empty .row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .dropzone {
+    position: absolute;
+    inset: 12px;
+    border: 2px dashed var(--field);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    color: var(--field);
+    background: rgba(242, 163, 58, 0.06);
+    pointer-events: none;
+  }
+  .statusline {
+    position: absolute;
+    left: 10px;
+    bottom: 8px;
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .statusline .pick {
+    color: var(--field);
+  }
+  .statusline .probe {
+    color: var(--probe);
+  }
+  .toast {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--plate-2);
+    border: 1px solid var(--warn);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: var(--radius-m);
+  }
+  @media (max-width: 1100px) {
+    .app {
+      grid-template-columns: 260px minmax(0, 1fr) 0;
+    }
+    .right {
+      display: none;
+    }
+  }
+  @media (max-width: 760px) {
+    .app {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto minmax(320px, 1fr) 200px auto;
+      grid-template-areas: 'top' 'view' 'spec' 'left';
+      overflow-y: auto;
+    }
+    .actions .btn:not(:nth-child(-n + 2)),
+    .quality,
+    .status {
+      display: none;
+    }
+  }
 </style>

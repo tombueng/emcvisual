@@ -1,0 +1,489 @@
+/**
+ * From a source definition to straight current elements plus a line spectrum
+ * (docs/stufe-1/PHYSIK.md §5). Element weights are relative to the reference current of
+ * the spectrum, so the field pattern does not depend on frequency (§6).
+ */
+import { buildNetGraph, pathTo, shortestTree, type NetGraph, type Step } from '../model/connectivity';
+import { coveredNear, type PlaneLayer } from '../model/planes';
+import type { BoardModel, Pad } from '../model/types';
+import { toWorld, type Vec3, type WorldFrame } from '../model/world';
+import { microstrip, shortLineLimit, stripline, unreferenced, type LineParams } from './lines';
+import { mapLines, trapezoidLines, type Line } from './spectrum';
+import { splitPadRef, type DiffPairSource, type LoadModel, type LoopSource, type SignalSource, type Source } from './sources';
+
+export interface CurrentElement {
+  a: Vec3;
+  b: Vec3;
+  /** Current from a to b relative to the reference current. */
+  w: number;
+  /** Core radius in mm (half the conductor width). */
+  r: number;
+  vertical: boolean;
+  /** Copper layer of horizontal elements, -1 for vertical ones. */
+  layer: number;
+  net: number;
+}
+
+export interface SourceInfo {
+  lengthMm: number;
+  cTotal?: number;
+  z0?: number;
+  eeff: number;
+  /** Frequency above which the lumped model is questionable (λ/10 rule). */
+  fShort: number;
+  driver?: string;
+  warnings: string[];
+}
+
+export interface SourceModel {
+  id: string;
+  elements: CurrentElement[];
+  /** Reference current spectrum, A RMS. */
+  lines: Line[];
+  info: SourceInfo;
+  /** Weighted centre of the current path, world mm (used to place the sound). */
+  centre: Vec3;
+}
+
+export interface PhysicsContext {
+  board: BoardModel;
+  frame: WorldFrame;
+  planes: PlaneLayer[];
+  /** Highest frequency of the line spectra, Hz. */
+  fMax: number;
+}
+
+export class SourceError extends Error {}
+
+const MIN_R = 0.05;
+
+export function buildSource(ctx: PhysicsContext, src: Source): SourceModel {
+  switch (src.type) {
+    case 'signal':
+      return signalModel(ctx, src);
+    case 'diffpair':
+      return diffPairModel(ctx, src);
+    case 'loop':
+      return loopModel(ctx, src);
+  }
+}
+
+// --- helpers ------------------------------------------------------------------------------------
+
+export function findPad(board: BoardModel, ref: string): number {
+  const s = splitPadRef(ref);
+  if (!s) return -1;
+  return board.pads.findIndex((p) => p.ref === s.ref && p.number === s.number);
+}
+
+export function padName(p: Pad): string {
+  return `${p.ref}.${p.number}`;
+}
+
+/** Nearest plane above and below a layer (excluding a plane on the layer itself). */
+function neighbourPlanes(ctx: PhysicsContext, layer: number): { above?: PlaneLayer; below?: PlaneLayer } {
+  const y = ctx.board.layers[layer]!.y;
+  let above: PlaneLayer | undefined;
+  let below: PlaneLayer | undefined;
+  for (const p of ctx.planes) {
+    if (p.layer === layer) continue;
+    if (p.y > y && (!above || p.y < above.y)) above = p;
+    if (p.y < y && (!below || p.y > below.y)) below = p;
+  }
+  return { above, below };
+}
+
+function dielectricBetween(ctx: PhysicsContext, l0: number, l1: number): { h: number; er: number } {
+  const lo = Math.min(l0, l1);
+  const hi = Math.max(l0, l1);
+  let h = 0;
+  let et = 0;
+  for (const d of ctx.board.dielectrics) {
+    if (d.above >= lo && d.above < hi) {
+      h += d.thickness;
+      et += d.thickness * d.epsilonR;
+    }
+  }
+  for (let l = lo + 1; l < hi; l++) h += ctx.board.layers[l]!.thickness;
+  return { h: Math.max(h, 0.01), er: h > 0 ? et / Math.max(h, 1e-9) || 4.4 : 4.4 };
+}
+
+const lineCache = new WeakMap<PhysicsContext, Map<string, LineParams>>();
+
+/** Line parameters of a track of the given width on a layer (microstrip or stripline). */
+export function lineParams(ctx: PhysicsContext, layer: number, width: number): LineParams {
+  let cache = lineCache.get(ctx);
+  if (!cache) lineCache.set(ctx, (cache = new Map()));
+  const key = `${layer}:${width.toFixed(4)}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const { above, below } = neighbourPlanes(ctx, layer);
+  const t = ctx.board.layers[layer]!.thickness;
+  let p: LineParams;
+  if (above && below) {
+    const d0 = dielectricBetween(ctx, above.layer, below.layer);
+    p = stripline(width, d0.h, t, d0.er);
+  } else if (above || below) {
+    const ref = (above ?? below)!;
+    const d = dielectricBetween(ctx, layer, ref.layer);
+    p = microstrip(width, d.h, d.er);
+  } else {
+    p = unreferenced();
+  }
+  cache.set(key, p);
+  return p;
+}
+
+/**
+ * Where displacement current from a node ends: the nearest plane (towards the board core)
+ * that has copper under the point; otherwise the nearest plane layer; otherwise the
+ * opposite outer layer (flagged by the caller).
+ */
+function returnHeight(ctx: PhysicsContext, layer: number, x: number, y: number): { y: number; referenced: boolean } {
+  const ly = ctx.board.layers[layer]!.y;
+  const cands = ctx.planes.filter((p) => p.layer !== layer);
+  const coveringNear = cands
+    .filter((p) => coveredNear(p.raster, x, y))
+    .sort((p, q) => Math.abs(p.y - ly) - Math.abs(q.y - ly))[0];
+  if (coveringNear) return { y: coveringNear.y, referenced: true };
+  const any = [...cands].sort((p, q) => Math.abs(p.y - ly) - Math.abs(q.y - ly))[0];
+  if (any) return { y: any.y, referenced: false };
+  const layers = ctx.board.layers;
+  const other = layer === 0 ? layers[layers.length - 1]! : layers[0]!;
+  return { y: other.y, referenced: false };
+}
+
+function stepElement(ctx: PhysicsContext, g: NetGraph, s: Step, w: number): CurrentElement {
+  const a = g.nodes[s.from]!;
+  const b = g.nodes[s.to]!;
+  const L = ctx.board.layers;
+  if (s.edge >= 0) {
+    const e = g.edges[s.edge]!;
+    if (e.kind === 'via' || e.kind === 'thru') {
+      return {
+        a: toWorld(ctx.frame, a, L[a.layer]!.y),
+        b: toWorld(ctx.frame, b, L[b.layer]!.y),
+        w,
+        r: Math.max(e.width / 2, MIN_R),
+        vertical: true,
+        layer: -1,
+        net: e.net,
+      };
+    }
+    return {
+      a: toWorld(ctx.frame, a, L[e.layer]!.y),
+      b: toWorld(ctx.frame, b, L[e.layer]!.y),
+      w,
+      r: Math.max(e.width / 2, MIN_R),
+      vertical: false,
+      layer: e.layer,
+      net: e.net,
+    };
+  }
+  const z = g.zones[s.zone]!;
+  return {
+    a: toWorld(ctx.frame, a, L[z.layer]!.y),
+    b: toWorld(ctx.frame, b, L[z.layer]!.y),
+    w,
+    r: 0.5,
+    vertical: false,
+    layer: z.layer,
+    net: z.net,
+  };
+}
+
+function verticalTo(ctx: PhysicsContext, x: number, y: number, fromY: number, toY: number, w: number, r: number, net: number): CurrentElement {
+  return {
+    a: toWorld(ctx.frame, { x, y }, fromY),
+    b: toWorld(ctx.frame, { x, y }, toY),
+    w,
+    r: Math.max(r, MIN_R),
+    vertical: true,
+    layer: -1,
+    net,
+  };
+}
+
+function centreOf(elements: CurrentElement[]): Vec3 {
+  let sx = 0;
+  let sy = 0;
+  let sz = 0;
+  let sw = 0;
+  for (const e of elements) {
+    const len = Math.hypot(e.b[0] - e.a[0], e.b[1] - e.a[1], e.b[2] - e.a[2]);
+    const k = Math.abs(e.w) * len;
+    sx += k * (e.a[0] + e.b[0]) / 2;
+    sy += k * (e.a[1] + e.b[1]) / 2;
+    sz += k * (e.a[2] + e.b[2]) / 2;
+    sw += k;
+  }
+  return sw > 0 ? [sx / sw, sy / sw, sz / sw] : [0, 0, 0];
+}
+
+const voltageLines = (ctx: PhysicsContext, src: SignalSource | DiffPairSource) => trapezoidLines(src.waveform, ctx.fMax);
+
+function netIndices(board: BoardModel, names: string[]): number[] {
+  const out: number[] = [];
+  for (const n of names) {
+    const i = board.nets.indexOf(n);
+    if (i <= 0) throw new SourceError(`net-not-found:${n}`);
+    out.push(i);
+  }
+  return out;
+}
+
+/** Driver pad: explicit, else an output pin, else a bidirectional one, else the first pad. */
+export function detectDriver(board: BoardModel, nets: number[]): number {
+  const pads = board.pads.map((p, i) => ({ p, i })).filter(({ p }) => nets.includes(p.net));
+  const rank = (t: string) => ({ output: 0, power_out: 1, tri_state: 2, bidirectional: 3, open_collector: 4 })[t] ?? 9;
+  pads.sort((a, b) => rank(a.p.pinType) - rank(b.p.pinType));
+  return pads[0]?.i ?? -1;
+}
+
+// --- signal nets --------------------------------------------------------------------------------
+
+interface NetCurrents {
+  elements: CurrentElement[];
+  cTotal: number;
+  z0: number;
+  eeff: number;
+  lengthMm: number;
+  maxPathMm: number;
+  driver: number;
+  warnings: string[];
+}
+
+function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string, load: LoadModel): NetCurrents {
+  const { board } = ctx;
+  const nets = netIndices(board, netNames);
+  const g = buildNetGraph(board, nets, true);
+  const warnings: string[] = [];
+  let driver = driverRef ? findPad(board, driverRef) : detectDriver(board, nets);
+  if (driver < 0 || !nets.includes(board.pads[driver]!.net)) {
+    if (driverRef) warnings.push(`driver-not-found:${driverRef}`);
+    driver = detectDriver(board, nets);
+  }
+  if (driver < 0) throw new SourceError('no-pads');
+  const fpSide = (pi: number) => board.footprints[board.pads[pi]!.footprint]!.side;
+  const pickNode = (pi: number) => {
+    const ids = g.padNodes.get(pi) ?? [];
+    return fpSide(pi) === 'bottom' ? ids[ids.length - 1]! : ids[0]!;
+  };
+  const root = pickNode(driver);
+  const tree = shortestTree(g, root);
+
+  // pads that bridge two nets of this source are not loads
+  const bridgePads = new Set<number>();
+  for (const e of g.edges) {
+    if (e.kind !== 'bridge') continue;
+    for (const nid of [e.a, e.b]) if (g.nodes[nid]!.pad !== undefined) bridgePads.add(g.nodes[nid]!.pad!);
+  }
+  const loads: number[] = [];
+  for (const [pi] of g.padNodes) if (pi !== driver && !bridgePads.has(pi)) loads.push(pi);
+
+  // line length, capacitance and Z0 along the tree
+  const n = g.nodes.length;
+  const cNode = new Float64Array(n);
+  let lengthMm = 0;
+  let zSum = 0;
+  let eSum = 0;
+  for (const v of tree.order) {
+    const s = tree.step[v];
+    if (!s || s.edge < 0) continue;
+    const e = g.edges[s.edge]!;
+    if (e.kind !== 'track') continue;
+    const lp = lineParams(ctx, e.layer, e.width);
+    const c = lp.cPerM * (e.length / 1000);
+    cNode[s.from] = cNode[s.from]! + c / 2;
+    cNode[s.to] = cNode[s.to]! + c / 2;
+    lengthMm += e.length;
+    zSum += lp.z0 * e.length;
+    eSum += lp.eeff * e.length;
+  }
+  const z0 = lengthMm > 0 ? zSum / lengthMm : 50;
+  const eeff = lengthMm > 0 ? eSum / lengthMm : 3;
+  const unreached = [...g.padNodes.keys()].filter((pi) => !Number.isFinite(tree.dist[pickNode(pi)]!));
+  if (unreached.length) warnings.push(`unconnected-pads:${unreached.map((pi) => padName(board.pads[pi]!)).join(',')}`);
+
+  const L = board.layers;
+  const elements: CurrentElement[] = [];
+  const nodeVertical = (v: number, w: number) => {
+    const nd = g.nodes[v]!;
+    const ret = returnHeight(ctx, nd.layer, nd.x, nd.y);
+    if (!ret.referenced) warnings.push('unreferenced');
+    elements.push(verticalTo(ctx, nd.x, nd.y, L[nd.layer]!.y, ret.y, w, 0.15, board.pads[driver]!.net));
+  };
+
+  let maxPathMm = 0;
+  for (const v of tree.order) maxPathMm = Math.max(maxPathMm, tree.dist[v]!);
+
+  if (load.model === 'capacitive') {
+    for (const pi of loads) {
+      const v = pickNode(pi);
+      if (Number.isFinite(tree.dist[v]!)) cNode[v] = cNode[v]! + load.cLoad;
+    }
+    const sub = new Float64Array(n);
+    for (let k = tree.order.length - 1; k >= 0; k--) {
+      const v = tree.order[k]!;
+      sub[v] = sub[v]! + cNode[v]!;
+      const p = tree.parent[v]!;
+      if (p >= 0) sub[p] = sub[p]! + sub[v]!;
+    }
+    const cTotal = sub[root]!;
+    if (!(cTotal > 0)) throw new SourceError('no-capacitance');
+    for (const v of tree.order) {
+      const s = tree.step[v];
+      if (s) elements.push(stepElement(ctx, g, s, sub[v]! / cTotal));
+      if (v !== root && cNode[v]! > 0) nodeVertical(v, cNode[v]! / cTotal);
+    }
+    // the driver: total current comes up from the plane, its own share goes straight back down
+    const rn = g.nodes[root]!;
+    const ret = returnHeight(ctx, rn.layer, rn.x, rn.y);
+    elements.push(verticalTo(ctx, rn.x, rn.y, ret.y, L[rn.layer]!.y, 1 - cNode[root]! / cTotal, 0.15, board.pads[driver]!.net));
+    return { elements, cTotal, z0, eeff, lengthMm, maxPathMm, driver, warnings: [...new Set(warnings)] };
+  }
+
+  // terminated: constant current along driver -> termination
+  let end = load.endPad ? findPad(board, load.endPad) : -1;
+  if (end < 0 || !g.padNodes.has(end)) {
+    end = loads.map((pi) => ({ pi, d: tree.dist[pickNode(pi)]! })).filter((x) => Number.isFinite(x.d)).sort((a, b) => b.d - a.d)[0]?.pi ?? -1;
+  }
+  if (end < 0) throw new SourceError('no-termination');
+  const path = pathTo(tree, pickNode(end)) ?? [];
+  let pathLen = 0;
+  for (const s of path) {
+    const el = stepElement(ctx, g, s, 1);
+    elements.push(el);
+    if (!el.vertical) pathLen += Math.hypot(el.b[0] - el.a[0], el.b[2] - el.a[2]);
+  }
+  const rn = g.nodes[root]!;
+  const en = g.nodes[pickNode(end)]!;
+  elements.push(verticalTo(ctx, rn.x, rn.y, returnHeight(ctx, rn.layer, rn.x, rn.y).y, L[rn.layer]!.y, 1, 0.15, board.pads[driver]!.net));
+  elements.push(verticalTo(ctx, en.x, en.y, L[en.layer]!.y, returnHeight(ctx, en.layer, en.x, en.y).y, 1, 0.15, board.pads[driver]!.net));
+  const z = load.z0 > 0 ? load.z0 : z0;
+  return { elements, cTotal: 0, z0: z, eeff, lengthMm: pathLen, maxPathMm: pathLen, driver, warnings: [...new Set(warnings)] };
+}
+
+function signalModel(ctx: PhysicsContext, src: SignalSource): SourceModel {
+  const nc = netCurrents(ctx, src.nets, src.driver, src.load);
+  const v = voltageLines(ctx, src);
+  const lines =
+    src.load.model === 'capacitive'
+      ? mapLines(v, (f) => 2 * Math.PI * f * nc.cTotal)
+      : mapLines(v, () => 1 / nc.z0);
+  return {
+    id: src.id,
+    elements: nc.elements,
+    lines,
+    info: {
+      lengthMm: nc.lengthMm,
+      cTotal: src.load.model === 'capacitive' ? nc.cTotal : undefined,
+      z0: nc.z0,
+      eeff: nc.eeff,
+      fShort: shortLineLimit(nc.maxPathMm, nc.eeff),
+      driver: padName(ctx.board.pads[nc.driver]!),
+      warnings: nc.warnings,
+    },
+    centre: centreOf(nc.elements),
+  };
+}
+
+function diffPairModel(ctx: PhysicsContext, src: DiffPairSource): SourceModel {
+  const p = netCurrents(ctx, [src.netP], src.driverP, src.load);
+  const n = netCurrents(ctx, [src.netN], src.driverN, src.load);
+  const k = -(1 - src.imbalance);
+  const elements = [...p.elements, ...n.elements.map((e) => ({ ...e, w: e.w * k }))];
+  const v = voltageLines(ctx, src);
+  const lines = src.load.model === 'capacitive' ? mapLines(v, (f) => 2 * Math.PI * f * p.cTotal) : mapLines(v, () => 1 / p.z0);
+  return {
+    id: src.id,
+    elements,
+    lines,
+    info: {
+      lengthMm: (p.lengthMm + n.lengthMm) / 2,
+      cTotal: src.load.model === 'capacitive' ? p.cTotal : undefined,
+      z0: p.z0,
+      eeff: p.eeff,
+      fShort: shortLineLimit(Math.max(p.maxPathMm, n.maxPathMm), p.eeff),
+      driver: `${padName(ctx.board.pads[p.driver]!)} / ${padName(ctx.board.pads[n.driver]!)}`,
+      warnings: [...new Set([...p.warnings, ...n.warnings])],
+    },
+    centre: centreOf(elements),
+  };
+}
+
+// --- current loops ------------------------------------------------------------------------------
+
+function loopModel(ctx: PhysicsContext, src: LoopSource): SourceModel {
+  const { board } = ctx;
+  if (src.pads.length < 2) throw new SourceError('loop-too-short');
+  const padIdx = src.pads.map((r) => {
+    const i = findPad(board, r);
+    if (i < 0) throw new SourceError(`pad-not-found:${r}`);
+    return i;
+  });
+  const L = board.layers;
+  const planeOf = new Map(ctx.planes.map((p) => [p.layer, p.net]));
+  const graphs = new Map<number, NetGraph>();
+  const graphFor = (net: number) => {
+    let g = graphs.get(net);
+    if (!g) graphs.set(net, (g = buildNetGraph(board, [net], false)));
+    return g;
+  };
+  const padLayer = (pi: number) => {
+    const p = board.pads[pi]!;
+    const side = board.footprints[p.footprint]!.side;
+    return side === 'bottom' ? p.layers[p.layers.length - 1] ?? L.length - 1 : p.layers[0] ?? 0;
+  };
+
+  const elements: CurrentElement[] = [];
+  const warnings: string[] = [];
+  let lengthMm = 0;
+  for (let k = 0; k < padIdx.length; k++) {
+    const a = padIdx[k]!;
+    const b = padIdx[(k + 1) % padIdx.length]!;
+    const pa = board.pads[a]!;
+    const pb = board.pads[b]!;
+    if (pa.footprint === pb.footprint || pa.net !== pb.net || pa.net === 0) {
+      if (pa.footprint !== pb.footprint) warnings.push(`loop-jump:${padName(pa)}-${padName(pb)}`);
+      const la = padLayer(a);
+      elements.push({
+        a: toWorld(ctx.frame, pa.at, L[la]!.y),
+        b: toWorld(ctx.frame, pb.at, L[la]!.y),
+        w: 1,
+        r: 0.3,
+        vertical: false,
+        layer: la,
+        net: pa.net,
+      });
+      lengthMm += Math.hypot(pa.at.x - pb.at.x, pa.at.y - pb.at.y);
+      continue;
+    }
+    const g = graphFor(pa.net);
+    const nodeOf = (pi: number) => {
+      const ids = g.padNodes.get(pi) ?? [];
+      return ids.find((id) => g.nodes[id]!.layer === padLayer(pi)) ?? ids[0]!;
+    };
+    const tree = shortestTree(g, nodeOf(a));
+    const path = pathTo(tree, nodeOf(b));
+    if (!path) {
+      warnings.push(`loop-no-path:${padName(pa)}-${padName(pb)}`);
+      continue;
+    }
+    for (const s of path) {
+      const el = stepElement(ctx, g, s, 1);
+      // return current inside the net's own plane is represented by the mirror images
+      if (!el.vertical && planeOf.get(el.layer) === pa.net) continue;
+      elements.push(el);
+      if (!el.vertical) lengthMm += Math.hypot(el.b[0] - el.a[0], el.b[2] - el.a[2]);
+    }
+  }
+  const lines = trapezoidLines(src.waveform, ctx.fMax);
+  return {
+    id: src.id,
+    elements,
+    lines,
+    info: { lengthMm, eeff: 1, fShort: shortLineLimit(lengthMm, 3), warnings: [...new Set(warnings)] },
+    centre: centreOf(elements),
+  };
+}
