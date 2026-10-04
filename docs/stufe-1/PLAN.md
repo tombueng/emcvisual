@@ -287,7 +287,7 @@ Zugehöriges Szenario (`public/demo/demo-board.scenario.json`) mit allen Quellen
 
 ## 11. Offene Fragen an den Projektinhaber
 
-1. Lizenz (z. B. MIT wie LuxDMX oder GPL wegen der Nähe zu KiCad)?
+1. ~~Lizenz~~ entschieden: 0BSD (ENTSCHEIDUNGEN.md Nr. 30).
 2. Repo öffentlich machen, und ab wann?
 3. Oberfläche nur Deutsch oder von Anfang an zweisprachig ausliefern?
 4. Zielbrowser: nur Chromium/Firefox aktuell, oder auch Safari?

@@ -77,3 +77,7 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     fallen 0,2-mm-Bahnen und kleine Pads sonst durch das Gitter, und Schleifen bleiben offen.
 29. **2026-10-04 · Eigenes Ergebnisformat (int16 centi-dB) statt HDF5 im Browser:** klein, ohne
     zusätzliche Bibliothek (h5wasm) lesbar, auf das Gitter der App umgerechnet.
+30. **2026-10-04 · Lizenz 0BSD.** Der Projektinhaber wollte die freizügigste Lizenz. 0BSD erlaubt
+    alles ohne Namensnennung und wirkt anders als Gemeinfreiheits-Erklärungen (Unlicense, CC0)
+    auch dort, wo man auf das Urheberrecht nicht verzichten kann, etwa in Deutschland. Damit
+    darf das Projekt „open source“ heißen (ergänzt Nr. 18 und 19).

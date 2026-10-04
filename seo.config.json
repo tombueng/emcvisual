@@ -2,8 +2,8 @@
   "googleSiteVerification": "",
   "bingSiteVerification": "",
   "title": "EMC/EMI near-field simulator for KiCad PCBs",
-  "description": "Free browser-based EMC/EMI tool: load a KiCad PCB and see its magnetic near field in 3D. Simulate clocks, buck converters, return paths and CISPR 32 emissions.",
-  "descriptionDe": "Kostenloses EMV-Werkzeug im Browser: KiCad-Platine laden, magnetisches Nahfeld in 3D sehen und hören, Takte, Schaltregler, Rückstrompfade und CISPR 32 prüfen.",
+  "description": "Free, open-source EMC/EMI tool in the browser: load a KiCad PCB and see its magnetic near field in 3D. Clocks, buck converters, return paths, CISPR 32, openEMS and near-field scans.",
+  "descriptionDe": "Kostenloses Open-Source-EMV-Werkzeug im Browser: KiCad-Platine laden, Nahfeld in 3D sehen und hören, Takte, Schaltregler, Rückstrompfade, CISPR 32, openEMS und Nahfeld-Scan.",
   "ogImageAlt": "3D view of a PCB with a glowing EMI near field, layout hints and a spectrum analyzer",
   "applicationSubCategory": "EMC / EMI simulation for printed circuit boards",
   "features": [
@@ -75,6 +75,9 @@
     "electric field",
     "openEMS",
     "FDTD",
-    "full-wave simulation"
+    "full-wave simulation",
+    "open source",
+    "open-source EMC tool",
+    "free EMC software"
   ]
 }

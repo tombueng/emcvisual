@@ -13,6 +13,9 @@ const ogImage = `${branding.siteUrl}og-image.png`;
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
+/** 0BSD (LICENSE in the repo). */
+const LICENSE_URL = 'https://opensource.org/license/0bsd';
+
 function jsonLd(): string {
   const data = [
     {
@@ -33,6 +36,7 @@ function jsonLd(): string {
       image: ogImage,
       screenshot: ogImage,
       author: { '@type': 'Person', name: branding.author, url: branding.authorUrl },
+      license: LICENSE_URL,
       sameAs: [repoUrl],
     },
     {
@@ -43,6 +47,7 @@ function jsonLd(): string {
       codeRepository: repoUrl,
       programmingLanguage: ['TypeScript', 'Svelte'],
       runtimePlatform: 'Web browser',
+      license: LICENSE_URL,
       keywords: seo.keywords.join(', '),
       author: { '@type': 'Person', name: branding.author, url: branding.authorUrl },
     },
@@ -56,27 +61,32 @@ function llmsTxt(): string {
 
 > ${seo.description}
 
-${branding.displayName} is a free web app for electronics and PCB designers. It reads a KiCad board
-file (.kicad_pcb, KiCad 6 to 10), lets you mark the noisy parts of the circuit (clock and data
-lines, differential pairs such as USB, the hot loop of a switching regulator / buck converter)
-and computes the magnetic near field around the board. The result is a 3D scene: the field
-glows above the copper, field lines show where the current loops close, a virtual near-field
-probe shows a spectrum like a spectrum analyzer, and every source can be heard.
+${branding.displayName} is a free, open-source (0BSD) web app for electronics and PCB designers. It reads
+a KiCad board file (.kicad_pcb, KiCad 6 to 10), lets you mark the noisy parts of the circuit (clock
+and data lines, differential pairs such as USB, the hot loop of a switching regulator / buck
+converter, storage inductors) and computes the magnetic and electric near field around the board.
+The result is a 3D scene: the field glows above the copper or shows as isosurfaces, field lines
+show where the current loops close, a virtual near-field probe shows a spectrum like a spectrum
+analyzer, and every source can be heard (tones or a Geiger counter).
 
 It is meant for EMC/EMI work before the lab (EMC pre-compliance), for PCB layout reviews and for
 learning: you can see why a slot in a ground plane under a clock line, a layer change from a
-GND to a VCC reference plane, or a large switching-regulator loop makes a board louder.
+GND to a VCC reference plane, or a large switching-regulator loop makes a board louder. Return
+currents detour around plane slots and jump through the nearest stitching via or capacitor, and
+the detours are drawn in 3D.
 
 How it works: quasi-static Biot-Savart field of straight current filaments, return currents as
-mirror images in the reference planes (with local plane coverage, so cut-outs and slots count),
-shielding by planes, trapezoid line spectra for the signals, and a far-field estimate from the
-magnetic dipole moment against CISPR 32 class B. It does not predict whether a product passes an
-EMC test: no cables, enclosures or resonances in this stage. Everything runs in the browser;
-the board file is not uploaded.
+mirror images in the reference planes plus geodesic detours through plane copper, shielding by
+planes, line and point charges for the electric field, trapezoid line spectra, and a far-field
+estimate from the magnetic dipole moment against CISPR 32 class B. For resonances it exports an
+openEMS (FDTD) job; the full-wave result loads back as a second field source, and both agree
+within about 1 dB in the quasi-static range. It does not predict whether a product passes an EMC
+test (no cables or enclosures). Everything runs in the browser; the board file is not uploaded.
 
-Planned: current distribution in planes (slots, stitching vias), full-wave simulation with
-openEMS, measuring real boards with a 3D printer as a near-field scanner (tinySA / HackRF),
-a tracked hand-held probe, VR.
+More: a near-field scanner chain (3D printer with OctoPrint or USB G-code, tinySA receiver; a
+virtual rig for trying it without hardware) with fitting of the source amplitudes to a scan, an
+HTML EMC report, live reload when KiCad saves the board, a command-line field check for CI that
+flags pull requests making the near field or far-field margin worse, and an experimental VR view.
 
 German: EMV-Simulation für Leiterplatten im Browser. KiCad-Platine laden, Störquellen festlegen,
 magnetisches Nahfeld in 3D sehen und hören, Rückstrompfade und CISPR 32 prüfen.
@@ -93,7 +103,10 @@ Keywords: ${seo.keywords.join(', ')}
 - [Architecture](${docs('docs/stufe-1/ARCHITEKTUR.md')}): modules, compute and render pipeline (German)
 
 ## Optional
-- [Roadmap](${docs('docs/ROADMAP.md')}): later stages, measurement hardware, openEMS (German)
+- [Roadmap](${docs('docs/ROADMAP.md')}): stages, measurement hardware, openEMS (German)
+- [Field check for CI](${docs('docs/CI-FELDCHECK.md')}): command line, GitHub Actions example (German)
+- [openEMS workflow](${docs('tools/openems/README.md')}): full-wave export, run, import (German)
+- [License: 0BSD](${docs('LICENSE')})
 - [Source code](${repoUrl})
 `;
 }

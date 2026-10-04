@@ -118,4 +118,9 @@ Grenzen stehen in [docs/stufe-1/PHYSIK.md](docs/stufe-1/PHYSIK.md).
 
 ## Lizenz
 
-Noch nicht festgelegt.
+[0BSD](LICENSE) (Zero-Clause BSD): Jeder darf den Code für jeden Zweck nutzen, ändern und
+weitergeben, auch kommerziell, ohne Namensnennung. openEMS (Stufe 3) steht unter GPL-3.0 und
+wird separat installiert; es ist nicht Teil dieses Repos.
+
+**In English:** open source under the most permissive terms, [0BSD](LICENSE): use, change and
+share it for any purpose, no attribution required.
