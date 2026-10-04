@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { BoardModel } from '../model/types';
 import type { WorldFrame } from '../model/world';
+import { covered, type CoverageRaster } from '../model/planes';
 import type { Grid } from '../compute/grid';
 import { buildBoardMeshes, highlightNets, type BoardMeshes } from './boardMesh';
 import { colormapLut, type ColormapId } from './colormaps';
@@ -220,7 +221,10 @@ export class Viewer {
     this.renderer.render(this.quadScene, this.quadCamera);
   }
 
+  private frame: WorldFrame = { ox: 0, oy: 0 };
+
   setBoard(board: BoardModel, frame: WorldFrame) {
+    this.frame = frame;
     if (this.board) {
       this.scene.remove(this.board.group);
       this.board.dispose();
@@ -481,8 +485,16 @@ export class Viewer {
     if (!this.board) return null;
     const ndc = this.toNdc(clientX, clientY);
     this.raycaster.setFromCamera(ndc, this.camera);
-    const hits = this.raycaster.intersectObjects(this.board.layers.filter((m) => m.visible), false);
+    const hits = this.raycaster.intersectObjects(this.board.layers.filter((m) => m.visible), true);
     for (const h of hits) {
+      const zone = h.object.userData.zone as { net: number; raster: CoverageRaster } | undefined;
+      if (zone) {
+        // textured plane: only where the raster has copper
+        const bx = h.point.x + this.frame.ox;
+        const by = h.point.z + this.frame.oy;
+        if (!covered(zone.raster, bx, by)) continue;
+        return { net: zone.net, layer: h.object.parent!.userData.layer as number, world: h.point.clone() };
+      }
       const layer = h.object.userData.layer as number;
       const ids = this.board.netIds[layer]!;
       const face = h.face;

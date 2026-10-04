@@ -20,6 +20,7 @@ import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fiel
 import { diagnoseSource } from '../physics/diagnostics';
 import { cispr32ClassB, dipoleMoment, farField, type LimitSegment } from '../physics/farfield';
 import { distPointSegment } from '../model/geometry';
+import { PickIndex } from '../model/pickIndex';
 import { app, type Hotspot, type LineInfo } from './app.svelte';
 import { DEFAULT_VIEW, migrateScenario, hashText, SCENARIO_KIND, SCENARIO_VERSION, type Scenario } from './scenario';
 import { loadLocal, saveLocal } from './persist';
@@ -37,8 +38,8 @@ export interface ProbeLine {
 }
 
 export interface ProbeReadout {
-  /** Per source: |h| at the probe and its lines in dBµA/m (or dBµV). */
-  sources: { id: string; name: string; color: string; lines: ProbeLine[]; h: number }[];
+  /** Per source: |h| at the probe, its lines in dBµA/m (or dBµV) and their power sum. */
+  sources: { id: string; name: string; color: string; lines: ProbeLine[]; h: number; db: number }[];
   /** Power sum per frequency over all sources. */
   total: ProbeLine[];
   unit: 'dBµA/m' | 'dBµV';
@@ -86,6 +87,7 @@ class Engine {
   private recomposeQueued = false;
   private saveTimer = 0;
   private boardText = '';
+  pickIndex: PickIndex | null = null;
   private boardName = '';
 
   attach(viewer: Viewer) {
@@ -102,6 +104,9 @@ class Engine {
   async loadBoard(text: string, fileName: string, scenario?: Scenario | null) {
     app.loading = true;
     app.error = '';
+    // let the loading state paint before the synchronous work starts
+    const yieldToUi = () => new Promise<void>((r) => setTimeout(r, 0));
+    await yieldToUi();
     try {
       const board = parseBoard(text, fileName);
       const hash = await hashText(text);
@@ -113,6 +118,7 @@ class Engine {
       this.boardName = fileName;
       app.board = board;
       app.boardHash = hash;
+      this.pickIndex = new PickIndex(board);
       app.layerVisible = board.layers.map(() => true);
       this.frame = worldFrame(board);
       const saved = scenario ?? loadLocal<Scenario>(`scenario:${hash}`);
@@ -129,6 +135,7 @@ class Engine {
       app.sourceErrors = {};
       app.probe.visible = false;
       this.preparePlanes();
+      await yieldToUi();
       this.viewer?.setBoard(board, this.frame);
       this.viewer?.setVolume(null, null);
       this.applyViewToViewer();
@@ -414,15 +421,17 @@ class Engine {
       const comp = app.probe.component;
       const hv = comp === 'x' ? Math.abs(h[0]!) : comp === 'y' ? Math.abs(h[1]!) : comp === 'z' ? Math.abs(h[2]!) : Math.hypot(h[0]!, h[1]!, h[2]!);
       const lines: ProbeLine[] = [];
+      let power = 0;
       for (const l of m.lines) {
         let a = l.amp * hv;
         if (asV) a *= 2 * Math.PI * l.f * MU0 * area;
         if (!(a > 0)) continue;
         lines.push({ f: l.f, db: 20 * Math.log10(a) + 120 });
+        power += a * a;
         const key = Math.round(l.f);
         totals.set(key, (totals.get(key) ?? 0) + a * a);
       }
-      sources.push({ id: s.id, name: s.name, color: s.color, lines, h: hv });
+      sources.push({ id: s.id, name: s.name, color: s.color, lines, h: hv, db: power > 0 ? 10 * Math.log10(power) + 120 : -200 });
     }
     const total = [...totals.entries()].sort((a, b) => a[0] - b[0]).map(([f, p]) => ({ f, db: 10 * Math.log10(p) + 120 }));
     return { sources, total, unit: asV ? 'dBµV' : 'dBµA/m' };

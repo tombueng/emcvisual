@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { branding } from '../branding';
   import { t } from '../i18n';
   import { app } from '../state/app.svelte';
@@ -8,7 +8,6 @@
   import { Sonifier, type Voice } from '../audio/sonifier';
   import { downloadDataUrl, downloadText, pickFile } from '../state/persist';
   import { toBoard } from '../model/world';
-  import { dist } from '../model/geometry';
   import type { Quality } from '../compute/grid';
   import SourcesPanel from './SourcesPanel.svelte';
   import ViewPanel from './ViewPanel.svelte';
@@ -23,7 +22,7 @@
   onMount(() => {
     viewer = new Viewer(viewEl);
     engine.attach(viewer);
-    viewer.controls.addEventListener('change', () => updateAudio());
+    viewer.controls.addEventListener('change', () => scheduleAudio());
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') app.pickMode = null;
     };
@@ -115,6 +114,24 @@
     return !!g && x >= g.x0 && x <= g.x0 + (g.nx - 1) * g.dx && z >= g.z0 && z <= g.z0 + (g.nz - 1) * g.dz;
   }
 
+  /**
+   * Copper under the pointer via the 2D pick index: intersect the ray with the outer copper
+   * surface facing the camera, then look up tracks, pads, vias and zones on the visible
+   * layers from that side inwards.
+   */
+  function copperAt(clientX: number, clientY: number) {
+    const board = app.board;
+    if (!viewer || !board || !engine.pickIndex) return null;
+    const fromTop = viewer.camera.position.y >= 0;
+    const order = board.layers.map((l) => l.index).filter((i) => app.layerVisible[i] !== false);
+    if (!fromTop) order.reverse();
+    const outer = fromTop ? board.layers[0]! : board.layers[board.layers.length - 1]!;
+    const p = viewer.pickPlane(clientX, clientY, outer.y);
+    if (!p) return null;
+    const b = toBoard(engine.frame, p.x, p.z);
+    return { board: b, layers: order, hit: engine.pickIndex.pick(b.x, b.y, order) };
+  }
+
   let lastHover = 0;
   function onPointerMove(e: PointerEvent) {
     if (!viewer || !app.board) return;
@@ -129,8 +146,8 @@
     const now = performance.now();
     if (now - lastHover > 60) {
       lastHover = now;
-      const hit = viewer.pick(e.clientX, e.clientY);
-      app.hoverNet = hit && hit.net > 0 ? `${app.board.nets[hit.net]} (${app.board.layers[hit.layer]!.name})` : '';
+      const c = copperAt(e.clientX, e.clientY);
+      app.hoverNet = c?.hit && c.hit.net > 0 ? `${app.board.nets[c.hit.net]} (${app.board.layers[c.hit.layer]!.name})` : '';
     }
   }
 
@@ -145,29 +162,18 @@
     if (moved > 4) return;
     const board = app.board;
     if (app.pickMode) {
-      const hit = viewer.pick(e.clientX, e.clientY);
+      const c = copperAt(e.clientX, e.clientY);
       const mode = app.pickMode;
-      if (hit) {
-        if (mode.kind === 'net' && hit.net > 0) {
-          mode.onPick(board.nets[hit.net]!);
+      if (!c) return;
+      if (mode.kind === 'net' && c.hit && c.hit.net > 0) {
+        mode.onPick(board.nets[c.hit.net]!);
+        app.pickMode = null;
+      } else if (mode.kind === 'pad') {
+        const best = c.hit?.kind === 'pad' ? c.hit.index : engine.pickIndex!.nearestPad(c.board.x, c.board.y, c.layers);
+        if (best >= 0) {
+          const p = board.pads[best]!;
+          mode.onPick(`${p.ref}.${p.number}`);
           app.pickMode = null;
-        } else if (mode.kind === 'pad') {
-          const b = toBoard(engine.frame, hit.world.x, hit.world.z);
-          let best = -1;
-          let bd = 2.5;
-          board.pads.forEach((p, i) => {
-            if (!p.layers.includes(hit.layer)) return;
-            const d = dist(p.at, b);
-            if (d < bd) {
-              bd = d;
-              best = i;
-            }
-          });
-          if (best >= 0) {
-            const p = board.pads[best]!;
-            mode.onPick(`${p.ref}.${p.number}`);
-            app.pickMode = null;
-          }
         }
       }
       return;
@@ -184,7 +190,6 @@
     void app.sources.map((s) => s.enabled);
     app.readout = engine.probeReadout();
     viewer?.setProbe(app.probe.visible ? [app.probe.x, app.probe.height, app.probe.z] : null, app.probe.radius);
-    updateAudio();
   });
 
   $effect(() => {
@@ -210,10 +215,23 @@
     engine.updateFieldLines();
   });
 
+  // Sound follows the probe readout. The effect only tracks the values listed here; the
+  // update itself runs untracked, otherwise reading app.readout inside the effect that writes
+  // it re-triggers the effect over and over (that froze the UI for seconds per mouse move).
   $effect(() => {
-    void [app.audio.volume, app.audio.pitchAt25MHz, app.audio.enabled];
-    updateAudio();
+    void [app.readout, app.audio.volume, app.audio.pitchAt25MHz, app.audio.enabled, app.view.dbLow, app.view.dbHigh];
+    untrack(() => scheduleAudio());
   });
+
+  let audioQueued = false;
+  function scheduleAudio() {
+    if (audioQueued || !app.audio.enabled) return;
+    audioQueued = true;
+    requestAnimationFrame(() => {
+      audioQueued = false;
+      updateAudio();
+    });
+  }
 
   function updateAudio() {
     if (!app.audio.enabled || !viewer) return;
@@ -224,13 +242,11 @@
         const src = app.sources.find((x) => x.id === s.id);
         const m = app.models[s.id];
         if (!src || !m) continue;
-        let p = 0;
-        for (const l of s.lines) p += 10 ** (l.db / 10);
         voices.push({
           id: s.id,
           f0: src.waveform.f0,
           lines: m.lines,
-          db: p > 0 ? 10 * Math.log10(p) : -200,
+          db: s.db,
           position: [m.centre[0] - app.probe.x, m.centre[1] - app.probe.height, m.centre[2] - app.probe.z],
         });
       }

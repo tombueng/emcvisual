@@ -13,3 +13,4 @@ fp-info-cache
 e2e/output/
 test-results/
 playwright-report/
+public/local/

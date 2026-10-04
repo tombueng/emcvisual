@@ -30,7 +30,7 @@
     void app.models;
     void app.sources.map((s) => [s.enabled, s.waveform.f0, s.waveform.tr, s.waveform.amplitude, s.waveform.duty]);
     const r = engine.farReadout(app.spectrumMode === 'far3' ? 3 : 10);
-    return r ? { sources: r.sources.map((s) => ({ ...s, h: 0 })), total: r.total, unit: 'dBµV/m', limits: r.limits } : null;
+    return r ? { sources: r.sources.map((s) => ({ ...s, h: 0, db: 0 })), total: r.total, unit: 'dBµV/m', limits: r.limits } : null;
   });
 
   const peak = $derived.by(() => {

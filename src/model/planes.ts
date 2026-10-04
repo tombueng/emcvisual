@@ -76,7 +76,11 @@ export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, 
   return planes;
 }
 
-/** Scanline fill of keyholed rings (each ring even-odd on its own, then OR-ed). */
+/**
+ * Scanline fill of keyholed rings (each ring even-odd on its own, then OR-ed). Edges drop
+ * their crossings straight into per-row buckets, so the cost is O(edges + crossings) rather
+ * than O(rows × edges).
+ */
 export function rasterize(rings: Vec2[][], bbox: { x0: number; y0: number; x1: number; y1: number }, area: number): CoverageRaster {
   const cell = Math.min(0.25, Math.max(0.1, Math.sqrt(Math.max(area, 1) / 2e6)));
   const x0 = bbox.x0 - cell;
@@ -84,31 +88,39 @@ export function rasterize(rings: Vec2[][], bbox: { x0: number; y0: number; x1: n
   const nx = Math.ceil((bbox.x1 - bbox.x0) / cell) + 2;
   const ny = Math.ceil((bbox.y1 - bbox.y0) / cell) + 2;
   const data = new Uint8Array(nx * ny);
-  const xs: number[] = [];
+  const rows: number[][] = [];
   for (const ring of rings) {
-    let ry0 = Infinity;
-    let ry1 = -Infinity;
-    for (const p of ring) {
-      if (p.y < ry0) ry0 = p.y;
-      if (p.y > ry1) ry1 = p.y;
-    }
-    const j0 = Math.max(0, Math.floor((ry0 - y0) / cell));
-    const j1 = Math.min(ny - 1, Math.ceil((ry1 - y0) / cell));
-    for (let j = j0; j <= j1; j++) {
-      const yc = y0 + (j + 0.5) * cell;
-      xs.length = 0;
-      for (let i = 0, k = ring.length - 1; i < ring.length; k = i++) {
-        const a = ring[i]!;
-        const b = ring[k]!;
-        if (a.y > yc !== b.y > yc) xs.push(a.x + ((yc - a.y) * (b.x - a.x)) / (b.y - a.y));
+    const touched: number[] = [];
+    for (let i = 0, k = ring.length - 1; i < ring.length; k = i++) {
+      const a = ring[i]!;
+      const b = ring[k]!;
+      if (a.y === b.y) continue;
+      const lo = Math.min(a.y, b.y);
+      const hi = Math.max(a.y, b.y);
+      // rows whose centre yc satisfies lo <= yc < hi (half-open, so shared vertices count once)
+      const j0 = Math.max(0, Math.ceil((lo - y0) / cell - 0.5));
+      const j1 = Math.min(ny - 1, Math.ceil((hi - y0) / cell - 0.5) - 1);
+      const dxdy = (b.x - a.x) / (b.y - a.y);
+      for (let j = j0; j <= j1; j++) {
+        const yc = y0 + (j + 0.5) * cell;
+        let row = rows[j];
+        if (!row) {
+          row = rows[j] = [];
+        }
+        if (row.length === 0) touched.push(j);
+        row.push(a.x + (yc - a.y) * dxdy);
       }
+    }
+    for (const j of touched) {
+      const xs = rows[j]!;
       xs.sort((p, q) => p - q);
+      const base = j * nx;
       for (let m = 0; m + 1 < xs.length; m += 2) {
         const i0 = Math.max(0, Math.ceil((xs[m]! - x0) / cell - 0.5));
         const i1 = Math.min(nx - 1, Math.floor((xs[m + 1]! - x0) / cell - 0.5));
-        const row = j * nx;
-        for (let i = i0; i <= i1; i++) data[row + i] = 1;
+        for (let i = i0; i <= i1; i++) data[base + i] = 1;
       }
+      xs.length = 0;
     }
   }
   return { x0, y0, cell, nx, ny, data };

@@ -3,6 +3,11 @@ import * as THREE from 'three';
 import { rotateKicad } from '../model/geometry';
 import type { BoardModel, Pad, Vec2 } from '../model/types';
 import type { WorldFrame } from '../model/world';
+import { rasterize, type CoverageRaster } from '../model/planes';
+
+/** Zones with more outline points than this are drawn as a texture instead of triangles. */
+const ZONE_TEXTURE_POINTS = 3000;
+const MAX_TEXTURE = 4096;
 
 export interface BoardMeshes {
   group: THREE.Group;
@@ -155,7 +160,13 @@ export function buildBoardMeshes(board: BoardModel, frame: WorldFrame): BoardMes
     const i = layer.index;
     const y = i === 0 ? topY + 0.005 : i === nL - 1 ? bottomY - 0.005 : layer.y;
     const b = new Builder(y, frame, layerColor(i, nL));
-    for (const z of board.zones) if (z.layer === i) for (const ring of z.polygons) b.polygon(ring, z.net);
+    const bigZones: typeof board.zones = [];
+    for (const z of board.zones) {
+      if (z.layer !== i) continue;
+      const points = z.polygons.reduce((n, r) => n + r.length, 0);
+      if (points > ZONE_TEXTURE_POINTS) bigZones.push(z);
+      else for (const ring of z.polygons) b.polygon(ring, z.net);
+    }
     for (const t of board.tracks) if (t.layer === i) b.segment(t.a, t.b, t.width, t.net);
     for (const p of board.pads) {
       if (!p.layers.includes(i)) continue;
@@ -164,6 +175,7 @@ export function buildBoardMeshes(board: BoardModel, frame: WorldFrame): BoardMes
     }
     for (const v of board.vias) if ((i === 0 || i === nL - 1) && v.fromLayer <= i && v.toLayer >= i) b.fan(circle(v.at, v.diameter / 2, 12), v.net);
     const { mesh, nets, colors } = b.mesh(copperMat);
+    for (const z of bigZones) mesh.add(zoneQuad(z.polygons, z.net, y, frame, layerColor(i, nL), board.bbox));
     mesh.name = `copper:${layer.name}`;
     mesh.userData.layer = i;
     mesh.renderOrder = 1;
@@ -242,6 +254,50 @@ export function buildBoardMeshes(board: BoardModel, frame: WorldFrame): BoardMes
   };
 }
 
+/**
+ * A large zone as one textured quad: triangulating planes with tens of thousands of points
+ * took most of the load time on big boards. The coverage raster doubles as an alpha mask
+ * and lets picking test the actual copper under the pointer.
+ */
+function zoneQuad(rs: Vec2[][], net: number, y: number, frame: WorldFrame, color: THREE.Color, bbox: BoardModel['bbox']): THREE.Mesh {
+  const area = Math.max(1, (bbox.x1 - bbox.x0) * (bbox.y1 - bbox.y0));
+  let raster: CoverageRaster = rasterize(rs, bbox, area);
+  // keep the texture within GPU limits on long boards
+  let scale = 1;
+  while ((raster.nx > MAX_TEXTURE || raster.ny > MAX_TEXTURE) && scale < 8) {
+    scale *= 2;
+    raster = rasterize(rs, bbox, area * scale * scale * 4);
+  }
+  const rgba = new Uint8Array(raster.nx * raster.ny * 4);
+  const r8 = Math.round(color.r * 255);
+  const g8 = Math.round(color.g * 255);
+  const b8 = Math.round(color.b * 255);
+  for (let k = 0; k < raster.data.length; k++) {
+    rgba[k * 4] = r8;
+    rgba[k * 4 + 1] = g8;
+    rgba[k * 4 + 2] = b8;
+    rgba[k * 4 + 3] = raster.data[k] ? 255 : 0;
+  }
+  const tex = new THREE.DataTexture(rgba, raster.nx, raster.ny, THREE.RGBAFormat);
+  tex.colorSpace = THREE.LinearSRGBColorSpace;
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  const w = raster.nx * raster.cell;
+  const h = raster.ny * raster.cell;
+  const geo = new THREE.PlaneGeometry(w, h);
+  geo.rotateX(-Math.PI / 2);
+  const mat = new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.5, metalness: 0.55, roughness: 0.4, side: THREE.DoubleSide });
+  const quad = new THREE.Mesh(geo, mat);
+  // after the rotation v = 1 lies at -Z, but raster row 0 (texture v = 0) is the smallest board
+  // y, i.e. -Z: flip v
+  const uv = geo.getAttribute('uv') as THREE.BufferAttribute;
+  for (let k = 0; k < uv.count; k++) uv.setY(k, 1 - uv.getY(k));
+  quad.position.set(raster.x0 + w / 2 - frame.ox, y, raster.y0 + h / 2 - frame.oy);
+  quad.userData.zone = { net, raster };
+  return quad;
+}
+
 /** Recolour copper: highlighted nets bright, others dimmed (or reset with null). */
 export function highlightNets(b: BoardMeshes, nets: Set<number> | null, color = new THREE.Color('#fff2a8')) {
   b.layers.forEach((mesh, i) => {
@@ -265,5 +321,13 @@ export function highlightNets(b: BoardMeshes, nets: Set<number> | null, color = 
       }
     }
     attr.needsUpdate = true;
+    for (const child of mesh.children) {
+      const zone = child.userData.zone as { net: number } | undefined;
+      if (!zone) continue;
+      const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
+      if (!nets) mat.color.setScalar(1);
+      else if (nets.has(zone.net)) mat.color.copy(color);
+      else mat.color.setScalar(0.45);
+    }
   });
 }
