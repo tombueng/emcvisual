@@ -72,14 +72,14 @@
             {#if app.sourceErrors[s.id]}<span class="err">!</span>{/if}
           </button>
           <input type="checkbox" title={t.sources.enabled} bind:checked={s.enabled} onchange={() => engine.sourceChanged(s.id)} />
-          <button class="btn ghost small" title={t.sources.remove} onclick={() => engine.removeSource(s.id)}>✕</button>
+          <button class="btn ghost small" title={t.sources.remove} aria-label={t.sources.remove} onclick={() => engine.removeSource(s.id)}>✕</button>
         </li>
       {/each}
     </ul>
 
     {#if app.selected}
       {#key app.selected.id}
-        <SourceEditor source={app.selected} />
+        <SourceEditor id={app.selected.id} />
       {/key}
     {/if}
 

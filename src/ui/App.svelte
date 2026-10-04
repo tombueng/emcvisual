@@ -87,6 +87,21 @@
     if (viewer) downloadDataUrl(`${(app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '')}.png`, viewer.snapshot());
   }
 
+  let ant = $state(false);
+  $effect(() => {
+    void app.board;
+    ant = false;
+  });
+  function toggleAnt() {
+    if (!viewer) return;
+    if (ant) viewer.overview();
+    else {
+      const h = app.hotspots[0];
+      viewer.antView(h ? h.x : 0, 2, h ? h.z : 0);
+    }
+    ant = !ant;
+  }
+
   function onDrop(e: DragEvent) {
     e.preventDefault();
     dragging = false;
@@ -274,6 +289,7 @@
       <button class="btn" onclick={saveScenario} disabled={!app.board}>{t.top.saveScenario}</button>
       <button class="btn" onclick={loadScenario} disabled={!app.board}>{t.top.loadScenario}</button>
       <button class="btn" onclick={snapshot} disabled={!app.board}>{t.top.snapshot}</button>
+      <button class="btn" class:on={ant} onclick={toggleAnt} disabled={!app.board} title={t.top.antHint}>{ant ? t.top.overview : t.top.antView}</button>
       <label class="quality">
         <span>{t.top.quality}</span>
         <select value={app.quality} onchange={(e) => engine.setQuality((e.currentTarget as HTMLSelectElement).value as Quality)}>
@@ -321,6 +337,7 @@
       {#if app.pickMode}<span class="pick">{app.pickMode.kind === 'pad' ? t.editor.picking : t.editor.pickingNet}</span>{/if}
       {#if app.hoverNet}<span>{app.hoverNet}</span>{/if}
       {#if app.board && app.probe.visible}<span class="probe">{app.probe.follow ? t.probe.follow : t.probe.pinned}</span>{/if}
+      {#if ant}<span>{t.top.antHint}</span>{/if}
     </div>
     {#if app.toast}<div class="toast" role="status">{app.toast}</div>{/if}
   </main>

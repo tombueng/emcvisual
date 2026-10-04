@@ -6,6 +6,12 @@
   import { C0, formatEng } from '../physics/units';
   import type { ViewMode } from '../state/scenario';
   import DiagnosticsPanel from './DiagnosticsPanel.svelte';
+  import { downloadText } from '../state/persist';
+
+  function exportSlice() {
+    const csv = engine.sliceCsv(app.view.sliceHeight);
+    if (csv) downloadText(`${(app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '')}-schnitt-${app.view.sliceHeight}mm.csv`, csv, 'text/csv');
+  }
 
   const modes: ViewMode[] = ['all', 'band', 'line'];
 
@@ -118,6 +124,7 @@
           <span class="value">{app.view.sliceHeight.toFixed(1).replace('.', ',')} mm</span>
         </div>
       </div>
+      <button class="btn small" onclick={exportSlice} disabled={!app.composite}>{t.view.sliceCsv}</button>
     {/if}
 
     <div class="section-title">{t.view.layers}</div>

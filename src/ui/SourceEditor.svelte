@@ -9,9 +9,11 @@
   import NetInput from './NetInput.svelte';
 
   interface Props {
-    source: Source;
+    id: string;
   }
-  let { source }: Props = $props();
+  let { id }: Props = $props();
+  // edit the source in the app state directly (it is not owned by the parent component)
+  const source = $derived(app.sources.find((s) => s.id === id)!) as Source;
 
   const nets = $derived(app.board ? app.board.nets.filter(Boolean) : []);
   const allPads = $derived(app.board ? app.board.pads.map((p) => `${p.ref}.${p.number}`) : []);

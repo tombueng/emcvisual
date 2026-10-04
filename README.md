@@ -10,11 +10,24 @@ Eingangskondensator näher an den Schaltregler rückt?
 
 Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 
+![Demo-Platine mit Feld, Diagnose und Spektrum](docs/images/app-demo.png)
+
 ## Stand
 
-**Stufe 1 in Arbeit:** quasistatische Simulation des magnetischen Nahfelds (Biot-Savart mit
-Spiegelströmen in den Bezugsflächen), 3D-Darstellung, virtuelle Nahfeldsonde, Klang.
-Plan und Fortschritt: [docs/stufe-1/PLAN.md](docs/stufe-1/PLAN.md).
+**Stufe 1 (M0–M6) läuft:** quasistatische Simulation des magnetischen Nahfelds
+(Biot-Savart mit Spiegelströmen in den Bezugsflächen) und dazu:
+
+- KiCad 6 bis 10 importieren; Bezugsflächen werden erkannt, Quellen aus Netznamen vorgeschlagen
+- Quellen: Takt- und Datenleitungen (auch über Serienwiderstände), Differenzpaare,
+  Stromschleifen von Schaltreglern (Pads auch per Klick in 3D)
+- Feld als leuchtendes Volumen, Schnittebene, Feldlinien der gewählten Quelle, Ameisenblick
+- virtuelle Nahfeldsonde mit Spektrumanalysator, Fernfeld-Abschätzung gegen CISPR 32 B
+- Klang: jede Quelle klingt, laut wo das Feld stark ist
+- Diagnose: unterbrochene Rückstrompfade, Bezugswechsel an Vias, fehlende Stitching-Vias,
+  Hotspots mit den Netzen und Bauteilen in der Nähe
+- Szenario als JSON speichern, PNG- und CSV-Export
+
+Plan, Abnahmekriterien und Umsetzungsnotizen: [docs/stufe-1/PLAN.md](docs/stufe-1/PLAN.md).
 
 Was später kommt (Flächenströme, Vollwelle mit openEMS, Messung mit einem 3D-Drucker als
 Scanner, Handsonde, VR): [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -33,6 +46,7 @@ Fenster ziehen.
 |---|---|
 | `npm run dev` | Entwicklungsserver |
 | `npm test` | Tests (Physik gegen analytische Lösungen, Parser gegen pcbnew-Referenzdaten) |
+| `npm run e2e` | Playwright-Tests im Browser (vorher einmal `npx playwright install --only-shell chromium`) |
 | `npm run check` | Typprüfung (TypeScript + Svelte) |
 | `npm run build` | statische Seite nach `dist/` |
 | `npm run demo-board` | Demo-Platine mit KiCad (pcbnew-Python) neu erzeugen |

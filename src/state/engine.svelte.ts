@@ -574,6 +574,33 @@ class Engine {
     this.linesWorker.postMessage({ id: ++this.linesJob, input });
   }
 
+  // --- export -----------------------------------------------------------------------------------
+
+  /** Horizontal slice of the composite at a height above F.Cu as CSV (board coordinates). */
+  sliceCsv(height: number): string | null {
+    const g = this.grid;
+    const c = this.composite;
+    if (!g || !c) return null;
+    const iy = Math.max(0, Math.min(g.ny - 1, Math.round((height - g.y0) / g.dy)));
+    const rows = [`# x_mm;y_mm;H_dBuA_m;height_mm=${(g.y0 + iy * g.dy).toFixed(2)}`];
+    for (let iz = 0; iz < g.nz; iz++) {
+      for (let ix = 0; ix < g.nx; ix++) {
+        const p = c.power[ix + g.nx * (iy + g.ny * iz)]!;
+        const b = toBoard(this.frame, g.x0 + ix * g.dx, g.z0 + iz * g.dz);
+        rows.push(`${b.x.toFixed(2)};${b.y.toFixed(2)};${p > 0 ? (10 * Math.log10(p) + 120).toFixed(2) : ''}`);
+      }
+    }
+    return rows.join('\n') + '\n';
+  }
+
+  /** Spectrum lines as CSV: frequency, total and one column per source. */
+  spectrumCsv(data: { sources: { name: string; lines: ProbeLine[] }[]; total: ProbeLine[]; unit: string }): string {
+    const header = ['f_Hz', `total_${data.unit}`, ...data.sources.map((s) => s.name.replace(/[;\n]/g, ' '))];
+    const per = data.sources.map((s) => new Map(s.lines.map((l) => [Math.round(l.f), l.db])));
+    const rows = data.total.map((l) => [l.f.toFixed(0), l.db.toFixed(2), ...per.map((m) => m.get(Math.round(l.f))?.toFixed(2) ?? '')].join(';'));
+    return [header.join(';'), ...rows].join('\n') + '\n';
+  }
+
   // --- persistence ------------------------------------------------------------------------------
 
   scenario(): Scenario {

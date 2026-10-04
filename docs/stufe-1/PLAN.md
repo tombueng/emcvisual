@@ -1,6 +1,6 @@
 # Stufe 1: Quasistatische Nahfeld-Simulation im Browser
 
-Stand: 2026-10-04 · Status: in Arbeit (siehe Meilenstein-Tabelle unten)
+Stand: 2026-10-04 · Status: M0–M6 umgesetzt, M7 teilweise (siehe Tabelle und §13)
 
 Begleitdokumente:
 - [PHYSIK.md](PHYSIK.md): das physikalische Modell mit allen Formeln, Annahmen und Gültigkeitsgrenzen
@@ -124,13 +124,13 @@ Jeder Meilenstein endet mit grünen Tests, aktualisierter Doku und einem Commit.
 | # | Inhalt | Status |
 |---|---|---|
 | M0 | Grundgerüst, Branding/Umbenennung, CI, Doku | erledigt |
-| M1 | KiCad-Import, Lagenaufbau, 3D-Platine, Demo-Platine | in Arbeit |
-| M2 | Physik-Kern: Spektren, Leitungsparameter, Konnektivität, Stromelemente, Spiegel, Biot-Savart | offen |
-| M3 | Feldgitter, Worker-Pool, Komposition, Volumen- und Schnittdarstellung | offen |
-| M4 | Quellen-Editor, Vorschläge, Szenario speichern/laden | offen |
-| M5 | Virtuelle Sonde, Spektrumanzeige, Verklanglichung | offen |
-| M6 | Feldlinien, Hotspots, Rückstrom-Warnungen, Fernfeld-Abschätzung | offen |
-| M7 | Feinschliff: Ameisen-Modus, Export, Englisch, GitHub Pages, Leistung | offen |
+| M1 | KiCad-Import, Lagenaufbau, 3D-Platine, Demo-Platine | erledigt |
+| M2 | Physik-Kern: Spektren, Leitungsparameter, Konnektivität, Stromelemente, Spiegel, Biot-Savart | erledigt |
+| M3 | Feldgitter, Worker-Pool, Komposition, Volumen- und Schnittdarstellung | erledigt |
+| M4 | Quellen-Editor, Vorschläge, Szenario speichern/laden | erledigt |
+| M5 | Virtuelle Sonde, Spektrumanzeige, Verklanglichung | erledigt |
+| M6 | Feldlinien, Hotspots, Rückstrom-Warnungen, Fernfeld-Abschätzung | erledigt |
+| M7 | Feinschliff: Ameisen-Modus, Export, Englisch, GitHub Pages, Leistung | teilweise: Ameisenblick, PNG/CSV-Export, Playwright-Tests erledigt; Englisch und Pages offen |
 | M8 | optional: quasistatisches E-Feld, WebGPU-Rechenkern | offen |
 
 ### M0 Grundgerüst
@@ -298,3 +298,30 @@ Zugehöriges Szenario (`public/demo/demo-board.scenario.json`) mit allen Quellen
 - Demo-Platine und mindestens zwei echte Platinen (2 und 4 Lagen) laufen fehlerfrei.
 - Doku (PHYSIK, ARCHITEKTUR, README) beschreibt den tatsächlichen Stand.
 - GitHub Pages zeigt die aktuelle Version (sofern das Repo öffentlich ist).
+
+## 13. Umsetzungsnotizen (Abweichungen und Ergänzungen zum Plan)
+
+Stand 2026-10-04, nach dem ersten Durchgang M0–M6.
+
+- **Gemessene Zahlen.** Demo-Platine im Gitter „Normal“ (1 mm): alle sechs Quellen in
+  0,1–0,2 s (Worker-Pool). Echte Platinen (KiCad-Demos, eigene 4-Lagen-Platine): 0,2–1,6 s
+  je Quelle auf einem Kern, also deutlich unter dem Budget. Parser: 85 MB / 12 Lagen in 2,8 s.
+- **Testkorpus.** 42 Platinen von KiCad 6 bis 10 lesen fehlerfrei; Pads, Vias, Leiterbahn-
+  längen und Zonenflächen stimmen bei der Demo und drei KiCad-Demos mit pcbnew überein.
+- **Diagnose an der Demo.** Gefunden werden genau die eingebauten Fehler (Schlitz-Kreuzung,
+  zwei Bezugswechsel GND ↔ +3V3, fehlende Flächen unter dem schlechten Regler, langer Takt);
+  guter Takt, guter Regler und USB-Paar bleiben ohne Hinweis.
+- **Vias in Freistellungen.** Ein Via sitzt in einem Loch der Fläche, die es durchquert. Für
+  Rückweg und Spiegel zählt deshalb Kupfer im Umkreis von 0,8 mm (`coveredNear`).
+- **Gleiche Pad-Nummern** innerhalb eines Footprints (Ausweichbohrungen, Exposed Pads) sind
+  ein Pin: Sie werden verbunden und nur einmal als Last gezählt.
+- **Leiterbahn-Enden** berühren ein Pad oder Via, sobald ihre halbe Breite das Kupfer
+  erreicht (BGA-Dogbones).
+- **Langsame Signale** (z. B. 1 kHz) hätten mehr als 4096 Oberwellen: Es wird jede k-te Linie
+  mit √k skaliert behalten (Bandleistung bleibt erhalten, PHYSIK.md §3.3).
+- **Automatisches dB-Fenster** 60 dB unter dem Maximum; Leuchten überwiegend emissiv, damit
+  die Platine sichtbar bleibt.
+- **Hotspots**: lokale Maxima in Sondenhöhe, höchstens zwei je dominierender Quelle, damit
+  leisere Quellen in der Liste auftauchen.
+- **Offen aus M7:** englische Oberfläche (Wörterbuch-Struktur steht), GitHub Pages (braucht
+  ein öffentliches Repo oder einen Plan mit privaten Pages).

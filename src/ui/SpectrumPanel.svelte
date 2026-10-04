@@ -3,6 +3,13 @@
   import { engine } from '../state/engine.svelte';
   import { t } from '../i18n';
   import { formatEng } from '../physics/units';
+  import { downloadText } from '../state/persist';
+
+  function exportCsv() {
+    if (!data) return;
+    const name = (app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+    downloadText(`${name}-${app.spectrumMode}.csv`, engine.spectrumCsv(data), 'text/csv');
+  }
 
   interface Props {
     ontoggleaudio: () => void;
@@ -220,8 +227,8 @@
 </script>
 
 <section class="analyzer">
-  <div class="screen" bind:this={wrap}>
-    <canvas bind:this={canvas} onpointermove={onMove} onpointerleave={() => (hover = null)} onclick={onClick}></canvas>
+  <div class="screen">
+    <div class="bar">
     <div class="modes" role="tablist">
       {#each ['probe', 'far3', 'far10'] as const as m (m)}
         <button role="tab" aria-selected={app.spectrumMode === m} class:active={app.spectrumMode === m} onclick={() => (app.spectrumMode = m)}>{t.probe.modes[m]}</button>
@@ -229,6 +236,7 @@
     </div>
     <div class="legend value">
       {#if data}
+        <button class="csv" onclick={exportCsv}>{t.probe.csv}</button>
         <span>{data.unit}</span>
         {#if data.limits}<span class="limit">{t.probe.limit}</span>{/if}
         {#if peak}<span>{t.probe.peak}: {formatEng(peak.f, 'Hz', 4)}, {peak.db.toFixed(1).replace('.', ',')}</span>{/if}
@@ -236,11 +244,15 @@
         <span>{t.probe.noProbe}</span>
       {/if}
     </div>
+    </div>
+    <div class="plot" bind:this={wrap}>
+    <canvas bind:this={canvas} onpointermove={onMove} onpointerleave={() => (hover = null)} onclick={onClick}></canvas>
     {#if hover}
       <div class="marker value" style:left={`${hover.x}px`} style:top={`${Math.max(4, hover.y - 30)}px`}>
         {formatEng(hover.f, 'Hz', 4)}<br />{hover.db.toFixed(1).replace('.', ',')}
       </div>
     {/if}
+    </div>
   </div>
 
   <div class="controls">
@@ -291,13 +303,27 @@
     min-height: 0;
   }
   .screen {
-    position: relative;
+    display: flex;
+    flex-direction: column;
     margin: 8px 0 8px 10px;
     border: 1px solid var(--line);
     border-radius: var(--radius-m);
     background: radial-gradient(120% 140% at 50% 0%, #142233 0%, #0b141d 70%);
     box-shadow: inset 0 0 0 1px rgba(76, 201, 240, 0.05), inset 0 10px 40px rgba(0, 0, 0, 0.35);
     overflow: hidden;
+  }
+  .bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 10px 0 40px;
+    flex-wrap: wrap;
+  }
+  .plot {
+    position: relative;
+    flex: 1;
+    min-height: 0;
   }
   canvas {
     position: absolute;
@@ -307,12 +333,8 @@
     cursor: crosshair;
   }
   .modes {
-    position: absolute;
-    top: 5px;
-    left: 48px;
     display: flex;
     gap: 2px;
-    z-index: 1;
   }
   .modes button {
     border: 1px solid transparent;
@@ -331,11 +353,19 @@
   .limit {
     color: var(--warn);
   }
+  .csv {
+    pointer-events: auto;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    color: var(--muted);
+    font-size: 11px;
+    padding: 0 6px;
+    cursor: pointer;
+  }
   .legend {
-    position: absolute;
-    top: 6px;
-    right: 12px;
     display: flex;
+    align-items: center;
     gap: 14px;
     font-size: 12px;
     color: var(--muted);

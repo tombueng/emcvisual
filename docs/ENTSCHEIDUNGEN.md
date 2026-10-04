@@ -29,3 +29,14 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     über ein Wörterbuch, Deutsch zuerst, Englisch in M7.
 11. **2026-10-04 · Repo zunächst privat.** Sichtbarkeit und Lizenz entscheidet der
     Projektinhaber (offene Fragen in stufe-1/PLAN.md §11).
+12. **2026-10-04 · Schrift IBM Plex Sans lokal gebündelt** (@fontsource, nur Latin), keine
+    Anfrage an Google Fonts: Die App verspricht, dass nichts den Rechner verlässt.
+13. **2026-10-04 · Gestaltung als Messgerät:** Schiefer-Blau statt Schwarz (das Leuchten
+    braucht einen dunklen Grund), Bernstein für das Feld, Cyan für die Sonde; das
+    auffälligste Element ist der Spektrumanalysator mit Raster.
+14. **2026-10-04 · Fernfeld als Orientierung im Analysator** (Modus „Fernfeld 3 m / 10 m“)
+    statt als eigene Seite; Grenzlinien CISPR 32 B, Hinweis „ohne Kabel“ im Diagnose-Reiter.
+15. **2026-10-04 · Feldlinien nur für die gewählte Quelle**, in einem eigenen Worker: Linien
+    aller Quellen gleichzeitig wären unlesbar und teuer.
+16. **2026-10-04 · Playwright-Tests in der CI**, Browser nur als Headless-Shell; WebGL läuft
+    dort über SwiftShader.

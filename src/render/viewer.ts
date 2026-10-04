@@ -232,7 +232,18 @@ export class Viewer {
     const r = Math.max(w, d);
     this.camera.near = Math.max(0.05, r / 2000);
     this.camera.far = r * 50;
-    this.camera.position.set(r * 0.15, r * 0.75, r * 0.95);
+    this.home = { pos: new THREE.Vector3(r * 0.15, r * 0.75, r * 0.95), near: this.camera.near };
+    this.overview();
+  }
+
+  private home: { pos: THREE.Vector3; near: number } | null = null;
+
+  /** Back to the overview camera of the board. */
+  overview() {
+    this.setWalk(false);
+    if (!this.home) return;
+    this.camera.position.copy(this.home.pos);
+    this.camera.near = this.home.near;
     this.controls.target.set(0, 0, 0);
     this.camera.updateProjectionMatrix();
     this.controls.update();
@@ -327,7 +338,7 @@ export class Viewer {
     if (pos) {
       this.probe.position.set(pos[0], pos[1], pos[2]);
       this.probe.scale.setScalar(radius);
-      (this.probe.userData.stem as THREE.Mesh).scale.y = 30 / radius;
+      (this.probe.userData.stem as THREE.Mesh).scale.y = 8 / radius;
     }
     this.requestRender();
   }
@@ -374,6 +385,82 @@ export class Viewer {
       this.scene.add(mesh);
     }
     this.requestRender();
+  }
+
+  private walkKeys = new Set<string>();
+  private walkHandlers: { down: (e: KeyboardEvent) => void; up: (e: KeyboardEvent) => void } | null = null;
+  private stopWalkAnim: (() => void) | null = null;
+  walkSpeed = 20; // mm per second
+
+  /**
+   * Ant view: the camera drops to a small height above the board at (x, z) and looks across
+   * it; W/A/S/D move along the board, Q/E change the height, the mouse still turns the view.
+   */
+  antView(tx: number, tz: number, height: number) {
+    // stand 14 mm from the target on the side of the board centre and look at it
+    const away = new THREE.Vector3(-tx, 0, -tz);
+    if (away.lengthSq() < 1) away.set(0, 0, 1);
+    away.normalize();
+    this.camera.position.set(tx + away.x * 14, height, tz + away.z * 14);
+    this.controls.target.set(tx, height * 0.4, tz);
+    this.camera.near = 0.05;
+    this.camera.updateProjectionMatrix();
+    this.controls.update();
+    this.setWalk(true);
+    this.requestRender();
+  }
+
+  setWalk(on: boolean) {
+    if (on && !this.walkHandlers) {
+      const isTyping = (e: KeyboardEvent) => e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement;
+      const down = (e: KeyboardEvent) => {
+        if (isTyping(e)) return;
+        const k = e.key.toLowerCase();
+        if ('wasdqe'.includes(k) && k.length === 1) this.walkKeys.add(k);
+      };
+      const up = (e: KeyboardEvent) => this.walkKeys.delete(e.key.toLowerCase());
+      window.addEventListener('keydown', down);
+      window.addEventListener('keyup', up);
+      this.walkHandlers = { down, up };
+      this.stopWalkAnim = this.startAnimation();
+      const prev = this.onFrame;
+      this.onFrame = (dt) => {
+        prev?.(dt);
+        this.walkStep(dt);
+      };
+    } else if (!on && this.walkHandlers) {
+      window.removeEventListener('keydown', this.walkHandlers.down);
+      window.removeEventListener('keyup', this.walkHandlers.up);
+      this.walkHandlers = null;
+      this.walkKeys.clear();
+      this.stopWalkAnim?.();
+      this.stopWalkAnim = null;
+      this.onFrame = undefined;
+    }
+  }
+
+  get walking() {
+    return !!this.walkHandlers;
+  }
+
+  private walkStep(dt: number) {
+    if (this.walkKeys.size === 0) return;
+    const fwd = new THREE.Vector3().subVectors(this.controls.target, this.camera.position);
+    fwd.y = 0;
+    if (fwd.lengthSq() < 1e-9) return;
+    fwd.normalize();
+    const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0));
+    const move = new THREE.Vector3();
+    const v = this.walkSpeed * dt;
+    if (this.walkKeys.has('w')) move.addScaledVector(fwd, v);
+    if (this.walkKeys.has('s')) move.addScaledVector(fwd, -v);
+    if (this.walkKeys.has('d')) move.addScaledVector(right, v);
+    if (this.walkKeys.has('a')) move.addScaledVector(right, -v);
+    if (this.walkKeys.has('e')) move.y += v * 0.3;
+    if (this.walkKeys.has('q')) move.y -= v * 0.3;
+    this.camera.position.add(move);
+    this.controls.target.add(move);
+    this.controls.update();
   }
 
   /** Point the camera at a world position, keeping the current distance. */

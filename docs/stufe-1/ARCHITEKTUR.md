@@ -43,13 +43,15 @@ src/
     biotsavart.ts           Kernel (Punkt), Feld einer Elementliste
     farfield.ts             Dipolmoment, E in 3/10 m, CISPR-Grenzen
     diagnostics.ts          Rückstrom- und Bezugswarnungen
+    suggest.ts              Quellen-Vorschläge aus Netznamen, Pin-Funktionen, Pin-Typen
   compute/
     grid.ts                 Gitterdefinition aus Umriss + Rand + Qualität
     fieldKernel.ts          Volumen |h|² für einen Gitterausschnitt (rein)
     field.worker.ts         Worker-Hülle um fieldKernel
     pool.ts                 Worker-Pool, Aufteilung, Fortschritt, Abbruch
     composer.ts             Σ w_s·|h_s|² → dB → Uint8-Volumen
-    fieldlines.ts           RK4-Feldlinien (exakt)
+    fieldlines.ts           RK4-Feldlinien (exakt), Startpunkte
+    fieldlines.worker.ts    Worker-Hülle für Feldlinien
   render/
     viewer.ts               Szene, Kamera, Steuerung, Render-Schleife, Picking
     boardMesh.ts            Platinen-Geometrie aus BoardModel
@@ -62,14 +64,16 @@ src/
     sonifier.ts             Web-Audio-Graph je Quelle
   state/
     app.svelte.ts           Anwendungszustand (Svelte-Runes)
+    engine.svelte.ts        Orchestrierung: Platine, Quellen, Jobs, Komposition, Sonde, Export
     scenario.ts             Szenario-JSON: Typen, Validierung, Migration
     persist.ts              localStorage (try/catch), Download/Upload
   ui/
-    App.svelte, TopBar, SourcesPanel, SourceEditor, NetPicker, PadPicker,
-    ViewPanel, LayersPanel, SpectrumView, DiagnosticsPanel, AudioPanel, …
+    App.svelte (Layout, Zeiger, Ton), SourcesPanel, SourceEditor, EngInput, NetInput,
+    ViewPanel (mit Lagen), DiagnosticsPanel, SpectrumPanel (Analysator, Sonde, Ton)
 public/demo/                Demo-Platine + Szenario
 tools/demo-board/           pcbnew-Skript für die Demo-Platine, Referenzdaten-Export
-tests/                      Vitest (Kern), fixtures/ (Platinen + pcbnew-Referenzen)
+tests/                      Vitest (Kern), fixtures/ (pcbnew-Referenzen)
+e2e/                        Playwright-Smoke-Tests (WebGL über SwiftShader)
 scripts/                    check-codename.mjs, rename.mjs
 docs/                       Pläne, Physik, Architektur, Roadmap
 ```
@@ -204,7 +208,8 @@ Schmale Fenster: Panels einklappbar, 3D-Ansicht bleibt Hauptfläche.
 - `tests/*.test.ts` (Vitest, Node-Umgebung): Parser, Geometrie, Flächen, Konnektivität,
   Spektren, Leitungen, Biot-Savart, Spiegel, Komposition.
 - `tests/fixtures/`: Testplatinen + pcbnew-Referenz-JSON (`tools/demo-board/export_reference.py`).
-- Oberfläche: Playwright-Smoke-Test (M7).
+- Oberfläche: Playwright (`npm run e2e`): Demo laden, rechnen, Sonde, Diagnose, Fernfeld,
+  Quellen bearbeiten, Feldlinien; keine Konsolenfehler. Läuft in der CI als eigener Job.
 
 ## 10. Erweiterungspunkte für spätere Stufen
 

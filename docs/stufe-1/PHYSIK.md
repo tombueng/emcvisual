@@ -68,7 +68,9 @@ in der Oberfläche: „Daten (Worst-Case-Muster)“.
 
 ### 3.3 Linienliste
 Für jede Quelle werden die Linien n·f0 bis f_max (Standard 1 GHz, einstellbar bis 6 GHz)
-erzeugt, höchstens 4096 Linien. Linien unter −80 dB relativ zur stärksten werden verworfen.
+erzeugt. Linien unter −80 dB relativ zur stärksten werden verworfen. Hat ein Signal mehr als
+4096 Oberwellen bis f_max (langsame Signale), wird jede k-te Linie behalten (k ungerade) und
+mit √k skaliert: Die Leistung in jedem Band bleibt erhalten, die Hüllkurve reicht bis f_max.
 
 ## 4. Leitungsparameter
 
@@ -197,9 +199,13 @@ Gaußscher Trapezformel; KiCad speichert Löcher als Keyhole, die Formel zieht s
 
 ### 8.2 Spiegelung
 Eine ideal leitende Ebene bei y = y_F wird für den Halbraum der Quelle durch einen
-Spiegelstrom ersetzt (Spiegelpunkt y' = 2·y_F − y):
-- **tangentiale** (waagerechte) Ströme: Spiegel mit **umgekehrter** Richtung (Gewicht −g),
-- **normale** (senkrechte) Ströme: Spiegel mit **gleicher** Richtung (Gewicht +g).
+Spiegelstrom ersetzt (Spiegelpunkt y' = 2·y_F − y). Mit der Spiegelung R am Ort gilt für die
+Stromdichte J' = −R(J):
+- **tangentiale** (waagerechte) Ströme: Spiegel mit **umgekehrter** Richtung,
+- **normale** (senkrechte) Ströme: Spiegel mit **gleicher** Richtung.
+
+Im Code werden die Endpunkte gespiegelt und das Gewicht negiert; das ergibt beide Regeln
+zugleich (das Spiegeln der Endpunkte dreht die senkrechte Richtung bereits um).
 
 Für eine Leiterbahn über einer Fläche ist der Spiegelstrom genau das Feld des Rückstroms, der
 sich bei hohen Frequenzen unter der Leitung sammelt (Verteilung ∝ 1/(1 + (x/h)²), Johnson,
@@ -211,7 +217,8 @@ Für jedes waagerechte Element wird in Schritten von 0,25 mm geprüft, ob die n�
 Flächenlage in Richtung Bezug dort Kupfer hat. Wo nicht, sucht das Modell die nächste
 weiter entfernte Flächenlage, die Kupfer hat, oder lässt den Spiegel weg (freie Schleife).
 Das Element wird an solchen Wechseln geteilt. Lücken kürzer als 1 mm (Via-Freistellungen)
-werden überbrückt. Senkrechte Elemente (Vias) werden an jeder Flächenlage geteilt.
+werden überbrückt. Senkrechte Elemente (Vias) werden an jeder Flächenlage geteilt; weil ein
+Via in der Freistellung (Loch) der Fläche sitzt, zählt für sie Kupfer im Umkreis von 0,8 mm.
 
 Damit wird ein Schlitz unter einer Taktleitung als **größere Schleife** (Spiegel in der
 entfernteren Fläche) sichtbar. Der tatsächliche Umweg des Rückstroms um den Schlitz herum
@@ -267,6 +274,18 @@ Fläche bildet eine senkrechte Schleife, deren Moment sich mit dem Spiegel verdo
 **Grenzen:** Das ist die Gegentakt-Abstrahlung der Platine allein. In der Praxis dominieren
 oft Gleichtaktströme auf Kabeln; die kennt Stufe 1 nicht. Ab einer Strukturgröße von etwa
 λ/4 überschätzt die f²-Formel (keine Sättigung); diese Bereiche werden schraffiert.
+
+## 11a. Diagnose-Regeln
+
+- **Rückstrompfad unterbrochen:** Unter einem waagerechten Stromelement fehlt auf der
+  Bezugslage (nächste Flächenlage, bei Gleichstand die zur Platinenmitte) auf mindestens 1 mm
+  Länge Kupfer. Nahe Hinweise derselben Quelle (8 mm) werden zusammengefasst.
+- **Bezugswechsel:** Ein Via verbindet zwei Lagen, auf denen der Strompfad verläuft, und die
+  an dieser Stelle nächsten Flächen gehören zu verschiedenen Netzen (z. B. GND → +3V3).
+- **Fehlende Stitching-Via:** gleiche Netze, aber verschiedene Flächenlagen, und kein Via
+  dieses Netzes, das beide Lagen verbindet, im Umkreis von 3 mm.
+- **Elektrisch lang:** Die Quelle hat oberhalb von f_kurz (§2) noch Linien über −40 dB der
+  stärksten.
 
 ## 12. Bekannte Grenzen von Stufe 1 (Zusammenfassung)
 
