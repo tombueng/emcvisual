@@ -1,0 +1,595 @@
+{
+ "copperLayers": [
+  "F.Cu",
+  "B.Cu"
+ ],
+ "thickness": 1.6,
+ "outlineBBox": {
+  "x0": 121.2215,
+  "y0": 90.1065,
+  "x1": 173.4185,
+  "y1": 136.5885
+ },
+ "nets": [
+  "GND",
+  "Net-(P1-PM)",
+  "Net-(P2-P1)",
+  "Net-(P3-P1)",
+  "Net-(P4-P1)",
+  "Net-(P4-PM)",
+  "Net-(U1A-G)",
+  "Net-(U1A-K)",
+  "Net-(U1B-K)",
+  "unconnected-(P5-Pad1)",
+  "unconnected-(P6-Pad1)",
+  "unconnected-(P7-Pad1)",
+  "unconnected-(P8-Pad1)"
+ ],
+ "footprints": [
+  "C1",
+  "C2",
+  "P1",
+  "P2",
+  "P3",
+  "P4",
+  "P5",
+  "P6",
+  "P7",
+  "P8",
+  "R1",
+  "R2",
+  "R3",
+  "R4",
+  "U1"
+ ],
+ "pads": [
+  {
+   "ref": "C1",
+   "number": "1",
+   "x": 141.605,
+   "y": 99.695,
+   "angle": 90.0,
+   "sizeX": 2.0,
+   "sizeY": 2.0,
+   "net": "Net-(P3-P1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C1",
+   "number": "2",
+   "x": 141.605,
+   "y": 94.695,
+   "angle": 90.0,
+   "sizeX": 2.0,
+   "sizeY": 2.0,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C2",
+   "number": "1",
+   "x": 137.16,
+   "y": 125.095,
+   "angle": 90.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "Net-(P2-P1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C2",
+   "number": "2",
+   "x": 137.16,
+   "y": 120.095,
+   "angle": 90.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "Net-(U1A-K)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "P1",
+   "number": "1",
+   "x": 166.37,
+   "y": 105.41,
+   "angle": 90.0,
+   "sizeX": 3.0,
+   "sizeY": 3.0,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "P1"
+  },
+  {
+   "ref": "P1",
+   "number": "2",
+   "x": 166.37,
+   "y": 100.41,
+   "angle": 90.0,
+   "sizeX": 3.0,
+   "sizeY": 3.0,
+   "net": "Net-(P1-PM)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "PM"
+  },
+  {
+   "ref": "P2",
+   "number": "1",
+   "x": 128.27,
+   "y": 112.776,
+   "angle": 270.0,
+   "sizeX": 3.0,
+   "sizeY": 3.0,
+   "net": "Net-(P2-P1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "P1"
+  },
+  {
+   "ref": "P2",
+   "number": "2",
+   "x": 128.27,
+   "y": 117.776,
+   "angle": 270.0,
+   "sizeX": 3.0,
+   "sizeY": 3.0,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "PM"
+  },
+  {
+   "ref": "P3",
+   "number": "1",
+   "x": 128.27,
+   "y": 100.711,
+   "angle": 270.0,
+   "sizeX": 3.0,
+   "sizeY": 3.0,
+   "net": "Net-(P3-P1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "P1"
+  },
+  {
+   "ref": "P3",
+   "number": "2",
+   "x": 128.27,
+   "y": 105.711,
+   "angle": 270.0,
+   "sizeX": 3.0,
+   "sizeY": 3.0,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "PM"
+  },
+  {
+   "ref": "P4",
+   "number": "1",
+   "x": 145.542,
+   "y": 131.191,
+   "angle": 0.0,
+   "sizeX": 3.0,
+   "sizeY": 3.0,
+   "net": "Net-(P4-P1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "P1"
+  },
+  {
+   "ref": "P4",
+   "number": "2",
+   "x": 150.542,
+   "y": 131.191,
+   "angle": 0.0,
+   "sizeX": 3.0,
+   "sizeY": 3.0,
+   "net": "Net-(P4-PM)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "PM"
+  },
+  {
+   "ref": "P5",
+   "number": "1",
+   "x": 125.095,
+   "y": 93.98,
+   "angle": 0.0,
+   "sizeX": 5.6,
+   "sizeY": 5.6,
+   "net": "unconnected-(P5-Pad1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "P6",
+   "number": "1",
+   "x": 169.545,
+   "y": 93.98,
+   "angle": 0.0,
+   "sizeX": 5.6,
+   "sizeY": 5.6,
+   "net": "unconnected-(P6-Pad1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "P7",
+   "number": "1",
+   "x": 169.545,
+   "y": 132.715,
+   "angle": 0.0,
+   "sizeX": 5.6,
+   "sizeY": 5.6,
+   "net": "unconnected-(P7-Pad1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "P8",
+   "number": "1",
+   "x": 125.095,
+   "y": 132.715,
+   "angle": 0.0,
+   "sizeX": 5.6,
+   "sizeY": 5.6,
+   "net": "unconnected-(P8-Pad1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "R1",
+   "number": "1",
+   "x": 136.271,
+   "y": 107.95,
+   "angle": 270.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "Net-(U1A-G)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R1",
+   "number": "2",
+   "x": 136.271,
+   "y": 115.57,
+   "angle": 270.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "Net-(U1A-K)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R2",
+   "number": "1",
+   "x": 156.21,
+   "y": 95.885,
+   "angle": 180.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "Net-(U1B-K)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R2",
+   "number": "2",
+   "x": 148.59,
+   "y": 95.885,
+   "angle": 180.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R3",
+   "number": "1",
+   "x": 133.985,
+   "y": 125.095,
+   "angle": 180.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "Net-(P2-P1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R3",
+   "number": "2",
+   "x": 126.365,
+   "y": 125.095,
+   "angle": 180.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R4",
+   "number": "1",
+   "x": 164.465,
+   "y": 117.475,
+   "angle": 270.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "Net-(P1-PM)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R4",
+   "number": "2",
+   "x": 164.465,
+   "y": 125.095,
+   "angle": 270.0,
+   "sizeX": 1.6,
+   "sizeY": 1.6,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U1",
+   "number": "1",
+   "x": 152.675,
+   "y": 118.465,
+   "angle": 0.0,
+   "sizeX": 2.03,
+   "sizeY": 2.03,
+   "net": "Net-(U1A-G)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "A"
+  },
+  {
+   "ref": "U1",
+   "number": "2",
+   "x": 154.825,
+   "y": 115.535,
+   "angle": 0.0,
+   "sizeX": 2.03,
+   "sizeY": 2.03,
+   "net": "Net-(P1-PM)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "G"
+  },
+  {
+   "ref": "U1",
+   "number": "3",
+   "x": 154.825,
+   "y": 111.885,
+   "angle": 0.0,
+   "sizeX": 2.03,
+   "sizeY": 2.03,
+   "net": "Net-(U1B-K)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "K"
+  },
+  {
+   "ref": "U1",
+   "number": "4",
+   "x": 152.675,
+   "y": 108.955,
+   "angle": 0.0,
+   "sizeX": 2.03,
+   "sizeY": 2.03,
+   "net": "Net-(P4-PM)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "F1"
+  },
+  {
+   "ref": "U1",
+   "number": "5",
+   "x": 149.225,
+   "y": 107.815,
+   "angle": 0.0,
+   "sizeX": 2.03,
+   "sizeY": 2.03,
+   "net": "Net-(P4-PM)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "F1"
+  },
+  {
+   "ref": "U1",
+   "number": "6",
+   "x": 145.765,
+   "y": 108.955,
+   "angle": 0.0,
+   "sizeX": 2.03,
+   "sizeY": 2.03,
+   "net": "Net-(P3-P1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "A"
+  },
+  {
+   "ref": "U1",
+   "number": "7",
+   "x": 143.615,
+   "y": 111.885,
+   "angle": 0.0,
+   "sizeX": 2.03,
+   "sizeY": 2.03,
+   "net": "Net-(U1A-G)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "G"
+  },
+  {
+   "ref": "U1",
+   "number": "8",
+   "x": 143.615,
+   "y": 115.495,
+   "angle": 0.0,
+   "sizeX": 2.03,
+   "sizeY": 2.03,
+   "net": "Net-(U1A-K)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "K"
+  },
+  {
+   "ref": "U1",
+   "number": "9",
+   "x": 145.765,
+   "y": 118.465,
+   "angle": 0.0,
+   "sizeX": 2.03,
+   "sizeY": 2.03,
+   "net": "Net-(P4-P1)",
+   "copperLayers": [
+    "F.Cu",
+    "B.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "F2"
+  }
+ ],
+ "vias": [],
+ "trackSegments": 59,
+ "trackArcs": 0,
+ "trackLengthByNet": {
+  "Net-(P1-PM)": 29.133802,
+  "Net-(P2-P1)": 19.128638,
+  "Net-(P3-P1)": 26.556281,
+  "Net-(P4-P1)": 11.286882,
+  "Net-(P4-PM)": 27.890062,
+  "Net-(U1A-G)": 68.59,
+  "Net-(U1A-K)": 11.839077,
+  "Net-(U1B-K)": 16.573686
+ },
+ "zones": [
+  {
+   "net": "GND",
+   "layer": "B.Cu",
+   "filledArea": 1254.389
+  }
+ ]
+}

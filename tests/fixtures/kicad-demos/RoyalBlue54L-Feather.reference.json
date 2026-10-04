@@ -1,0 +1,9938 @@
+{
+ "copperLayers": [
+  "F.Cu",
+  "In1.Cu",
+  "In2.Cu",
+  "In3.Cu",
+  "In4.Cu",
+  "In5.Cu",
+  "In6.Cu",
+  "B.Cu"
+ ],
+ "thickness": 1.6,
+ "outlineBBox": {
+  "x0": 119.05,
+  "y0": 93.5,
+  "x1": 177.57,
+  "y1": 116.46
+ },
+ "nets": [
+  "+BATT",
+  "/Connectors/ANALOG.A0",
+  "/Connectors/ANALOG.A1",
+  "/Connectors/ANALOG.A2",
+  "/Connectors/ANALOG.A3",
+  "/Connectors/ANALOG.A4",
+  "/Connectors/ANALOG.A5",
+  "/Connectors/DIG.D10",
+  "/Connectors/DIG.D11",
+  "/Connectors/DIG.D12",
+  "/Connectors/DIG.D13",
+  "/Connectors/DIG.D5",
+  "/Connectors/DIG.D6",
+  "/Connectors/DIG.D9",
+  "/Connectors/ENABLE",
+  "/Connectors/I2C.SCL",
+  "/Connectors/I2C.SDA",
+  "/Connectors/SHPHLD",
+  "/Connectors/SPI.MISO",
+  "/Connectors/SPI.MOSI",
+  "/Connectors/SPI.SCK",
+  "/Connectors/UART.RX",
+  "/Connectors/UART.TX",
+  "/Debugger/D+",
+  "/Debugger/D-",
+  "/Debugger/SWD_TRG.SWDCLK",
+  "/Debugger/SWD_TRG.SWDIO",
+  "/Debugger/SWD_TRG.~{RESET}",
+  "/Debugger/TRG_SWDCLK_NRF52",
+  "/Debugger/TRG_SWDIO_NRF52",
+  "/Debugger/TRG_~{RESET}_NRF52",
+  "/Debugger/UART_RX_NRF52",
+  "/Debugger/UART_TX_NRF52",
+  "/Debugger/USB.CC1",
+  "/Debugger/USB.CC2",
+  "/Debugger/USB.VBUS",
+  "/Debugger/nRF52_VDD",
+  "/nPM1300/NPM1300.INT",
+  "/nPM1300/NPM1300.SCL",
+  "/nPM1300/NPM1300.SDA",
+  "/nRF54L15/D2_FLASH",
+  "/nRF54L15/D3_FLASH",
+  "/nRF54L15/~{CS}_FLASH",
+  "GND",
+  "Net-(D1-A)",
+  "Net-(D1-K)",
+  "Net-(D3-BK)",
+  "Net-(D3-GK)",
+  "Net-(D3-RK)",
+  "Net-(J6-Pin_2)",
+  "Net-(J6-Pin_4)",
+  "Net-(J8-SWCLK)",
+  "Net-(J8-SWDIO)",
+  "Net-(J8-~{RESET})",
+  "Net-(JP1-A)",
+  "Net-(U1-P1.00{slash}XL1)",
+  "Net-(U1-P1.01{slash}XL2)",
+  "Net-(U2-SW2)",
+  "Net-(U2-VSET2)",
+  "Net-(U5-DEC1)",
+  "Net-(U5-DEC3)",
+  "Net-(U5-DEC4)",
+  "Net-(U5-DECUSB)",
+  "Net-(U5-XC1)",
+  "Net-(U5-XC2)",
+  "VBUS",
+  "VDD",
+  "VSYS",
+  "unconnected-(J1-Pin_3-Pad3)",
+  "unconnected-(J3-SBU1-PadA8)",
+  "unconnected-(J3-SBU2-PadB8)",
+  "unconnected-(J6-Pin_1-Pad1)",
+  "unconnected-(J6-Pin_3-Pad3)",
+  "unconnected-(J6-Pin_5-Pad5)",
+  "unconnected-(J8-SWO-Pad6)",
+  "unconnected-(U2-GPIO2-Pad9)",
+  "unconnected-(U2-GPIO3-Pad10)",
+  "unconnected-(U2-GPIO4-Pad11)",
+  "unconnected-(U2-SW1-Pad3)",
+  "unconnected-(U3-IO1-Pad1)",
+  "unconnected-(U5-ANT-Pad24)",
+  "unconnected-(U5-DCC-Pad39)",
+  "unconnected-(U5-DEC5{slash}NC-Pad21)",
+  "unconnected-(U5-P0.00{slash}XL1-Pad2)",
+  "unconnected-(U5-P0.01{slash}XL2-Pad3)",
+  "unconnected-(U5-P0.03{slash}AIN1-Pad31)",
+  "unconnected-(U5-P0.04{slash}AIN2-Pad4)",
+  "unconnected-(U5-P0.05{slash}AIN3-Pad5)",
+  "unconnected-(U5-P0.09{slash}NFC1-Pad22)",
+  "unconnected-(U5-P0.10{slash}NFC2-Pad23)",
+  "unconnected-(U5-P0.11-Pad7)",
+  "unconnected-(U5-P0.15-Pad14)",
+  "unconnected-(U5-P0.17-Pad15)",
+  "unconnected-(U5-P0.20-Pad17)",
+  "unconnected-(U5-P1.09-Pad6)"
+ ],
+ "footprints": [
+  "C1",
+  "C10",
+  "C11",
+  "C12",
+  "C13",
+  "C14",
+  "C15",
+  "C16",
+  "C17",
+  "C18",
+  "C19",
+  "C2",
+  "C20",
+  "C21",
+  "C22",
+  "C23",
+  "C24",
+  "C25",
+  "C3",
+  "C4",
+  "C5",
+  "C6",
+  "C7",
+  "C8",
+  "C9",
+  "D1",
+  "D3",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "J1",
+  "J2",
+  "J3",
+  "J4",
+  "J5",
+  "J6",
+  "J8",
+  "JP1",
+  "L1",
+  "LOGO1",
+  "R1",
+  "R2",
+  "R3",
+  "R4",
+  "R5",
+  "R6",
+  "R7",
+  "R8",
+  "SW1",
+  "SW2",
+  "TP1",
+  "TP10",
+  "TP11",
+  "TP12",
+  "TP2",
+  "TP3",
+  "TP4",
+  "TP5",
+  "TP6",
+  "TP7",
+  "TP8",
+  "TP9",
+  "U1",
+  "U2",
+  "U3",
+  "U4",
+  "U5",
+  "U6",
+  "Y1",
+  "Y2"
+ ],
+ "pads": [
+  {
+   "ref": "C1",
+   "number": "1",
+   "x": 151.14,
+   "y": 105.21,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C1",
+   "number": "2",
+   "x": 151.14,
+   "y": 106.17,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C10",
+   "number": "1",
+   "x": 140.44,
+   "y": 107.28,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C10",
+   "number": "2",
+   "x": 140.44,
+   "y": 108.24,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C11",
+   "number": "1",
+   "x": 150.045,
+   "y": 100.59,
+   "angle": 0.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "+BATT",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C11",
+   "number": "2",
+   "x": 151.595,
+   "y": 100.59,
+   "angle": 0.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C12",
+   "number": "1",
+   "x": 160.21,
+   "y": 109.14,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C12",
+   "number": "2",
+   "x": 160.21,
+   "y": 110.1,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C13",
+   "number": "1",
+   "x": 128.31,
+   "y": 111.855,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "Net-(J6-Pin_4)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C13",
+   "number": "2",
+   "x": 129.27,
+   "y": 111.855,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C14",
+   "number": "1",
+   "x": 127.31,
+   "y": 111.855,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "Net-(J6-Pin_2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C14",
+   "number": "2",
+   "x": 126.35,
+   "y": 111.855,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C15",
+   "number": "1",
+   "x": 138.59,
+   "y": 111.69,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C15",
+   "number": "2",
+   "x": 139.55,
+   "y": 111.69,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C16",
+   "number": "1",
+   "x": 134.44,
+   "y": 111.71,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C16",
+   "number": "2",
+   "x": 133.48,
+   "y": 111.71,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C17",
+   "number": "1",
+   "x": 135.87,
+   "y": 104.4,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C17",
+   "number": "2",
+   "x": 134.91,
+   "y": 104.4,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C18",
+   "number": "1",
+   "x": 129.93,
+   "y": 108.82,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C18",
+   "number": "2",
+   "x": 129.93,
+   "y": 109.78,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "Net-(U5-XC1)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C19",
+   "number": "1",
+   "x": 140.44,
+   "y": 110.05,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "Net-(U5-DEC1)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C19",
+   "number": "2",
+   "x": 140.44,
+   "y": 111.01,
+   "angle": 270.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C2",
+   "number": "1",
+   "x": 148.085,
+   "y": 108.67,
+   "angle": 0.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "VSYS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C2",
+   "number": "2",
+   "x": 149.635,
+   "y": 108.67,
+   "angle": 0.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C20",
+   "number": "1",
+   "x": 131.21,
+   "y": 112.06,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C20",
+   "number": "2",
+   "x": 132.17,
+   "y": 112.06,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "Net-(U5-XC2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C21",
+   "number": "1",
+   "x": 132.78,
+   "y": 107.74,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "Net-(U5-DEC3)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C21",
+   "number": "2",
+   "x": 131.82,
+   "y": 107.74,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C22",
+   "number": "1",
+   "x": 133.26,
+   "y": 106.78,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "Net-(U5-DEC4)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C22",
+   "number": "2",
+   "x": 132.3,
+   "y": 106.78,
+   "angle": 180.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C23",
+   "number": "1",
+   "x": 138.92,
+   "y": 104.57,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "Net-(U5-DECUSB)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C23",
+   "number": "2",
+   "x": 139.88,
+   "y": 104.57,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C24",
+   "number": "1",
+   "x": 158.06,
+   "y": 103.42,
+   "angle": 90.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C24",
+   "number": "2",
+   "x": 158.06,
+   "y": 102.46,
+   "angle": 90.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C25",
+   "number": "1",
+   "x": 153.23,
+   "y": 101.81,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C25",
+   "number": "2",
+   "x": 154.19,
+   "y": 101.81,
+   "angle": 0.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C3",
+   "number": "1",
+   "x": 146.615,
+   "y": 108.67,
+   "angle": 180.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "VSYS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C3",
+   "number": "2",
+   "x": 145.065,
+   "y": 108.67,
+   "angle": 180.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C4",
+   "number": "1",
+   "x": 148.58,
+   "y": 99.595,
+   "angle": 90.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "VSYS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C4",
+   "number": "2",
+   "x": 148.58,
+   "y": 98.045,
+   "angle": 90.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C5",
+   "number": "1",
+   "x": 147.01,
+   "y": 99.595,
+   "angle": 90.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "/Debugger/USB.VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C5",
+   "number": "2",
+   "x": 147.01,
+   "y": 98.045,
+   "angle": 90.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C6",
+   "number": "1",
+   "x": 144.88,
+   "y": 99.595,
+   "angle": 90.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C6",
+   "number": "2",
+   "x": 144.88,
+   "y": 98.045,
+   "angle": 90.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C7",
+   "number": "1",
+   "x": 140.44,
+   "y": 106.42,
+   "angle": 90.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C7",
+   "number": "2",
+   "x": 140.44,
+   "y": 105.46,
+   "angle": 90.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C8",
+   "number": "1",
+   "x": 150.37,
+   "y": 111.705,
+   "angle": 90.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "Net-(JP1-A)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C8",
+   "number": "2",
+   "x": 150.37,
+   "y": 110.155,
+   "angle": 90.0,
+   "sizeX": 0.9,
+   "sizeY": 0.95,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C9",
+   "number": "1",
+   "x": 160.26,
+   "y": 100.87,
+   "angle": 90.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "C9",
+   "number": "2",
+   "x": 160.26,
+   "y": 99.91,
+   "angle": 90.0,
+   "sizeX": 0.56,
+   "sizeY": 0.62,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "D1",
+   "number": "1",
+   "x": 165.6375,
+   "y": 111.65,
+   "angle": 180.0,
+   "sizeX": 0.875,
+   "sizeY": 0.95,
+   "net": "Net-(D1-K)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "K"
+  },
+  {
+   "ref": "D1",
+   "number": "2",
+   "x": 164.0625,
+   "y": 111.65,
+   "angle": 180.0,
+   "sizeX": 0.875,
+   "sizeY": 0.95,
+   "net": "Net-(D1-A)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "A"
+  },
+  {
+   "ref": "D3",
+   "number": "1",
+   "x": 142.48,
+   "y": 104.58,
+   "angle": 0.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "VSYS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "A"
+  },
+  {
+   "ref": "D3",
+   "number": "2",
+   "x": 143.28,
+   "y": 104.58,
+   "angle": 0.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "Net-(D3-RK)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "RK"
+  },
+  {
+   "ref": "D3",
+   "number": "3",
+   "x": 143.28,
+   "y": 105.38,
+   "angle": 0.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "Net-(D3-GK)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GK"
+  },
+  {
+   "ref": "D3",
+   "number": "4",
+   "x": 142.48,
+   "y": 105.38,
+   "angle": 0.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "Net-(D3-BK)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "BK"
+  },
+  {
+   "ref": "H1",
+   "number": "",
+   "x": 121.64,
+   "y": 96.09,
+   "angle": 0.0,
+   "sizeX": 2.5,
+   "sizeY": 2.5,
+   "net": "",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "H2",
+   "number": "",
+   "x": 174.98,
+   "y": 96.09,
+   "angle": 0.0,
+   "sizeX": 2.5,
+   "sizeY": 2.5,
+   "net": "",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "H3",
+   "number": "",
+   "x": 121.64,
+   "y": 113.87,
+   "angle": 0.0,
+   "sizeX": 2.5,
+   "sizeY": 2.5,
+   "net": "",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "H4",
+   "number": "",
+   "x": 174.98,
+   "y": 113.87,
+   "angle": 0.0,
+   "sizeX": 2.5,
+   "sizeY": 2.5,
+   "net": "",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "J1",
+   "number": "1",
+   "x": 133.07,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_1"
+  },
+  {
+   "ref": "J1",
+   "number": "1",
+   "x": 133.07,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_1"
+  },
+  {
+   "ref": "J1",
+   "number": "10",
+   "x": 155.93,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A5",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_10"
+  },
+  {
+   "ref": "J1",
+   "number": "10",
+   "x": 155.93,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A5",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_10"
+  },
+  {
+   "ref": "J1",
+   "number": "11",
+   "x": 158.47,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/SPI.SCK",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_11"
+  },
+  {
+   "ref": "J1",
+   "number": "11",
+   "x": 158.47,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/SPI.SCK",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_11"
+  },
+  {
+   "ref": "J1",
+   "number": "12",
+   "x": 161.01,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/SPI.MOSI",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_12"
+  },
+  {
+   "ref": "J1",
+   "number": "12",
+   "x": 161.01,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/SPI.MOSI",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_12"
+  },
+  {
+   "ref": "J1",
+   "number": "13",
+   "x": 163.55,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/SPI.MISO",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_13"
+  },
+  {
+   "ref": "J1",
+   "number": "13",
+   "x": 163.55,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/SPI.MISO",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_13"
+  },
+  {
+   "ref": "J1",
+   "number": "14",
+   "x": 166.09,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/UART.RX",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_14"
+  },
+  {
+   "ref": "J1",
+   "number": "14",
+   "x": 166.09,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/UART.RX",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_14"
+  },
+  {
+   "ref": "J1",
+   "number": "15",
+   "x": 168.63,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/UART.TX",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_15"
+  },
+  {
+   "ref": "J1",
+   "number": "15",
+   "x": 168.63,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/UART.TX",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_15"
+  },
+  {
+   "ref": "J1",
+   "number": "16",
+   "x": 171.17,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/SHPHLD",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_16"
+  },
+  {
+   "ref": "J1",
+   "number": "16",
+   "x": 171.17,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/SHPHLD",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_16"
+  },
+  {
+   "ref": "J1",
+   "number": "2",
+   "x": 135.61,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_2"
+  },
+  {
+   "ref": "J1",
+   "number": "2",
+   "x": 135.61,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_2"
+  },
+  {
+   "ref": "J1",
+   "number": "3",
+   "x": 138.15,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "unconnected-(J1-Pin_3-Pad3)",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "Pin_3"
+  },
+  {
+   "ref": "J1",
+   "number": "3",
+   "x": 138.15,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "unconnected-(J1-Pin_3-Pad3)",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "Pin_3"
+  },
+  {
+   "ref": "J1",
+   "number": "4",
+   "x": 140.69,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_4"
+  },
+  {
+   "ref": "J1",
+   "number": "4",
+   "x": 140.69,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_4"
+  },
+  {
+   "ref": "J1",
+   "number": "5",
+   "x": 143.23,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A0",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_5"
+  },
+  {
+   "ref": "J1",
+   "number": "5",
+   "x": 143.23,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A0",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_5"
+  },
+  {
+   "ref": "J1",
+   "number": "6",
+   "x": 145.77,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A1",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_6"
+  },
+  {
+   "ref": "J1",
+   "number": "6",
+   "x": 145.77,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A1",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_6"
+  },
+  {
+   "ref": "J1",
+   "number": "7",
+   "x": 148.31,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A2",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_7"
+  },
+  {
+   "ref": "J1",
+   "number": "7",
+   "x": 148.31,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A2",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_7"
+  },
+  {
+   "ref": "J1",
+   "number": "8",
+   "x": 150.85,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A3",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_8"
+  },
+  {
+   "ref": "J1",
+   "number": "8",
+   "x": 150.85,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A3",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_8"
+  },
+  {
+   "ref": "J1",
+   "number": "9",
+   "x": 153.39,
+   "y": 115.14,
+   "angle": 270.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A4",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_9"
+  },
+  {
+   "ref": "J1",
+   "number": "9",
+   "x": 153.39,
+   "y": 116.41,
+   "angle": 270.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/ANALOG.A4",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_9"
+  },
+  {
+   "ref": "J2",
+   "number": "1",
+   "x": 143.23,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "+BATT",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_1"
+  },
+  {
+   "ref": "J2",
+   "number": "1",
+   "x": 143.23,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "+BATT",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_1"
+  },
+  {
+   "ref": "J2",
+   "number": "1",
+   "x": 143.23,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "+BATT",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_1"
+  },
+  {
+   "ref": "J2",
+   "number": "10",
+   "x": 166.09,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D5",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_10"
+  },
+  {
+   "ref": "J2",
+   "number": "10",
+   "x": 166.09,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D5",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_10"
+  },
+  {
+   "ref": "J2",
+   "number": "11",
+   "x": 168.63,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/I2C.SCL",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_11"
+  },
+  {
+   "ref": "J2",
+   "number": "11",
+   "x": 168.63,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/I2C.SCL",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_11"
+  },
+  {
+   "ref": "J2",
+   "number": "12",
+   "x": 171.17,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/I2C.SDA",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_12"
+  },
+  {
+   "ref": "J2",
+   "number": "12",
+   "x": 171.17,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/I2C.SDA",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_12"
+  },
+  {
+   "ref": "J2",
+   "number": "2",
+   "x": 145.77,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/ENABLE",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_2"
+  },
+  {
+   "ref": "J2",
+   "number": "2",
+   "x": 145.77,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/ENABLE",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_2"
+  },
+  {
+   "ref": "J2",
+   "number": "3",
+   "x": 148.31,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "VSYS",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_3"
+  },
+  {
+   "ref": "J2",
+   "number": "3",
+   "x": 148.31,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "VSYS",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_3"
+  },
+  {
+   "ref": "J2",
+   "number": "4",
+   "x": 150.85,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D13",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_4"
+  },
+  {
+   "ref": "J2",
+   "number": "4",
+   "x": 150.85,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D13",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_4"
+  },
+  {
+   "ref": "J2",
+   "number": "5",
+   "x": 153.39,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D12",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_5"
+  },
+  {
+   "ref": "J2",
+   "number": "5",
+   "x": 153.39,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D12",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_5"
+  },
+  {
+   "ref": "J2",
+   "number": "6",
+   "x": 155.93,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D11",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_6"
+  },
+  {
+   "ref": "J2",
+   "number": "6",
+   "x": 155.93,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D11",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_6"
+  },
+  {
+   "ref": "J2",
+   "number": "7",
+   "x": 158.47,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D10",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_7"
+  },
+  {
+   "ref": "J2",
+   "number": "7",
+   "x": 158.47,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D10",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_7"
+  },
+  {
+   "ref": "J2",
+   "number": "8",
+   "x": 161.01,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D9",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_8"
+  },
+  {
+   "ref": "J2",
+   "number": "8",
+   "x": 161.01,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D9",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_8"
+  },
+  {
+   "ref": "J2",
+   "number": "9",
+   "x": 163.55,
+   "y": 93.55,
+   "angle": 90.0,
+   "sizeX": 2.12,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D6",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_9"
+  },
+  {
+   "ref": "J2",
+   "number": "9",
+   "x": 163.55,
+   "y": 94.82,
+   "angle": 90.0,
+   "sizeX": 1.7,
+   "sizeY": 1.7,
+   "net": "/Connectors/DIG.D6",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_9"
+  },
+  {
+   "ref": "J3",
+   "number": "",
+   "x": 123.96,
+   "y": 102.09,
+   "angle": 270.0,
+   "sizeX": 0.65,
+   "sizeY": 0.65,
+   "net": "",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "J3",
+   "number": "",
+   "x": 123.96,
+   "y": 107.87,
+   "angle": 270.0,
+   "sizeX": 0.65,
+   "sizeY": 0.65,
+   "net": "",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "J3",
+   "number": "A1",
+   "x": 125.405,
+   "y": 101.73,
+   "angle": 270.0,
+   "sizeX": 0.6,
+   "sizeY": 1.45,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "J3",
+   "number": "A12",
+   "x": 125.405,
+   "y": 108.23,
+   "angle": 270.0,
+   "sizeX": 0.6,
+   "sizeY": 1.45,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "J3",
+   "number": "A4",
+   "x": 125.405,
+   "y": 102.53,
+   "angle": 270.0,
+   "sizeX": 0.6,
+   "sizeY": 1.45,
+   "net": "/Debugger/USB.VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VBUS"
+  },
+  {
+   "ref": "J3",
+   "number": "A5",
+   "x": 125.405,
+   "y": 103.73,
+   "angle": 270.0,
+   "sizeX": 0.3,
+   "sizeY": 1.45,
+   "net": "/Debugger/USB.CC1",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "CC1"
+  },
+  {
+   "ref": "J3",
+   "number": "A6",
+   "x": 125.405,
+   "y": 104.73,
+   "angle": 270.0,
+   "sizeX": 0.3,
+   "sizeY": 1.45,
+   "net": "/Debugger/D+",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "D+"
+  },
+  {
+   "ref": "J3",
+   "number": "A7",
+   "x": 125.405,
+   "y": 105.23,
+   "angle": 270.0,
+   "sizeX": 0.3,
+   "sizeY": 1.45,
+   "net": "/Debugger/D-",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "D-"
+  },
+  {
+   "ref": "J3",
+   "number": "A8",
+   "x": 125.405,
+   "y": 106.23,
+   "angle": 270.0,
+   "sizeX": 0.3,
+   "sizeY": 1.45,
+   "net": "unconnected-(J3-SBU1-PadA8)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional+no_connect",
+   "pinFunction": "SBU1"
+  },
+  {
+   "ref": "J3",
+   "number": "A9",
+   "x": 125.405,
+   "y": 107.43,
+   "angle": 270.0,
+   "sizeX": 0.6,
+   "sizeY": 1.45,
+   "net": "/Debugger/USB.VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VBUS"
+  },
+  {
+   "ref": "J3",
+   "number": "B1",
+   "x": 125.405,
+   "y": 108.23,
+   "angle": 270.0,
+   "sizeX": 0.6,
+   "sizeY": 1.45,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "J3",
+   "number": "B12",
+   "x": 125.405,
+   "y": 101.73,
+   "angle": 270.0,
+   "sizeX": 0.6,
+   "sizeY": 1.45,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "J3",
+   "number": "B4",
+   "x": 125.405,
+   "y": 107.43,
+   "angle": 270.0,
+   "sizeX": 0.6,
+   "sizeY": 1.45,
+   "net": "/Debugger/USB.VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VBUS"
+  },
+  {
+   "ref": "J3",
+   "number": "B5",
+   "x": 125.405,
+   "y": 106.73,
+   "angle": 270.0,
+   "sizeX": 0.3,
+   "sizeY": 1.45,
+   "net": "/Debugger/USB.CC2",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "CC2"
+  },
+  {
+   "ref": "J3",
+   "number": "B6",
+   "x": 125.405,
+   "y": 105.73,
+   "angle": 270.0,
+   "sizeX": 0.3,
+   "sizeY": 1.45,
+   "net": "/Debugger/D+",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "D+"
+  },
+  {
+   "ref": "J3",
+   "number": "B7",
+   "x": 125.405,
+   "y": 104.23,
+   "angle": 270.0,
+   "sizeX": 0.3,
+   "sizeY": 1.45,
+   "net": "/Debugger/D-",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "D-"
+  },
+  {
+   "ref": "J3",
+   "number": "B8",
+   "x": 125.405,
+   "y": 103.23,
+   "angle": 270.0,
+   "sizeX": 0.3,
+   "sizeY": 1.45,
+   "net": "unconnected-(J3-SBU2-PadB8)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional+no_connect",
+   "pinFunction": "SBU2"
+  },
+  {
+   "ref": "J3",
+   "number": "B9",
+   "x": 125.405,
+   "y": 102.53,
+   "angle": 270.0,
+   "sizeX": 0.6,
+   "sizeY": 1.45,
+   "net": "/Debugger/USB.VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VBUS"
+  },
+  {
+   "ref": "J3",
+   "number": "S1",
+   "x": 120.31,
+   "y": 100.66,
+   "angle": 270.0,
+   "sizeX": 1.0,
+   "sizeY": 1.6,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "SHIELD"
+  },
+  {
+   "ref": "J3",
+   "number": "S1",
+   "x": 120.31,
+   "y": 109.3,
+   "angle": 270.0,
+   "sizeX": 1.0,
+   "sizeY": 1.6,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "SHIELD"
+  },
+  {
+   "ref": "J3",
+   "number": "S1",
+   "x": 124.49,
+   "y": 100.66,
+   "angle": 270.0,
+   "sizeX": 1.0,
+   "sizeY": 2.1,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "SHIELD"
+  },
+  {
+   "ref": "J3",
+   "number": "S1",
+   "x": 124.49,
+   "y": 109.3,
+   "angle": 270.0,
+   "sizeX": 1.0,
+   "sizeY": 2.1,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "SHIELD"
+  },
+  {
+   "ref": "J4",
+   "number": "1",
+   "x": 137.88,
+   "y": 101.308,
+   "angle": 180.0,
+   "sizeX": 1.0,
+   "sizeY": 3.5,
+   "net": "+BATT",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_1"
+  },
+  {
+   "ref": "J4",
+   "number": "2",
+   "x": 135.88,
+   "y": 101.308,
+   "angle": 180.0,
+   "sizeX": 1.0,
+   "sizeY": 3.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_2"
+  },
+  {
+   "ref": "J4",
+   "number": "MP",
+   "x": 133.53,
+   "y": 95.558,
+   "angle": 180.0,
+   "sizeX": 1.5,
+   "sizeY": 3.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "MountPin"
+  },
+  {
+   "ref": "J4",
+   "number": "MP",
+   "x": 140.23,
+   "y": 95.558,
+   "angle": 180.0,
+   "sizeX": 1.5,
+   "sizeY": 3.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "MountPin"
+  },
+  {
+   "ref": "J5",
+   "number": "1",
+   "x": 129.49,
+   "y": 98.633,
+   "angle": 180.0,
+   "sizeX": 0.6,
+   "sizeY": 1.55,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_1"
+  },
+  {
+   "ref": "J5",
+   "number": "2",
+   "x": 128.49,
+   "y": 98.633,
+   "angle": 180.0,
+   "sizeX": 0.6,
+   "sizeY": 1.55,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_2"
+  },
+  {
+   "ref": "J5",
+   "number": "3",
+   "x": 127.49,
+   "y": 98.633,
+   "angle": 180.0,
+   "sizeX": 0.6,
+   "sizeY": 1.55,
+   "net": "/Connectors/I2C.SDA",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_3"
+  },
+  {
+   "ref": "J5",
+   "number": "4",
+   "x": 126.49,
+   "y": 98.633,
+   "angle": 180.0,
+   "sizeX": 0.6,
+   "sizeY": 1.55,
+   "net": "/Connectors/I2C.SCL",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_4"
+  },
+  {
+   "ref": "J5",
+   "number": "MP",
+   "x": 125.19,
+   "y": 94.758,
+   "angle": 180.0,
+   "sizeX": 1.2,
+   "sizeY": 1.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "MountPin"
+  },
+  {
+   "ref": "J5",
+   "number": "MP",
+   "x": 130.79,
+   "y": 94.758,
+   "angle": 180.0,
+   "sizeX": 1.2,
+   "sizeY": 1.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "MountPin"
+  },
+  {
+   "ref": "J6",
+   "number": "1",
+   "x": 126.81,
+   "y": 113.28,
+   "angle": 0.0,
+   "sizeX": 0.3,
+   "sizeY": 0.8,
+   "net": "unconnected-(J6-Pin_1-Pad1)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "Pin_1"
+  },
+  {
+   "ref": "J6",
+   "number": "2",
+   "x": 127.31,
+   "y": 113.28,
+   "angle": 0.0,
+   "sizeX": 0.3,
+   "sizeY": 0.8,
+   "net": "Net-(J6-Pin_2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_2"
+  },
+  {
+   "ref": "J6",
+   "number": "3",
+   "x": 127.81,
+   "y": 113.28,
+   "angle": 0.0,
+   "sizeX": 0.3,
+   "sizeY": 0.8,
+   "net": "unconnected-(J6-Pin_3-Pad3)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "Pin_3"
+  },
+  {
+   "ref": "J6",
+   "number": "4",
+   "x": 128.31,
+   "y": 113.28,
+   "angle": 0.0,
+   "sizeX": 0.3,
+   "sizeY": 0.8,
+   "net": "Net-(J6-Pin_4)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "Pin_4"
+  },
+  {
+   "ref": "J6",
+   "number": "5",
+   "x": 128.81,
+   "y": 113.28,
+   "angle": 0.0,
+   "sizeX": 0.3,
+   "sizeY": 0.8,
+   "net": "unconnected-(J6-Pin_5-Pad5)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "Pin_5"
+  },
+  {
+   "ref": "J6",
+   "number": "MP",
+   "x": 125.81,
+   "y": 115.78,
+   "angle": 0.0,
+   "sizeX": 0.4,
+   "sizeY": 0.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "MountPin"
+  },
+  {
+   "ref": "J6",
+   "number": "MP",
+   "x": 129.81,
+   "y": 115.78,
+   "angle": 0.0,
+   "sizeX": 0.4,
+   "sizeY": 0.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "MountPin"
+  },
+  {
+   "ref": "J8",
+   "number": "",
+   "x": 127.594,
+   "y": 102.4325,
+   "angle": 90.0,
+   "sizeX": 0.9906,
+   "sizeY": 0.9906,
+   "net": "",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "J8",
+   "number": "",
+   "x": 128.61,
+   "y": 107.5125,
+   "angle": 90.0,
+   "sizeX": 0.9906,
+   "sizeY": 0.9906,
+   "net": "",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "J8",
+   "number": "",
+   "x": 129.626,
+   "y": 102.4325,
+   "angle": 90.0,
+   "sizeX": 0.9906,
+   "sizeY": 0.9906,
+   "net": "",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "J8",
+   "number": "1",
+   "x": 127.975,
+   "y": 106.2425,
+   "angle": 90.0,
+   "sizeX": 0.7874,
+   "sizeY": 0.7874,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "VCC"
+  },
+  {
+   "ref": "J8",
+   "number": "2",
+   "x": 129.245,
+   "y": 106.2425,
+   "angle": 90.0,
+   "sizeX": 0.7874,
+   "sizeY": 0.7874,
+   "net": "Net-(J8-SWDIO)",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "SWDIO"
+  },
+  {
+   "ref": "J8",
+   "number": "3",
+   "x": 127.975,
+   "y": 104.9725,
+   "angle": 90.0,
+   "sizeX": 0.7874,
+   "sizeY": 0.7874,
+   "net": "Net-(J8-~{RESET})",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "open_collector",
+   "pinFunction": "~{RESET}"
+  },
+  {
+   "ref": "J8",
+   "number": "4",
+   "x": 129.245,
+   "y": 104.9725,
+   "angle": 90.0,
+   "sizeX": 0.7874,
+   "sizeY": 0.7874,
+   "net": "Net-(J8-SWCLK)",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "output",
+   "pinFunction": "SWCLK"
+  },
+  {
+   "ref": "J8",
+   "number": "5",
+   "x": 127.975,
+   "y": 103.7025,
+   "angle": 90.0,
+   "sizeX": 0.7874,
+   "sizeY": 0.7874,
+   "net": "GND",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "J8",
+   "number": "6",
+   "x": 129.245,
+   "y": 103.7025,
+   "angle": 90.0,
+   "sizeX": 0.7874,
+   "sizeY": 0.7874,
+   "net": "unconnected-(J8-SWO-Pad6)",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "input+no_connect",
+   "pinFunction": "SWO"
+  },
+  {
+   "ref": "JP1",
+   "number": "1",
+   "x": 152.86,
+   "y": 106.98,
+   "angle": 90.0,
+   "sizeX": 1.0,
+   "sizeY": 0.5,
+   "net": "Net-(JP1-A)",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "A"
+  },
+  {
+   "ref": "JP1",
+   "number": "2",
+   "x": 152.86,
+   "y": 105.68,
+   "angle": 90.0,
+   "sizeX": 1.0,
+   "sizeY": 0.5,
+   "net": "VDD",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "B"
+  },
+  {
+   "ref": "L1",
+   "number": "1",
+   "x": 148.86,
+   "y": 111.7175,
+   "angle": 90.0,
+   "sizeX": 0.875,
+   "sizeY": 0.95,
+   "net": "Net-(JP1-A)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "L1",
+   "number": "2",
+   "x": 148.86,
+   "y": 110.1425,
+   "angle": 90.0,
+   "sizeX": 0.875,
+   "sizeY": 0.95,
+   "net": "Net-(U2-SW2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R1",
+   "number": "1",
+   "x": 155.25,
+   "y": 108.04,
+   "angle": 0.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R1",
+   "number": "2",
+   "x": 156.27,
+   "y": 108.04,
+   "angle": 0.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R2",
+   "number": "1",
+   "x": 127.103416,
+   "y": 101.355058,
+   "angle": 90.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R2",
+   "number": "2",
+   "x": 127.103416,
+   "y": 100.335058,
+   "angle": 90.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "/Connectors/I2C.SCL",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R3",
+   "number": "1",
+   "x": 128.043416,
+   "y": 101.355058,
+   "angle": 90.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R3",
+   "number": "2",
+   "x": 128.043416,
+   "y": 100.335058,
+   "angle": 90.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "/Connectors/I2C.SDA",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R4",
+   "number": "1",
+   "x": 151.2,
+   "y": 102.8,
+   "angle": 90.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "Net-(U2-VSET2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R4",
+   "number": "2",
+   "x": 151.2,
+   "y": 101.78,
+   "angle": 90.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R5",
+   "number": "1",
+   "x": 170.21,
+   "y": 112.07,
+   "angle": 180.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R5",
+   "number": "2",
+   "x": 169.19,
+   "y": 112.07,
+   "angle": 180.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "/nPM1300/NPM1300.SCL",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R6",
+   "number": "1",
+   "x": 166.94,
+   "y": 111.65,
+   "angle": 0.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "Net-(D1-K)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R6",
+   "number": "2",
+   "x": 167.96,
+   "y": 111.65,
+   "angle": 0.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R7",
+   "number": "1",
+   "x": 170.21,
+   "y": 111.13,
+   "angle": 180.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R7",
+   "number": "2",
+   "x": 169.19,
+   "y": 111.13,
+   "angle": 180.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "/nPM1300/NPM1300.SDA",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R8",
+   "number": "1",
+   "x": 143.11,
+   "y": 107.01,
+   "angle": 270.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "R8",
+   "number": "2",
+   "x": 143.11,
+   "y": 108.03,
+   "angle": 270.0,
+   "sizeX": 0.54,
+   "sizeY": 0.64,
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "SW1",
+   "number": "1",
+   "x": 153.685,
+   "y": 111.605,
+   "angle": 180.0,
+   "sizeX": 1.05,
+   "sizeY": 0.65,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "SW1",
+   "number": "1",
+   "x": 157.835,
+   "y": 111.605,
+   "angle": 180.0,
+   "sizeX": 1.05,
+   "sizeY": 0.65,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "SW1",
+   "number": "2",
+   "x": 153.71,
+   "y": 109.455,
+   "angle": 180.0,
+   "sizeX": 1.05,
+   "sizeY": 0.65,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "2"
+  },
+  {
+   "ref": "SW1",
+   "number": "2",
+   "x": 157.835,
+   "y": 109.455,
+   "angle": 180.0,
+   "sizeX": 1.05,
+   "sizeY": 0.65,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "2"
+  },
+  {
+   "ref": "SW2",
+   "number": "1",
+   "x": 153.685,
+   "y": 100.505,
+   "angle": 180.0,
+   "sizeX": 1.05,
+   "sizeY": 0.65,
+   "net": "/Connectors/DIG.D11",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "SW2",
+   "number": "1",
+   "x": 157.835,
+   "y": 100.505,
+   "angle": 180.0,
+   "sizeX": 1.05,
+   "sizeY": 0.65,
+   "net": "/Connectors/DIG.D11",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "SW2",
+   "number": "2",
+   "x": 153.71,
+   "y": 98.355,
+   "angle": 180.0,
+   "sizeX": 1.05,
+   "sizeY": 0.65,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "2"
+  },
+  {
+   "ref": "SW2",
+   "number": "2",
+   "x": 157.835,
+   "y": 98.355,
+   "angle": 180.0,
+   "sizeX": 1.05,
+   "sizeY": 0.65,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "2"
+  },
+  {
+   "ref": "TP1",
+   "number": "1",
+   "x": 170.36,
+   "y": 102.48,
+   "angle": 90.0,
+   "sizeX": 2.0,
+   "sizeY": 2.0,
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP10",
+   "number": "1",
+   "x": 136.7,
+   "y": 99.98,
+   "angle": 180.0,
+   "sizeX": 1.5,
+   "sizeY": 1.5,
+   "net": "Net-(J8-~{RESET})",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP11",
+   "number": "1",
+   "x": 139.1,
+   "y": 102.38,
+   "angle": 180.0,
+   "sizeX": 1.5,
+   "sizeY": 1.5,
+   "net": "Net-(J8-SWCLK)",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP12",
+   "number": "1",
+   "x": 136.7,
+   "y": 102.38,
+   "angle": 180.0,
+   "sizeX": 1.5,
+   "sizeY": 1.5,
+   "net": "Net-(J8-SWDIO)",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP2",
+   "number": "1",
+   "x": 165.36,
+   "y": 102.48,
+   "angle": 90.0,
+   "sizeX": 2.0,
+   "sizeY": 2.0,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP3",
+   "number": "1",
+   "x": 170.36,
+   "y": 107.48,
+   "angle": 90.0,
+   "sizeX": 2.0,
+   "sizeY": 2.0,
+   "net": "/Debugger/SWD_TRG.SWDCLK",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP4",
+   "number": "1",
+   "x": 165.51,
+   "y": 107.48,
+   "angle": 90.0,
+   "sizeX": 2.0,
+   "sizeY": 2.0,
+   "net": "GND",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP5",
+   "number": "1",
+   "x": 122.3,
+   "y": 101.38,
+   "angle": 270.0,
+   "sizeX": 1.5,
+   "sizeY": 1.5,
+   "net": "/Debugger/USB.VBUS",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP6",
+   "number": "1",
+   "x": 122.3,
+   "y": 108.58,
+   "angle": 270.0,
+   "sizeX": 1.5,
+   "sizeY": 1.5,
+   "net": "/Debugger/USB.CC2",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP7",
+   "number": "1",
+   "x": 122.4,
+   "y": 106.18,
+   "angle": 90.0,
+   "sizeX": 1.5,
+   "sizeY": 1.5,
+   "net": "/Debugger/D+",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP8",
+   "number": "1",
+   "x": 122.4,
+   "y": 103.78,
+   "angle": 90.0,
+   "sizeX": 1.5,
+   "sizeY": 1.5,
+   "net": "/Debugger/D-",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "TP9",
+   "number": "1",
+   "x": 139.1,
+   "y": 99.98,
+   "angle": 180.0,
+   "sizeX": 1.5,
+   "sizeY": 1.5,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "U1",
+   "number": "A1",
+   "x": 168.92,
+   "y": 100.93,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "A3",
+   "x": 167.12,
+   "y": 100.93,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/UART.RX",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.09"
+  },
+  {
+   "ref": "U1",
+   "number": "A9",
+   "x": 161.47,
+   "y": 100.93,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "A9",
+   "x": 161.72,
+   "y": 100.93,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "B1",
+   "x": 168.92,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "B2",
+   "x": 168.02,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/UART.TX",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.10"
+  },
+  {
+   "ref": "U1",
+   "number": "B3",
+   "x": 167.12,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/I2C.SDA",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.11/AIN4"
+  },
+  {
+   "ref": "U1",
+   "number": "B4",
+   "x": 166.22,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/ANALOG.A4",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.12/AIN5"
+  },
+  {
+   "ref": "U1",
+   "number": "B5",
+   "x": 165.32,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/ANALOG.A5",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.13/AIN6"
+  },
+  {
+   "ref": "U1",
+   "number": "B6",
+   "x": 164.42,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/DIG.D5",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.14/AIN7"
+  },
+  {
+   "ref": "U1",
+   "number": "B7",
+   "x": 163.52,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "B8",
+   "x": 162.62,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "VDD"
+  },
+  {
+   "ref": "U1",
+   "number": "B9",
+   "x": 161.47,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "B9",
+   "x": 161.72,
+   "y": 101.83,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "C8",
+   "x": 162.62,
+   "y": 102.73,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VDD"
+  },
+  {
+   "ref": "U1",
+   "number": "C9",
+   "x": 161.47,
+   "y": 102.73,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "Net-(U1-P1.01{slash}XL2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.01/XL2"
+  },
+  {
+   "ref": "U1",
+   "number": "C9",
+   "x": 161.72,
+   "y": 102.73,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "Net-(U1-P1.01{slash}XL2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.01/XL2"
+  },
+  {
+   "ref": "U1",
+   "number": "D1",
+   "x": 168.92,
+   "y": 103.63,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "D8",
+   "x": 162.62,
+   "y": 103.63,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "Net-(U1-P1.00{slash}XL1)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.00/XL1"
+  },
+  {
+   "ref": "U1",
+   "number": "D9",
+   "x": 161.47,
+   "y": 103.63,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "Net-(J6-Pin_2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.02/NFC1"
+  },
+  {
+   "ref": "U1",
+   "number": "D9",
+   "x": 161.72,
+   "y": 103.63,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "Net-(J6-Pin_2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.02/NFC1"
+  },
+  {
+   "ref": "U1",
+   "number": "E1",
+   "x": 168.92,
+   "y": 104.53,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "E8",
+   "x": 162.62,
+   "y": 104.53,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "Net-(J6-Pin_4)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.03/NFC2"
+  },
+  {
+   "ref": "U1",
+   "number": "E9",
+   "x": 161.47,
+   "y": 104.53,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "/Connectors/ANALOG.A0",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.04/AIN0"
+  },
+  {
+   "ref": "U1",
+   "number": "E9",
+   "x": 161.72,
+   "y": 104.53,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/ANALOG.A0",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.04/AIN0"
+  },
+  {
+   "ref": "U1",
+   "number": "F1",
+   "x": 168.92,
+   "y": 105.43,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "F8",
+   "x": 162.62,
+   "y": 105.43,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/ANALOG.A1",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.05/AIN1"
+  },
+  {
+   "ref": "U1",
+   "number": "F9",
+   "x": 161.47,
+   "y": 105.43,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "/Connectors/ANALOG.A2",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.06/AIN2"
+  },
+  {
+   "ref": "U1",
+   "number": "F9",
+   "x": 161.72,
+   "y": 105.43,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/ANALOG.A2",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.06/AIN2"
+  },
+  {
+   "ref": "U1",
+   "number": "G2",
+   "x": 168.02,
+   "y": 106.33,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "~{RESET}"
+  },
+  {
+   "ref": "U1",
+   "number": "G8",
+   "x": 162.62,
+   "y": 106.33,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/I2C.SCL",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.08"
+  },
+  {
+   "ref": "U1",
+   "number": "G9",
+   "x": 161.47,
+   "y": 106.33,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "/Connectors/ANALOG.A3",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.07/AIN3"
+  },
+  {
+   "ref": "U1",
+   "number": "G9",
+   "x": 161.72,
+   "y": 106.33,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/ANALOG.A3",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P1.07/AIN3"
+  },
+  {
+   "ref": "U1",
+   "number": "H2",
+   "x": 168.02,
+   "y": 107.23,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/nPM1300/NPM1300.SDA",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P0.04"
+  },
+  {
+   "ref": "U1",
+   "number": "H8",
+   "x": 162.62,
+   "y": 107.23,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U1",
+   "number": "H9",
+   "x": 161.47,
+   "y": 107.23,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "/nRF54L15/D3_FLASH",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.00"
+  },
+  {
+   "ref": "U1",
+   "number": "H9",
+   "x": 161.72,
+   "y": 107.23,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/nRF54L15/D3_FLASH",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.00"
+  },
+  {
+   "ref": "U1",
+   "number": "J2",
+   "x": 168.02,
+   "y": 108.13,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/nPM1300/NPM1300.SCL",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P0.03"
+  },
+  {
+   "ref": "U1",
+   "number": "J3",
+   "x": 167.12,
+   "y": 108.13,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "SWDIO"
+  },
+  {
+   "ref": "U1",
+   "number": "J4",
+   "x": 166.22,
+   "y": 108.13,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/DIG.D11",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P0.00"
+  },
+  {
+   "ref": "U1",
+   "number": "J5",
+   "x": 165.32,
+   "y": 108.13,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/DIG.D12",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.09"
+  },
+  {
+   "ref": "U1",
+   "number": "J6",
+   "x": 164.42,
+   "y": 108.13,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/DIG.D13",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.07"
+  },
+  {
+   "ref": "U1",
+   "number": "J7",
+   "x": 163.52,
+   "y": 108.13,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/nRF54L15/D2_FLASH",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.03"
+  },
+  {
+   "ref": "U1",
+   "number": "J8",
+   "x": 162.62,
+   "y": 108.13,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/SPI.MOSI",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.02"
+  },
+  {
+   "ref": "U1",
+   "number": "J9",
+   "x": 161.47,
+   "y": 108.13,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "/Connectors/SPI.SCK",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.01"
+  },
+  {
+   "ref": "U1",
+   "number": "J9",
+   "x": 161.72,
+   "y": 108.13,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/SPI.SCK",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.01"
+  },
+  {
+   "ref": "U1",
+   "number": "K2",
+   "x": 168.02,
+   "y": 109.03,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/nPM1300/NPM1300.INT",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P0.02"
+  },
+  {
+   "ref": "U1",
+   "number": "K3",
+   "x": 167.12,
+   "y": 109.03,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Debugger/SWD_TRG.SWDCLK",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "SWDCLK"
+  },
+  {
+   "ref": "U1",
+   "number": "K4",
+   "x": 166.22,
+   "y": 109.03,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/DIG.D6",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P0.01"
+  },
+  {
+   "ref": "U1",
+   "number": "K5",
+   "x": 165.32,
+   "y": 109.03,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/DIG.D9",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.10"
+  },
+  {
+   "ref": "U1",
+   "number": "K6",
+   "x": 164.42,
+   "y": 109.03,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/DIG.D10",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.08"
+  },
+  {
+   "ref": "U1",
+   "number": "K7",
+   "x": 163.52,
+   "y": 109.03,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "Net-(D1-A)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.06"
+  },
+  {
+   "ref": "U1",
+   "number": "K8",
+   "x": 162.62,
+   "y": 109.03,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/nRF54L15/~{CS}_FLASH",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.05"
+  },
+  {
+   "ref": "U1",
+   "number": "K9",
+   "x": 161.47,
+   "y": 109.03,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.5,
+   "net": "/Connectors/SPI.MISO",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.04"
+  },
+  {
+   "ref": "U1",
+   "number": "K9",
+   "x": 161.72,
+   "y": 109.03,
+   "angle": 270.0,
+   "sizeX": 0.4,
+   "sizeY": 0.4,
+   "net": "/Connectors/SPI.MISO",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "P2.04"
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 146.18,
+   "y": 103.06,
+   "angle": 90.0,
+   "sizeX": 0.554596,
+   "sizeY": 0.554596,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 146.18,
+   "y": 103.96,
+   "angle": 90.0,
+   "sizeX": 0.568298,
+   "sizeY": 0.568298,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 146.18,
+   "y": 104.96,
+   "angle": 90.0,
+   "sizeX": 0.568298,
+   "sizeY": 0.568298,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 146.18,
+   "y": 105.86,
+   "angle": 90.0,
+   "sizeX": 0.554596,
+   "sizeY": 0.554596,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 147.08,
+   "y": 103.06,
+   "angle": 90.0,
+   "sizeX": 0.568298,
+   "sizeY": 0.568298,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 147.08,
+   "y": 103.96,
+   "angle": 90.0,
+   "sizeX": 0.806226,
+   "sizeY": 0.806226,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 147.08,
+   "y": 104.96,
+   "angle": 90.0,
+   "sizeX": 0.806226,
+   "sizeY": 0.806226,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 147.08,
+   "y": 105.86,
+   "angle": 90.0,
+   "sizeX": 0.568298,
+   "sizeY": 0.568298,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 148.08,
+   "y": 103.06,
+   "angle": 90.0,
+   "sizeX": 0.568298,
+   "sizeY": 0.568298,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 148.08,
+   "y": 103.96,
+   "angle": 90.0,
+   "sizeX": 0.806226,
+   "sizeY": 0.806226,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 148.08,
+   "y": 104.96,
+   "angle": 90.0,
+   "sizeX": 0.806226,
+   "sizeY": 0.806226,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 148.08,
+   "y": 105.86,
+   "angle": 90.0,
+   "sizeX": 0.568298,
+   "sizeY": 0.568298,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 148.98,
+   "y": 103.06,
+   "angle": 90.0,
+   "sizeX": 0.554596,
+   "sizeY": 0.554596,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 148.98,
+   "y": 103.96,
+   "angle": 90.0,
+   "sizeX": 0.568298,
+   "sizeY": 0.568298,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 148.98,
+   "y": 104.96,
+   "angle": 90.0,
+   "sizeX": 0.568298,
+   "sizeY": 0.568298,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "",
+   "x": 148.98,
+   "y": 105.86,
+   "angle": 90.0,
+   "sizeX": 0.554596,
+   "sizeY": 0.554596,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U2",
+   "number": "1",
+   "x": 145.83,
+   "y": 106.91,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "VSYS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_out",
+   "pinFunction": "VOUT1"
+  },
+  {
+   "ref": "U2",
+   "number": "10",
+   "x": 150.03,
+   "y": 105.71,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "unconnected-(U2-GPIO3-Pad10)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional+no_connect",
+   "pinFunction": "GPIO3"
+  },
+  {
+   "ref": "U2",
+   "number": "11",
+   "x": 150.03,
+   "y": 105.21,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "unconnected-(U2-GPIO4-Pad11)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional+no_connect",
+   "pinFunction": "GPIO4"
+  },
+  {
+   "ref": "U2",
+   "number": "12",
+   "x": 150.03,
+   "y": 104.71,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "VDDIO"
+  },
+  {
+   "ref": "U2",
+   "number": "13",
+   "x": 150.03,
+   "y": 104.21,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "/nPM1300/NPM1300.SDA",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "SDA"
+  },
+  {
+   "ref": "U2",
+   "number": "14",
+   "x": 150.03,
+   "y": 103.71,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "/nPM1300/NPM1300.SCL",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "SCL"
+  },
+  {
+   "ref": "U2",
+   "number": "15",
+   "x": 150.03,
+   "y": 103.21,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "/Connectors/SHPHLD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "SHPHLD"
+  },
+  {
+   "ref": "U2",
+   "number": "16",
+   "x": 150.03,
+   "y": 102.71,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "Net-(U2-VSET2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSET2"
+  },
+  {
+   "ref": "U2",
+   "number": "17",
+   "x": 149.33,
+   "y": 102.01,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSET1"
+  },
+  {
+   "ref": "U2",
+   "number": "18",
+   "x": 148.83,
+   "y": 102.01,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "NTC"
+  },
+  {
+   "ref": "U2",
+   "number": "19",
+   "x": 148.33,
+   "y": 102.01,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "+BATT",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "VBAT"
+  },
+  {
+   "ref": "U2",
+   "number": "2",
+   "x": 146.33,
+   "y": 106.91,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "PVSS1"
+  },
+  {
+   "ref": "U2",
+   "number": "20",
+   "x": 147.83,
+   "y": 102.01,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "VSYS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_out",
+   "pinFunction": "VSYS"
+  },
+  {
+   "ref": "U2",
+   "number": "21",
+   "x": 147.33,
+   "y": 102.01,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "/Debugger/USB.VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "VBUS"
+  },
+  {
+   "ref": "U2",
+   "number": "22",
+   "x": 146.83,
+   "y": 102.01,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_out",
+   "pinFunction": "VBUSOUT"
+  },
+  {
+   "ref": "U2",
+   "number": "23",
+   "x": 146.33,
+   "y": 102.01,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "/Debugger/USB.CC1",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "CC1"
+  },
+  {
+   "ref": "U2",
+   "number": "24",
+   "x": 145.83,
+   "y": 102.01,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "/Debugger/USB.CC2",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "CC2"
+  },
+  {
+   "ref": "U2",
+   "number": "25",
+   "x": 145.13,
+   "y": 102.71,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "Net-(D3-RK)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "open_collector",
+   "pinFunction": "LED0"
+  },
+  {
+   "ref": "U2",
+   "number": "26",
+   "x": 145.13,
+   "y": 103.21,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "Net-(D3-GK)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "open_collector",
+   "pinFunction": "LED1"
+  },
+  {
+   "ref": "U2",
+   "number": "27",
+   "x": 145.13,
+   "y": 103.71,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "Net-(D3-BK)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "open_collector",
+   "pinFunction": "LED2"
+  },
+  {
+   "ref": "U2",
+   "number": "28",
+   "x": 145.13,
+   "y": 104.21,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "LSIN1/VINLDO1"
+  },
+  {
+   "ref": "U2",
+   "number": "29",
+   "x": 145.13,
+   "y": 104.71,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "output",
+   "pinFunction": "LSOUT1/VOUTLDO1"
+  },
+  {
+   "ref": "U2",
+   "number": "3",
+   "x": 146.83,
+   "y": 106.91,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "unconnected-(U2-SW1-Pad3)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "SW1"
+  },
+  {
+   "ref": "U2",
+   "number": "30",
+   "x": 145.13,
+   "y": 105.21,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "LSIN2/VINLDO2"
+  },
+  {
+   "ref": "U2",
+   "number": "31",
+   "x": 145.13,
+   "y": 105.71,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "output",
+   "pinFunction": "LSOUT2/VOUTLDO2"
+  },
+  {
+   "ref": "U2",
+   "number": "32",
+   "x": 145.13,
+   "y": 106.21,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "Net-(JP1-A)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_out",
+   "pinFunction": "VOUT2"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 146.58,
+   "y": 103.46,
+   "angle": 90.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 146.58,
+   "y": 104.46,
+   "angle": 90.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 146.58,
+   "y": 105.46,
+   "angle": 90.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 147.58,
+   "y": 103.46,
+   "angle": 90.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 147.58,
+   "y": 104.46,
+   "angle": 90.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 147.58,
+   "y": 104.46,
+   "angle": 90.0,
+   "sizeX": 2.5,
+   "sizeY": 2.5,
+   "net": "GND",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 147.58,
+   "y": 104.46,
+   "angle": 90.0,
+   "sizeX": 3.6,
+   "sizeY": 3.6,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 147.58,
+   "y": 105.46,
+   "angle": 90.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 148.58,
+   "y": 103.46,
+   "angle": 90.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 148.58,
+   "y": 104.46,
+   "angle": 90.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "33",
+   "x": 148.58,
+   "y": 105.46,
+   "angle": 90.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "AVSS"
+  },
+  {
+   "ref": "U2",
+   "number": "4",
+   "x": 147.33,
+   "y": 106.91,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "VSYS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "PVDD"
+  },
+  {
+   "ref": "U2",
+   "number": "5",
+   "x": 147.83,
+   "y": 106.91,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "Net-(U2-SW2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "SW2"
+  },
+  {
+   "ref": "U2",
+   "number": "6",
+   "x": 148.33,
+   "y": 106.91,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "PVSS2"
+  },
+  {
+   "ref": "U2",
+   "number": "7",
+   "x": 148.83,
+   "y": 106.91,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "/nPM1300/NPM1300.INT",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "GPIO0"
+  },
+  {
+   "ref": "U2",
+   "number": "8",
+   "x": 149.33,
+   "y": 106.91,
+   "angle": 90.0,
+   "sizeX": 0.8,
+   "sizeY": 0.25,
+   "net": "/Connectors/ENABLE",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "GPIO1"
+  },
+  {
+   "ref": "U2",
+   "number": "9",
+   "x": 150.03,
+   "y": 106.21,
+   "angle": 90.0,
+   "sizeX": 0.25,
+   "sizeY": 0.8,
+   "net": "unconnected-(U2-GPIO2-Pad9)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional+no_connect",
+   "pinFunction": "GPIO2"
+  },
+  {
+   "ref": "U3",
+   "number": "1",
+   "x": 127.8975,
+   "y": 104.4725,
+   "angle": 0.0,
+   "sizeX": 0.675,
+   "sizeY": 0.35,
+   "net": "unconnected-(U3-IO1-Pad1)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive+no_connect",
+   "pinFunction": "IO1"
+  },
+  {
+   "ref": "U3",
+   "number": "2",
+   "x": 127.8975,
+   "y": 104.9725,
+   "angle": 0.0,
+   "sizeX": 0.675,
+   "sizeY": 0.35,
+   "net": "/Debugger/D-",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "IO2"
+  },
+  {
+   "ref": "U3",
+   "number": "3",
+   "x": 127.8975,
+   "y": 105.4725,
+   "angle": 0.0,
+   "sizeX": 0.675,
+   "sizeY": 0.35,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U3",
+   "number": "4",
+   "x": 129.3225,
+   "y": 105.4725,
+   "angle": 0.0,
+   "sizeX": 0.675,
+   "sizeY": 0.35,
+   "net": "/Debugger/D+",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "IO3"
+  },
+  {
+   "ref": "U3",
+   "number": "5",
+   "x": 129.3225,
+   "y": 104.4725,
+   "angle": 0.0,
+   "sizeX": 0.675,
+   "sizeY": 0.35,
+   "net": "/Debugger/USB.VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U4",
+   "number": "",
+   "x": 159.46,
+   "y": 106.53,
+   "angle": 270.0,
+   "sizeX": 0.16,
+   "sizeY": 1.29,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U4",
+   "number": "1",
+   "x": 160.21,
+   "y": 105.105,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.25,
+   "net": "/nRF54L15/~{CS}_FLASH",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "~{CS}"
+  },
+  {
+   "ref": "U4",
+   "number": "2",
+   "x": 159.71,
+   "y": 105.105,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.25,
+   "net": "/Connectors/SPI.MISO",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "DO/IO_{1}"
+  },
+  {
+   "ref": "U4",
+   "number": "3",
+   "x": 159.21,
+   "y": 105.105,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.25,
+   "net": "/nRF54L15/D2_FLASH",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "~{WP}/IO_{2}"
+  },
+  {
+   "ref": "U4",
+   "number": "4",
+   "x": 158.71,
+   "y": 105.105,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.25,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U4",
+   "number": "5",
+   "x": 158.71,
+   "y": 107.955,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.25,
+   "net": "/Connectors/SPI.MOSI",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "DI/IO_{0}"
+  },
+  {
+   "ref": "U4",
+   "number": "6",
+   "x": 159.21,
+   "y": 107.955,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.25,
+   "net": "/Connectors/SPI.SCK",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "CLK"
+  },
+  {
+   "ref": "U4",
+   "number": "7",
+   "x": 159.71,
+   "y": 107.955,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.25,
+   "net": "/nRF54L15/D3_FLASH",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "~{HOLD}/~{RESET}/IO_{3}"
+  },
+  {
+   "ref": "U4",
+   "number": "8",
+   "x": 160.21,
+   "y": 107.955,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.25,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "VCC"
+  },
+  {
+   "ref": "U4",
+   "number": "9",
+   "x": 159.46,
+   "y": 106.53,
+   "angle": 270.0,
+   "sizeX": 0.2,
+   "sizeY": 1.6,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "EP"
+  },
+  {
+   "ref": "U5",
+   "number": "",
+   "x": 135.846667,
+   "y": 107.096667,
+   "angle": 180.0,
+   "sizeX": 0.802926,
+   "sizeY": 0.802926,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U5",
+   "number": "",
+   "x": 135.846667,
+   "y": 108.13,
+   "angle": 180.0,
+   "sizeX": 0.802926,
+   "sizeY": 0.802926,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U5",
+   "number": "",
+   "x": 135.846667,
+   "y": 109.163333,
+   "angle": 180.0,
+   "sizeX": 0.802926,
+   "sizeY": 0.802926,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U5",
+   "number": "",
+   "x": 136.88,
+   "y": 107.096667,
+   "angle": 180.0,
+   "sizeX": 0.802926,
+   "sizeY": 0.802926,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U5",
+   "number": "",
+   "x": 136.88,
+   "y": 108.13,
+   "angle": 180.0,
+   "sizeX": 0.802926,
+   "sizeY": 0.802926,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U5",
+   "number": "",
+   "x": 136.88,
+   "y": 109.163333,
+   "angle": 180.0,
+   "sizeX": 0.802926,
+   "sizeY": 0.802926,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U5",
+   "number": "",
+   "x": 137.913333,
+   "y": 107.096667,
+   "angle": 180.0,
+   "sizeX": 0.802926,
+   "sizeY": 0.802926,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U5",
+   "number": "",
+   "x": 137.913333,
+   "y": 108.13,
+   "angle": 180.0,
+   "sizeX": 0.802926,
+   "sizeY": 0.802926,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U5",
+   "number": "",
+   "x": 137.913333,
+   "y": 109.163333,
+   "angle": 180.0,
+   "sizeX": 0.802926,
+   "sizeY": 0.802926,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U5",
+   "number": "1",
+   "x": 139.3175,
+   "y": 109.93,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "Net-(U5-DEC1)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "DEC1"
+  },
+  {
+   "ref": "U5",
+   "number": "10",
+   "x": 139.3175,
+   "y": 106.33,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "VBUS"
+  },
+  {
+   "ref": "U5",
+   "number": "11",
+   "x": 138.68,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "Net-(U5-DECUSB)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "DECUSB"
+  },
+  {
+   "ref": "U5",
+   "number": "12",
+   "x": 138.28,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "/Debugger/D-",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "D-"
+  },
+  {
+   "ref": "U5",
+   "number": "13",
+   "x": 137.88,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "/Debugger/D+",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "D+"
+  },
+  {
+   "ref": "U5",
+   "number": "14",
+   "x": 137.48,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "unconnected-(U5-P0.15-Pad14)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.15"
+  },
+  {
+   "ref": "U5",
+   "number": "15",
+   "x": 137.08,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "unconnected-(U5-P0.17-Pad15)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.17"
+  },
+  {
+   "ref": "U5",
+   "number": "16",
+   "x": 136.68,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "Net-(J8-~{RESET})",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "P0.18/~{RESET}"
+  },
+  {
+   "ref": "U5",
+   "number": "17",
+   "x": 136.28,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "unconnected-(U5-P0.20-Pad17)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.20"
+  },
+  {
+   "ref": "U5",
+   "number": "18",
+   "x": 135.88,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "VDD"
+  },
+  {
+   "ref": "U5",
+   "number": "19",
+   "x": 135.48,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "Net-(J8-SWDIO)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "SWDIO"
+  },
+  {
+   "ref": "U5",
+   "number": "2",
+   "x": 139.3175,
+   "y": 109.53,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-P0.00{slash}XL1-Pad2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.00/XL1"
+  },
+  {
+   "ref": "U5",
+   "number": "20",
+   "x": 135.08,
+   "y": 105.6925,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "Net-(J8-SWCLK)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "SWDCLK"
+  },
+  {
+   "ref": "U5",
+   "number": "21",
+   "x": 134.4425,
+   "y": 106.33,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-DEC5{slash}NC-Pad21)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "DEC5/NC"
+  },
+  {
+   "ref": "U5",
+   "number": "22",
+   "x": 134.4425,
+   "y": 106.73,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-P0.09{slash}NFC1-Pad22)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.09/NFC1"
+  },
+  {
+   "ref": "U5",
+   "number": "23",
+   "x": 134.4425,
+   "y": 107.13,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-P0.10{slash}NFC2-Pad23)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.10/NFC2"
+  },
+  {
+   "ref": "U5",
+   "number": "24",
+   "x": 134.4425,
+   "y": 107.53,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-ANT-Pad24)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "ANT"
+  },
+  {
+   "ref": "U5",
+   "number": "25",
+   "x": 134.4425,
+   "y": 107.93,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "VSS_PA"
+  },
+  {
+   "ref": "U5",
+   "number": "26",
+   "x": 134.4425,
+   "y": 108.33,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "Net-(U5-DEC4)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "DEC6"
+  },
+  {
+   "ref": "U5",
+   "number": "27",
+   "x": 134.4425,
+   "y": 108.73,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "Net-(U5-DEC3)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "DEC3"
+  },
+  {
+   "ref": "U5",
+   "number": "28",
+   "x": 134.4425,
+   "y": 109.13,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "Net-(U5-XC1)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "XC1"
+  },
+  {
+   "ref": "U5",
+   "number": "29",
+   "x": 134.4425,
+   "y": 109.53,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "Net-(U5-XC2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "XC2"
+  },
+  {
+   "ref": "U5",
+   "number": "3",
+   "x": 139.3175,
+   "y": 109.13,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-P0.01{slash}XL2-Pad3)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.01/XL2"
+  },
+  {
+   "ref": "U5",
+   "number": "30",
+   "x": 134.4425,
+   "y": 109.93,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "VDD"
+  },
+  {
+   "ref": "U5",
+   "number": "31",
+   "x": 135.08,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "unconnected-(U5-P0.03{slash}AIN1-Pad31)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.03/AIN1"
+  },
+  {
+   "ref": "U5",
+   "number": "32",
+   "x": 135.48,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "/Debugger/TRG_SWDCLK_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "P0.02/AIN0"
+  },
+  {
+   "ref": "U5",
+   "number": "33",
+   "x": 135.88,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "/Debugger/TRG_SWDIO_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "P0.28/AIN4"
+  },
+  {
+   "ref": "U5",
+   "number": "34",
+   "x": 136.28,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "P0.29/AIN5"
+  },
+  {
+   "ref": "U5",
+   "number": "35",
+   "x": 136.68,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "/Debugger/UART_TX_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "P0.30/AIN6"
+  },
+  {
+   "ref": "U5",
+   "number": "36",
+   "x": 137.08,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "/Debugger/UART_RX_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "P0.31/AIN7"
+  },
+  {
+   "ref": "U5",
+   "number": "37",
+   "x": 137.48,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "38",
+   "x": 137.88,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "Net-(U5-DEC4)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "DEC4"
+  },
+  {
+   "ref": "U5",
+   "number": "39",
+   "x": 138.28,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "unconnected-(U5-DCC-Pad39)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "DCC"
+  },
+  {
+   "ref": "U5",
+   "number": "4",
+   "x": 139.3175,
+   "y": 108.73,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-P0.04{slash}AIN2-Pad4)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.04/AIN2"
+  },
+  {
+   "ref": "U5",
+   "number": "40",
+   "x": 138.68,
+   "y": 110.5675,
+   "angle": 180.0,
+   "sizeX": 0.25,
+   "sizeY": 0.825,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "VDD"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 135.33,
+   "y": 106.58,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 135.33,
+   "y": 107.613333,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 135.33,
+   "y": 108.646667,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 135.33,
+   "y": 109.68,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 136.363333,
+   "y": 106.58,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 136.363333,
+   "y": 107.613333,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 136.363333,
+   "y": 108.646667,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 136.363333,
+   "y": 109.68,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 136.88,
+   "y": 108.13,
+   "angle": 180.0,
+   "sizeX": 3.6,
+   "sizeY": 3.6,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 136.88,
+   "y": 108.13,
+   "angle": 180.0,
+   "sizeX": 3.6,
+   "sizeY": 3.6,
+   "net": "GND",
+   "copperLayers": [
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 137.396667,
+   "y": 106.58,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 137.396667,
+   "y": 107.613333,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 137.396667,
+   "y": 108.646667,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 137.396667,
+   "y": 109.68,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 138.43,
+   "y": 106.58,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 138.43,
+   "y": 107.613333,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 138.43,
+   "y": 108.646667,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "41",
+   "x": 138.43,
+   "y": 109.68,
+   "angle": 180.0,
+   "sizeX": 0.5,
+   "sizeY": 0.5,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu",
+    "In1.Cu",
+    "In2.Cu",
+    "In3.Cu",
+    "In4.Cu",
+    "In5.Cu",
+    "In6.Cu",
+    "B.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "VSS"
+  },
+  {
+   "ref": "U5",
+   "number": "5",
+   "x": 139.3175,
+   "y": 108.33,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-P0.05{slash}AIN3-Pad5)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.05/AIN3"
+  },
+  {
+   "ref": "U5",
+   "number": "6",
+   "x": 139.3175,
+   "y": 107.93,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-P1.09-Pad6)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P1.09"
+  },
+  {
+   "ref": "U5",
+   "number": "7",
+   "x": 139.3175,
+   "y": 107.53,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "unconnected-(U5-P0.11-Pad7)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified+no_connect",
+   "pinFunction": "P0.11"
+  },
+  {
+   "ref": "U5",
+   "number": "8",
+   "x": 139.3175,
+   "y": 107.13,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "VDD"
+  },
+  {
+   "ref": "U5",
+   "number": "9",
+   "x": 139.3175,
+   "y": 106.73,
+   "angle": 180.0,
+   "sizeX": 0.825,
+   "sizeY": 0.25,
+   "net": "VBUS",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "unspecified",
+   "pinFunction": "VDDH"
+  },
+  {
+   "ref": "U6",
+   "number": "",
+   "x": 154.64,
+   "y": 104.235,
+   "angle": 0.0,
+   "sizeX": 0.82,
+   "sizeY": 1.07,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U6",
+   "number": "",
+   "x": 154.64,
+   "y": 105.605,
+   "angle": 0.0,
+   "sizeX": 0.82,
+   "sizeY": 1.07,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U6",
+   "number": "",
+   "x": 155.76,
+   "y": 104.235,
+   "angle": 0.0,
+   "sizeX": 0.82,
+   "sizeY": 1.07,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U6",
+   "number": "",
+   "x": 155.76,
+   "y": 105.605,
+   "angle": 0.0,
+   "sizeX": 0.82,
+   "sizeY": 1.07,
+   "net": "",
+   "copperLayers": [],
+   "pinType": "",
+   "pinFunction": ""
+  },
+  {
+   "ref": "U6",
+   "number": "1",
+   "x": 154.45,
+   "y": 102.875,
+   "angle": 0.0,
+   "sizeX": 0.28,
+   "sizeY": 0.71,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "A1"
+  },
+  {
+   "ref": "U6",
+   "number": "10",
+   "x": 156.995,
+   "y": 106.17,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Debugger/SWD_TRG.SWDCLK",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "B6"
+  },
+  {
+   "ref": "U6",
+   "number": "11",
+   "x": 156.995,
+   "y": 105.67,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "B5"
+  },
+  {
+   "ref": "U6",
+   "number": "12",
+   "x": 156.995,
+   "y": 105.17,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "B4"
+  },
+  {
+   "ref": "U6",
+   "number": "13",
+   "x": 156.995,
+   "y": 104.67,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Connectors/UART.TX",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "B3"
+  },
+  {
+   "ref": "U6",
+   "number": "14",
+   "x": 156.995,
+   "y": 104.17,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Connectors/UART.RX",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "B2"
+  },
+  {
+   "ref": "U6",
+   "number": "15",
+   "x": 156.995,
+   "y": 103.67,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "V_{CCB}"
+  },
+  {
+   "ref": "U6",
+   "number": "16",
+   "x": 155.95,
+   "y": 102.875,
+   "angle": 0.0,
+   "sizeX": 0.28,
+   "sizeY": 0.71,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "B1"
+  },
+  {
+   "ref": "U6",
+   "number": "17",
+   "x": 155.2,
+   "y": 104.92,
+   "angle": 0.0,
+   "sizeX": 2.05,
+   "sizeY": 2.55,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "U6",
+   "number": "2",
+   "x": 153.405,
+   "y": 103.67,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "V_{CCA}"
+  },
+  {
+   "ref": "U6",
+   "number": "3",
+   "x": 153.405,
+   "y": 104.17,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Debugger/UART_RX_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "A2"
+  },
+  {
+   "ref": "U6",
+   "number": "4",
+   "x": 153.405,
+   "y": 104.67,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Debugger/UART_TX_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "A3"
+  },
+  {
+   "ref": "U6",
+   "number": "5",
+   "x": 153.405,
+   "y": 105.17,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "A4"
+  },
+  {
+   "ref": "U6",
+   "number": "6",
+   "x": 153.405,
+   "y": 105.67,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Debugger/TRG_SWDIO_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "A5"
+  },
+  {
+   "ref": "U6",
+   "number": "7",
+   "x": 153.405,
+   "y": 106.17,
+   "angle": 0.0,
+   "sizeX": 0.71,
+   "sizeY": 0.28,
+   "net": "/Debugger/TRG_SWDCLK_NRF52",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "bidirectional",
+   "pinFunction": "A6"
+  },
+  {
+   "ref": "U6",
+   "number": "8",
+   "x": 154.45,
+   "y": 106.965,
+   "angle": 0.0,
+   "sizeX": 0.28,
+   "sizeY": 0.71,
+   "net": "/Debugger/nRF52_VDD",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "input",
+   "pinFunction": "OE"
+  },
+  {
+   "ref": "U6",
+   "number": "9",
+   "x": 155.95,
+   "y": 106.965,
+   "angle": 0.0,
+   "sizeX": 0.28,
+   "sizeY": 0.71,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "power_in",
+   "pinFunction": "GND"
+  },
+  {
+   "ref": "Y1",
+   "number": "1",
+   "x": 159.84,
+   "y": 98.23,
+   "angle": 180.0,
+   "sizeX": 1.0,
+   "sizeY": 1.8,
+   "net": "Net-(U1-P1.01{slash}XL2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "Y1",
+   "number": "2",
+   "x": 162.34,
+   "y": 98.23,
+   "angle": 180.0,
+   "sizeX": 1.0,
+   "sizeY": 1.8,
+   "net": "Net-(U1-P1.00{slash}XL1)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "2"
+  },
+  {
+   "ref": "Y2",
+   "number": "1",
+   "x": 131.14,
+   "y": 109.5,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.8,
+   "net": "Net-(U5-XC1)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "1"
+  },
+  {
+   "ref": "Y2",
+   "number": "2",
+   "x": 131.14,
+   "y": 110.9,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "2"
+  },
+  {
+   "ref": "Y2",
+   "number": "3",
+   "x": 132.24,
+   "y": 110.9,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.8,
+   "net": "Net-(U5-XC2)",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "3"
+  },
+  {
+   "ref": "Y2",
+   "number": "4",
+   "x": 132.24,
+   "y": 109.5,
+   "angle": 270.0,
+   "sizeX": 0.9,
+   "sizeY": 0.8,
+   "net": "GND",
+   "copperLayers": [
+    "F.Cu"
+   ],
+   "pinType": "passive",
+   "pinFunction": "4"
+  }
+ ],
+ "vias": [
+  {
+   "x": 122.06,
+   "y": 110.53,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 124.36,
+   "y": 103.73,
+   "net": "/Debugger/USB.CC1",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 124.385,
+   "y": 106.73,
+   "net": "/Debugger/USB.CC2",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 125.06,
+   "y": 110.53,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 125.06,
+   "y": 112.53,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 125.405,
+   "y": 101.73,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 125.405,
+   "y": 102.53,
+   "net": "/Debugger/USB.VBUS",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 125.405,
+   "y": 108.23,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 126.49,
+   "y": 98.633,
+   "net": "/Connectors/I2C.SCL",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 126.685,
+   "y": 105.73,
+   "net": "/Debugger/D+",
+   "diameter": 0.4,
+   "drill": 1e-05
+  },
+  {
+   "x": 126.785,
+   "y": 104.755,
+   "net": "/Debugger/D-",
+   "diameter": 0.4,
+   "drill": 1e-05
+  },
+  {
+   "x": 127.06,
+   "y": 94.53,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 127.06,
+   "y": 96.53,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 127.103416,
+   "y": 101.355058,
+   "net": "VDD",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 127.31,
+   "y": 104.0,
+   "net": "Net-(J8-~{RESET})",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 127.31,
+   "y": 111.855,
+   "net": "Net-(J6-Pin_2)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 127.41,
+   "y": 106.81,
+   "net": "/Debugger/nRF52_VDD",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 127.46,
+   "y": 105.48,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 127.49,
+   "y": 98.633,
+   "net": "/Connectors/I2C.SDA",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 127.81,
+   "y": 114.52,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 128.043416,
+   "y": 101.355058,
+   "net": "VDD",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 128.31,
+   "y": 111.855,
+   "net": "Net-(J6-Pin_4)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 128.49,
+   "y": 98.633,
+   "net": "VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 129.06,
+   "y": 94.53,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 129.06,
+   "y": 96.53,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 129.49,
+   "y": 98.633,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 129.77,
+   "y": 106.76,
+   "net": "Net-(J8-SWDIO)",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 129.93,
+   "y": 108.82,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 130.16,
+   "y": 106.35,
+   "net": "Net-(J8-SWCLK)",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 131.14,
+   "y": 110.9,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 131.21,
+   "y": 112.06,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 131.82,
+   "y": 107.74,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 132.24,
+   "y": 109.5,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 132.3,
+   "y": 106.78,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 132.72,
+   "y": 105.66,
+   "net": "Net-(J8-~{RESET})",
+   "diameter": 0.4,
+   "drill": 1e-05
+  },
+  {
+   "x": 133.26,
+   "y": 105.73,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 133.39,
+   "y": 104.33,
+   "net": "Net-(J8-SWDIO)",
+   "diameter": 0.4,
+   "drill": 1e-05
+  },
+  {
+   "x": 133.48,
+   "y": 111.71,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 133.609447,
+   "y": 108.05997,
+   "net": "Net-(U5-DEC4)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 133.84,
+   "y": 105.4,
+   "net": "Net-(J8-SWCLK)",
+   "diameter": 0.4,
+   "drill": 1e-05
+  },
+  {
+   "x": 134.44,
+   "y": 111.71,
+   "net": "/Debugger/nRF52_VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 134.91,
+   "y": 104.4,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 135.87,
+   "y": 104.4,
+   "net": "/Debugger/nRF52_VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 136.06,
+   "y": 95.53,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 136.07,
+   "y": 98.06,
+   "net": "GND",
+   "diameter": 0.4,
+   "drill": 1e-05
+  },
+  {
+   "x": 136.68,
+   "y": 104.95,
+   "net": "Net-(J8-~{RESET})",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 137.88,
+   "y": 101.308,
+   "net": "+BATT",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 137.88,
+   "y": 111.28,
+   "net": "Net-(U5-DEC4)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 138.59,
+   "y": 111.69,
+   "net": "/Debugger/nRF52_VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 139.55,
+   "y": 111.69,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 139.88,
+   "y": 104.57,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 140.44,
+   "y": 105.46,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 140.44,
+   "y": 107.28,
+   "net": "/Debugger/nRF52_VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 140.44,
+   "y": 108.24,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 140.44,
+   "y": 111.01,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 141.54,
+   "y": 108.41,
+   "net": "/Debugger/UART_RX_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 141.95,
+   "y": 107.59,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 142.04,
+   "y": 108.95,
+   "net": "/Debugger/UART_TX_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 142.54,
+   "y": 109.39,
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 142.56,
+   "y": 112.63,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 142.98,
+   "y": 101.9,
+   "net": "VSYS",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 143.04,
+   "y": 109.9,
+   "net": "/Debugger/TRG_SWDIO_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 143.06,
+   "y": 112.03,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 143.54,
+   "y": 110.320347,
+   "net": "/Debugger/TRG_SWDCLK_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 144.085,
+   "y": 102.03,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 144.88,
+   "y": 98.045,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 145.065,
+   "y": 108.67,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 145.33,
+   "y": 101.09,
+   "net": "/Debugger/USB.CC1",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 145.33,
+   "y": 102.01,
+   "net": "/Debugger/USB.CC2",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 147.01,
+   "y": 98.045,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 147.01,
+   "y": 99.595,
+   "net": "/Debugger/USB.VBUS",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 147.06,
+   "y": 110.13,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 147.06,
+   "y": 110.93,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 147.36,
+   "y": 108.67,
+   "net": "VSYS",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 148.165,
+   "y": 100.565,
+   "net": "VSYS",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 148.58,
+   "y": 98.045,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 150.045,
+   "y": 100.59,
+   "net": "+BATT",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 150.36,
+   "y": 110.13,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 150.37,
+   "y": 111.705,
+   "net": "Net-(JP1-A)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 150.73,
+   "y": 108.66,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 150.84,
+   "y": 97.92,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 150.962892,
+   "y": 106.91,
+   "net": "/Connectors/ENABLE",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 151.14,
+   "y": 105.21,
+   "net": "VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 151.14,
+   "y": 106.17,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 151.2,
+   "y": 101.78,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 151.48,
+   "y": 104.21,
+   "net": "/nPM1300/NPM1300.SDA",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 151.595,
+   "y": 100.59,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 151.74,
+   "y": 109.4,
+   "net": "/Debugger/UART_RX_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 152.3,
+   "y": 102.83,
+   "net": "/Connectors/SHPHLD",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 152.301405,
+   "y": 103.573512,
+   "net": "/nPM1300/NPM1300.SCL",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 152.389916,
+   "y": 108.420654,
+   "net": "/Debugger/UART_TX_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 153.073185,
+   "y": 108.396815,
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 153.23,
+   "y": 101.81,
+   "net": "/Debugger/nRF52_VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 153.41,
+   "y": 103.04,
+   "net": "/Debugger/nRF52_VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 153.71,
+   "y": 98.355,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 153.74,
+   "y": 108.39,
+   "net": "/Debugger/TRG_SWDIO_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 154.19,
+   "y": 101.81,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 154.45,
+   "y": 102.875,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 154.46,
+   "y": 106.94,
+   "net": "/Debugger/nRF52_VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 154.46,
+   "y": 108.38,
+   "net": "/Debugger/TRG_SWDCLK_NRF52",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 155.13,
+   "y": 98.67,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 155.13,
+   "y": 113.42,
+   "net": "/Connectors/SHPHLD",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 155.2,
+   "y": 104.92,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 155.66,
+   "y": 111.33,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 155.689293,
+   "y": 109.459293,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 155.95,
+   "y": 102.875,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 155.95,
+   "y": 106.965,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 156.37,
+   "y": 101.77,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 157.85,
+   "y": 111.6,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 158.056662,
+   "y": 104.774726,
+   "net": "/Connectors/UART.TX",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 158.06,
+   "y": 102.46,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 158.06,
+   "y": 103.42,
+   "net": "VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 158.072847,
+   "y": 108.632847,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 158.075565,
+   "y": 104.124999,
+   "net": "/Connectors/UART.RX",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 158.66,
+   "y": 105.105,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 158.83,
+   "y": 109.14,
+   "net": "/Connectors/SPI.MOSI",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 158.879468,
+   "y": 106.005,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 159.364035,
+   "y": 108.769445,
+   "net": "/Connectors/SPI.SCK",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 159.530046,
+   "y": 103.162861,
+   "net": "/nRF54L15/D2_FLASH",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 159.84,
+   "y": 98.23,
+   "net": "Net-(U1-P1.01{slash}XL2)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 160.02,
+   "y": 103.59,
+   "net": "/Connectors/SPI.MISO",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 160.21,
+   "y": 109.14,
+   "net": "VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 160.21,
+   "y": 110.1,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 160.26,
+   "y": 99.91,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 160.26,
+   "y": 100.87,
+   "net": "VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 160.36,
+   "y": 104.15,
+   "net": "/nRF54L15/~{CS}_FLASH",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 160.99,
+   "y": 105.43,
+   "net": "/Connectors/ANALOG.A2",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 161.72,
+   "y": 100.93,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 161.72,
+   "y": 101.83,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 161.72,
+   "y": 102.73,
+   "net": "Net-(U1-P1.01{slash}XL2)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 161.72,
+   "y": 104.53,
+   "net": "/Connectors/ANALOG.A0",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 161.72,
+   "y": 106.33,
+   "net": "/Connectors/ANALOG.A3",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 161.72,
+   "y": 109.03,
+   "net": "/Connectors/SPI.MISO",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.030553,
+   "y": 103.301016,
+   "net": "Net-(J6-Pin_2)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.34,
+   "y": 98.23,
+   "net": "Net-(U1-P1.00{slash}XL1)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.35,
+   "y": 109.65,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.56,
+   "y": 111.63,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.62,
+   "y": 101.83,
+   "net": "VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.62,
+   "y": 102.73,
+   "net": "VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.62,
+   "y": 103.63,
+   "net": "Net-(U1-P1.00{slash}XL1)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.62,
+   "y": 105.43,
+   "net": "/Connectors/ANALOG.A1",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.62,
+   "y": 108.13,
+   "net": "/Connectors/SPI.MOSI",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 162.62,
+   "y": 109.03,
+   "net": "/nRF54L15/~{CS}_FLASH",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 163.126446,
+   "y": 106.036446,
+   "net": "/Connectors/I2C.SCL",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 163.22,
+   "y": 104.26,
+   "net": "Net-(J6-Pin_4)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 163.38,
+   "y": 107.23,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 163.52,
+   "y": 101.83,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 163.52,
+   "y": 108.13,
+   "net": "/nRF54L15/D2_FLASH",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 163.53,
+   "y": 109.02,
+   "net": "Net-(D1-A)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 163.56,
+   "y": 105.41,
+   "net": "GND",
+   "diameter": 0.35,
+   "drill": 1e-05
+  },
+  {
+   "x": 164.0625,
+   "y": 111.65,
+   "net": "Net-(D1-A)",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 164.105,
+   "y": 109.76,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 164.42,
+   "y": 109.03,
+   "net": "/Connectors/DIG.D10",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 164.988554,
+   "y": 105.718554,
+   "net": "/Connectors/DIG.D13",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 165.18,
+   "y": 104.39,
+   "net": "/Connectors/ANALOG.A4",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 165.32,
+   "y": 109.03,
+   "net": "/Connectors/DIG.D9",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 165.638446,
+   "y": 105.730524,
+   "net": "/Connectors/DIG.D12",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 165.92,
+   "y": 109.37,
+   "net": "/Connectors/DIG.D6",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 165.95,
+   "y": 107.51,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 166.03,
+   "y": 104.31,
+   "net": "/Connectors/ANALOG.A5",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 166.19,
+   "y": 110.01,
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 166.23,
+   "y": 100.74,
+   "net": "/Connectors/ANALOG.A4",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 166.754293,
+   "y": 103.874293,
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 167.06,
+   "y": 107.41,
+   "net": "/Connectors/DIG.D11",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 167.12,
+   "y": 100.93,
+   "net": "/Connectors/UART.RX",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 167.12,
+   "y": 101.83,
+   "net": "/Connectors/I2C.SDA",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 167.12,
+   "y": 108.13,
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 167.12,
+   "y": 109.03,
+   "net": "/Debugger/SWD_TRG.SWDCLK",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 167.18,
+   "y": 102.76,
+   "net": "/Connectors/UART.TX",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 167.96,
+   "y": 111.65,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 168.02,
+   "y": 109.03,
+   "net": "/nPM1300/NPM1300.INT",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 168.92,
+   "y": 100.93,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 168.92,
+   "y": 101.83,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 168.92,
+   "y": 103.63,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 168.92,
+   "y": 104.53,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 168.92,
+   "y": 105.43,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 169.19,
+   "y": 111.13,
+   "net": "/nPM1300/NPM1300.SDA",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 169.19,
+   "y": 112.07,
+   "net": "/nPM1300/NPM1300.SCL",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 169.59,
+   "y": 97.88,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 169.75,
+   "y": 113.08,
+   "net": "/nPM1300/NPM1300.INT",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 170.21,
+   "y": 111.13,
+   "net": "VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 170.21,
+   "y": 112.07,
+   "net": "VDD",
+   "diameter": 0.45,
+   "drill": 1e-05
+  },
+  {
+   "x": 170.22,
+   "y": 97.33,
+   "net": "GND",
+   "diameter": 0.45,
+   "drill": 1e-05
+  }
+ ],
+ "trackSegments": 943,
+ "trackArcs": 0,
+ "trackLengthByNet": {
+  "+BATT": 2.724949,
+  "/Connectors/ANALOG.A0": 31.611597,
+  "/Connectors/ANALOG.A1": 31.10637,
+  "/Connectors/ANALOG.A2": 18.421993,
+  "/Connectors/ANALOG.A3": 15.497485,
+  "/Connectors/ANALOG.A4": 30.874886,
+  "/Connectors/ANALOG.A5": 26.57984,
+  "/Connectors/DIG.D10": 27.775088,
+  "/Connectors/DIG.D11": 35.353308,
+  "/Connectors/DIG.D12": 22.841295,
+  "/Connectors/DIG.D13": 24.535282,
+  "/Connectors/DIG.D5": 7.701737,
+  "/Connectors/DIG.D6": 23.343688,
+  "/Connectors/DIG.D9": 25.141362,
+  "/Connectors/ENABLE": 17.227026,
+  "/Connectors/I2C.SCL": 64.065153,
+  "/Connectors/I2C.SDA": 60.601548,
+  "/Connectors/SHPHLD": 31.710403,
+  "/Connectors/SPI.MISO": 14.788128,
+  "/Connectors/SPI.MOSI": 13.283529,
+  "/Connectors/SPI.SCK": 13.890089,
+  "/Connectors/UART.RX": 36.239304,
+  "/Connectors/UART.TX": 40.418247,
+  "/Debugger/D+": 22.549813,
+  "/Debugger/D-": 22.37783,
+  "/Debugger/SWD_TRG.SWDCLK": 22.067526,
+  "/Debugger/SWD_TRG.SWDIO": 24.769887,
+  "/Debugger/SWD_TRG.~{RESET}": 51.671799,
+  "/Debugger/TRG_SWDCLK_NRF52": 30.996988,
+  "/Debugger/TRG_SWDIO_NRF52": 31.281105,
+  "/Debugger/TRG_~{RESET}_NRF52": 32.78831,
+  "/Debugger/UART_RX_NRF52": 26.01425,
+  "/Debugger/UART_TX_NRF52": 30.982886,
+  "/Debugger/USB.CC1": 24.794209,
+  "/Debugger/USB.CC2": 29.035246,
+  "/Debugger/USB.VBUS": 42.637805,
+  "/Debugger/nRF52_VDD": 73.233669,
+  "/nPM1300/NPM1300.INT": 31.804153,
+  "/nPM1300/NPM1300.SCL": 29.158833,
+  "/nPM1300/NPM1300.SDA": 30.514248,
+  "/nRF54L15/D2_FLASH": 15.924036,
+  "/nRF54L15/D3_FLASH": 2.562401,
+  "/nRF54L15/~{CS}_FLASH": 6.833255,
+  "GND": 31.820694,
+  "Net-(D1-A)": 2.850569,
+  "Net-(D1-K)": 1.3025,
+  "Net-(D3-BK)": 5.160214,
+  "Net-(D3-GK)": 3.604092,
+  "Net-(D3-RK)": 3.403675,
+  "Net-(J6-Pin_2)": 50.433426,
+  "Net-(J6-Pin_4)": 50.681904,
+  "Net-(J8-SWCLK)": 18.861494,
+  "Net-(J8-SWDIO)": 13.094273,
+  "Net-(J8-~{RESET})": 21.38012,
+  "Net-(JP1-A)": 20.916419,
+  "Net-(U1-P1.00{slash}XL1)": 6.675778,
+  "Net-(U1-P1.01{slash}XL2)": 5.278722,
+  "Net-(U2-SW2)": 3.757808,
+  "Net-(U2-VSET2)": 1.207279,
+  "Net-(U5-DEC1)": 1.172206,
+  "Net-(U5-DEC3)": 2.330317,
+  "Net-(U5-DEC4)": 10.128208,
+  "Net-(U5-DECUSB)": 1.221911,
+  "Net-(U5-XC1)": 5.730856,
+  "Net-(U5-XC2)": 4.011688,
+  "VBUS": 15.249049,
+  "VDD": 5.790365,
+  "VSYS": 23.348213
+ },
+ "zones": [
+  {
+   "net": "/Debugger/SWD_TRG.SWDCLK",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(D3-GK)",
+   "layer": "F.Cu",
+   "filledArea": 0.104
+  },
+  {
+   "net": "/Connectors/UART.TX",
+   "layer": "F.Cu",
+   "filledArea": 0.115
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.214
+  },
+  {
+   "net": "/Connectors/UART.TX",
+   "layer": "F.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.119
+  },
+  {
+   "net": "Net-(U5-DEC4)",
+   "layer": "F.Cu",
+   "filledArea": 0.09
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/SWD_TRG.SWDCLK",
+   "layer": "F.Cu",
+   "filledArea": 0.05
+  },
+  {
+   "net": "/Connectors/I2C.SDA",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(J6-Pin_2)",
+   "layer": "F.Cu",
+   "filledArea": 0.094
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.12
+  },
+  {
+   "net": "/Debugger/TRG_SWDIO_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.076
+  },
+  {
+   "net": "Net-(J6-Pin_4)",
+   "layer": "F.Cu",
+   "filledArea": 0.187
+  },
+  {
+   "net": "Net-(J6-Pin_2)",
+   "layer": "F.Cu",
+   "filledArea": 0.187
+  },
+  {
+   "net": "VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.209
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.111
+  },
+  {
+   "net": "Net-(D1-K)",
+   "layer": "F.Cu",
+   "filledArea": 0.191
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.007
+  },
+  {
+   "net": "VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.173
+  },
+  {
+   "net": "Net-(U5-DEC4)",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(D3-BK)",
+   "layer": "F.Cu",
+   "filledArea": 0.125
+  },
+  {
+   "net": "/Connectors/DIG.D13",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/SPI.SCK",
+   "layer": "F.Cu",
+   "filledArea": 0.107
+  },
+  {
+   "net": "+BATT",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.139
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.155
+  },
+  {
+   "net": "/Connectors/I2C.SDA",
+   "layer": "F.Cu",
+   "filledArea": 0.264
+  },
+  {
+   "net": "VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/USB.CC2",
+   "layer": "F.Cu",
+   "filledArea": 0.041
+  },
+  {
+   "net": "VBUS",
+   "layer": "F.Cu",
+   "filledArea": 0.409
+  },
+  {
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "layer": "F.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.187
+  },
+  {
+   "net": "/nPM1300/NPM1300.SDA",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/nRF54L15/D3_FLASH",
+   "layer": "F.Cu",
+   "filledArea": 0.081
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "Net-(U5-DEC1)",
+   "layer": "F.Cu",
+   "filledArea": 0.133
+  },
+  {
+   "net": "/nPM1300/NPM1300.SCL",
+   "layer": "F.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "Net-(U5-XC2)",
+   "layer": "F.Cu",
+   "filledArea": 0.187
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/nRF54L15/~{CS}_FLASH",
+   "layer": "F.Cu",
+   "filledArea": 0.081
+  },
+  {
+   "net": "VBUS",
+   "layer": "F.Cu",
+   "filledArea": 0.197
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.152
+  },
+  {
+   "net": "Net-(J6-Pin_2)",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.206
+  },
+  {
+   "net": "/Debugger/TRG_SWDIO_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/UART_TX_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.076
+  },
+  {
+   "net": "/nPM1300/NPM1300.INT",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/SPI.MISO",
+   "layer": "F.Cu",
+   "filledArea": 0.081
+  },
+  {
+   "net": "/nPM1300/NPM1300.SDA",
+   "layer": "F.Cu",
+   "filledArea": 0.18
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.399
+  },
+  {
+   "net": "/nPM1300/NPM1300.SDA",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/TRG_SWDCLK_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "F.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "F.Cu",
+   "filledArea": 0.223
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.14
+  },
+  {
+   "net": "Net-(JP1-A)",
+   "layer": "F.Cu",
+   "filledArea": 0.489
+  },
+  {
+   "net": "/Connectors/UART.TX",
+   "layer": "F.Cu",
+   "filledArea": 0.08
+  },
+  {
+   "net": "Net-(U2-VSET2)",
+   "layer": "F.Cu",
+   "filledArea": 0.181
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/USB.CC1",
+   "layer": "F.Cu",
+   "filledArea": 0.071
+  },
+  {
+   "net": "/Debugger/TRG_SWDCLK_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.101
+  },
+  {
+   "net": "Net-(U5-XC1)",
+   "layer": "F.Cu",
+   "filledArea": 0.324
+  },
+  {
+   "net": "/Connectors/ANALOG.A4",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.109
+  },
+  {
+   "net": "/nPM1300/NPM1300.INT",
+   "layer": "F.Cu",
+   "filledArea": 0.075
+  },
+  {
+   "net": "/nPM1300/NPM1300.SDA",
+   "layer": "F.Cu",
+   "filledArea": 0.075
+  },
+  {
+   "net": "/Connectors/SPI.MOSI",
+   "layer": "F.Cu",
+   "filledArea": 0.081
+  },
+  {
+   "net": "/Connectors/DIG.D11",
+   "layer": "F.Cu",
+   "filledArea": 0.117
+  },
+  {
+   "net": "Net-(U5-XC1)",
+   "layer": "F.Cu",
+   "filledArea": 0.348
+  },
+  {
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.076
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.027
+  },
+  {
+   "net": "/nRF54L15/~{CS}_FLASH",
+   "layer": "F.Cu",
+   "filledArea": 0.118
+  },
+  {
+   "net": "/nPM1300/NPM1300.SCL",
+   "layer": "F.Cu",
+   "filledArea": 0.109
+  },
+  {
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/UART_TX_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.099
+  },
+  {
+   "net": "/Debugger/TRG_SWDIO_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.1
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.007
+  },
+  {
+   "net": "Net-(J6-Pin_4)",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.007
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "F.Cu",
+   "filledArea": 0.08
+  },
+  {
+   "net": "/Debugger/UART_RX_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.099
+  },
+  {
+   "net": "Net-(JP1-A)",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "Net-(U5-XC2)",
+   "layer": "F.Cu",
+   "filledArea": 0.355
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.125
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.426
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.187
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.492
+  },
+  {
+   "net": "/Connectors/SPI.MOSI",
+   "layer": "F.Cu",
+   "filledArea": 0.114
+  },
+  {
+   "net": "/Connectors/UART.RX",
+   "layer": "F.Cu",
+   "filledArea": 0.12
+  },
+  {
+   "net": "Net-(J6-Pin_4)",
+   "layer": "F.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "Net-(U5-XC1)",
+   "layer": "F.Cu",
+   "filledArea": 0.187
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.11
+  },
+  {
+   "net": "Net-(J6-Pin_4)",
+   "layer": "F.Cu",
+   "filledArea": 0.094
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/TRG_SWDCLK_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.046
+  },
+  {
+   "net": "/Connectors/DIG.D11",
+   "layer": "F.Cu",
+   "filledArea": 0.301
+  },
+  {
+   "net": "Net-(J6-Pin_2)",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.151
+  },
+  {
+   "net": "/Connectors/DIG.D11",
+   "layer": "F.Cu",
+   "filledArea": 0.301
+  },
+  {
+   "net": "/nRF54L15/D2_FLASH",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/I2C.SCL",
+   "layer": "F.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "Net-(U5-XC2)",
+   "layer": "F.Cu",
+   "filledArea": 0.444
+  },
+  {
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.109
+  },
+  {
+   "net": "/Debugger/USB.VBUS",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Connectors/SPI.MISO",
+   "layer": "F.Cu",
+   "filledArea": 0.11
+  },
+  {
+   "net": "/nPM1300/NPM1300.SCL",
+   "layer": "F.Cu",
+   "filledArea": 0.075
+  },
+  {
+   "net": "/nRF54L15/D2_FLASH",
+   "layer": "F.Cu",
+   "filledArea": 0.081
+  },
+  {
+   "net": "Net-(JP1-A)",
+   "layer": "F.Cu",
+   "filledArea": 0.47
+  },
+  {
+   "net": "/Connectors/I2C.SCL",
+   "layer": "F.Cu",
+   "filledArea": 0.319
+  },
+  {
+   "net": "/Connectors/I2C.SCL",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.208
+  },
+  {
+   "net": "/Connectors/DIG.D11",
+   "layer": "F.Cu",
+   "filledArea": 0.232
+  },
+  {
+   "net": "Net-(D1-K)",
+   "layer": "F.Cu",
+   "filledArea": 0.464
+  },
+  {
+   "net": "Net-(D3-RK)",
+   "layer": "F.Cu",
+   "filledArea": 0.125
+  },
+  {
+   "net": "/Connectors/ENABLE",
+   "layer": "F.Cu",
+   "filledArea": 0.041
+  },
+  {
+   "net": "VBUS",
+   "layer": "F.Cu",
+   "filledArea": 0.188
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.214
+  },
+  {
+   "net": "Net-(JP1-A)",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Connectors/I2C.SDA",
+   "layer": "F.Cu",
+   "filledArea": 0.152
+  },
+  {
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "layer": "F.Cu",
+   "filledArea": 0.08
+  },
+  {
+   "net": "/Connectors/ENABLE",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ANALOG.A5",
+   "layer": "F.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "Net-(J8-~{RESET})",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/I2C.SCL",
+   "layer": "F.Cu",
+   "filledArea": 0.149
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "F.Cu",
+   "filledArea": 0.301
+  },
+  {
+   "net": "Net-(JP1-A)",
+   "layer": "F.Cu",
+   "filledArea": 0.489
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.141
+  },
+  {
+   "net": "/Connectors/SPI.SCK",
+   "layer": "F.Cu",
+   "filledArea": 0.081
+  },
+  {
+   "net": "/Connectors/ANALOG.A2",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "VBUS",
+   "layer": "F.Cu",
+   "filledArea": 0.489
+  },
+  {
+   "net": "/Connectors/DIG.D12",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Connectors/UART.RX",
+   "layer": "F.Cu",
+   "filledArea": 0.08
+  },
+  {
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.099
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.492
+  },
+  {
+   "net": "VSYS",
+   "layer": "F.Cu",
+   "filledArea": 0.398
+  },
+  {
+   "net": "Net-(U2-SW2)",
+   "layer": "F.Cu",
+   "filledArea": 0.464
+  },
+  {
+   "net": "Net-(U5-DEC4)",
+   "layer": "F.Cu",
+   "filledArea": 0.144
+  },
+  {
+   "net": "Net-(U5-DEC4)",
+   "layer": "F.Cu",
+   "filledArea": 0.178
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "Net-(U5-DECUSB)",
+   "layer": "F.Cu",
+   "filledArea": 0.14
+  },
+  {
+   "net": "/Connectors/I2C.SDA",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/UART_RX_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/SHPHLD",
+   "layer": "F.Cu",
+   "filledArea": 0.075
+  },
+  {
+   "net": "/Connectors/SPI.SCK",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/DIG.D6",
+   "layer": "F.Cu",
+   "filledArea": 0.109
+  },
+  {
+   "net": "/Debugger/USB.VBUS",
+   "layer": "F.Cu",
+   "filledArea": 0.492
+  },
+  {
+   "net": "/Debugger/UART_RX_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.076
+  },
+  {
+   "net": "VDD",
+   "layer": "F.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "Net-(U5-DEC3)",
+   "layer": "F.Cu",
+   "filledArea": 0.181
+  },
+  {
+   "net": "/nPM1300/NPM1300.SCL",
+   "layer": "F.Cu",
+   "filledArea": 0.154
+  },
+  {
+   "net": "/Debugger/UART_TX_NRF52",
+   "layer": "F.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "+BATT",
+   "layer": "F.Cu",
+   "filledArea": 0.492
+  },
+  {
+   "net": "GND",
+   "layer": "F.Cu",
+   "filledArea": 612.258
+  },
+  {
+   "net": "GND",
+   "layer": "In1.Cu",
+   "filledArea": 986.748
+  },
+  {
+   "net": "GND",
+   "layer": "In3.Cu",
+   "filledArea": 986.748
+  },
+  {
+   "net": "GND",
+   "layer": "In5.Cu",
+   "filledArea": 886.499
+  },
+  {
+   "net": "GND",
+   "layer": "In6.Cu",
+   "filledArea": 986.748
+  },
+  {
+   "net": "GND",
+   "layer": "B.Cu",
+   "filledArea": 733.675
+  },
+  {
+   "net": "/Debugger/UART_TX_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(D1-A)",
+   "layer": "B.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "Net-(J6-Pin_2)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.122
+  },
+  {
+   "net": "/Debugger/UART_RX_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "VSYS",
+   "layer": "B.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.14
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.149
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.149
+  },
+  {
+   "net": "Net-(U1-P1.00{slash}XL1)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(U1-P1.01{slash}XL2)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(U1-P1.00{slash}XL1)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "B.Cu",
+   "filledArea": 0.031
+  },
+  {
+   "net": "/Debugger/TRG_SWDIO_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.113
+  },
+  {
+   "net": "/Connectors/SPI.MOSI",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/UART_RX_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.054
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/SPI.SCK",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/SWD_TRG.SWDCLK",
+   "layer": "B.Cu",
+   "filledArea": 1.885
+  },
+  {
+   "net": "Net-(J6-Pin_4)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(U5-DEC4)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(U1-P1.01{slash}XL2)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(J6-Pin_4)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "layer": "B.Cu",
+   "filledArea": 1.755
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.149
+  },
+  {
+   "net": "/Debugger/TRG_~{RESET}_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "/Connectors/SPI.MISO",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "VSYS",
+   "layer": "B.Cu",
+   "filledArea": 21.779
+  },
+  {
+   "net": "Net-(U5-DEC4)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(D1-A)",
+   "layer": "B.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "B.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.149
+  },
+  {
+   "net": "/Debugger/TRG_SWDIO_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.117
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "B.Cu",
+   "filledArea": 1.755
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.149
+  },
+  {
+   "net": "/Debugger/UART_TX_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.119
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(J6-Pin_2)",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/SWD_TRG.SWDCLK",
+   "layer": "B.Cu",
+   "filledArea": 0.099
+  },
+  {
+   "net": "VSYS",
+   "layer": "B.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Connectors/SPI.MOSI",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "Net-(JP1-A)",
+   "layer": "B.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "/Debugger/SWD_TRG.~{RESET}",
+   "layer": "B.Cu",
+   "filledArea": 1.746
+  },
+  {
+   "net": "/Debugger/TRG_SWDCLK_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/nRF52_VDD",
+   "layer": "B.Cu",
+   "filledArea": 0.14
+  },
+  {
+   "net": "/Debugger/TRG_SWDCLK_NRF52",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/SWD_TRG.SWDIO",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/I2C.SCL",
+   "layer": "B.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "+BATT",
+   "layer": "In2.Cu",
+   "filledArea": 97.576
+  },
+  {
+   "net": "/Connectors/I2C.SCL",
+   "layer": "In2.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/I2C.SDA",
+   "layer": "In2.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ANALOG.A2",
+   "layer": "In2.Cu",
+   "filledArea": 0.109
+  },
+  {
+   "net": "/Connectors/I2C.SDA",
+   "layer": "In2.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ANALOG.A3",
+   "layer": "In2.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ANALOG.A4",
+   "layer": "In2.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/I2C.SCL",
+   "layer": "In2.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ANALOG.A5",
+   "layer": "In2.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "VDD",
+   "layer": "In2.Cu",
+   "filledArea": 766.415
+  },
+  {
+   "net": "VDD",
+   "layer": "In4.Cu",
+   "filledArea": 818.493
+  },
+  {
+   "net": "/nPM1300/NPM1300.SCL",
+   "layer": "In4.Cu",
+   "filledArea": 0.114
+  },
+  {
+   "net": "/Connectors/SPI.MISO",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/UART.TX",
+   "layer": "In4.Cu",
+   "filledArea": 0.119
+  },
+  {
+   "net": "/Connectors/DIG.D10",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/DIG.D9",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/nRF54L15/D2_FLASH",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/nRF54L15/~{CS}_FLASH",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/nRF54L15/~{CS}_FLASH",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/nPM1300/NPM1300.SCL",
+   "layer": "In4.Cu",
+   "filledArea": 0.1
+  },
+  {
+   "net": "/Connectors/SPI.MISO",
+   "layer": "In4.Cu",
+   "filledArea": 0.107
+  },
+  {
+   "net": "/Connectors/UART.TX",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/nRF54L15/D2_FLASH",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/DIG.D6",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/UART.RX",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/UART.RX",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Debugger/USB.VBUS",
+   "layer": "In4.Cu",
+   "filledArea": 0.159
+  },
+  {
+   "net": "Net-(J8-~{RESET})",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/nPM1300/NPM1300.SDA",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/nPM1300/NPM1300.SDA",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ENABLE",
+   "layer": "In4.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/UART.RX",
+   "layer": "In5.Cu",
+   "filledArea": 0.108
+  },
+  {
+   "net": "/nPM1300/NPM1300.INT",
+   "layer": "In5.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ANALOG.A4",
+   "layer": "In5.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ANALOG.A0",
+   "layer": "In5.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ANALOG.A1",
+   "layer": "In5.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/DIG.D13",
+   "layer": "In5.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/ANALOG.A4",
+   "layer": "In5.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/DIG.D11",
+   "layer": "In5.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/DIG.D12",
+   "layer": "In5.Cu",
+   "filledArea": 0.117
+  },
+  {
+   "net": "/nPM1300/NPM1300.INT",
+   "layer": "In5.Cu",
+   "filledArea": 0.129
+  },
+  {
+   "net": "/Connectors/UART.TX",
+   "layer": "In5.Cu",
+   "filledArea": 0.109
+  }
+ ]
+}
