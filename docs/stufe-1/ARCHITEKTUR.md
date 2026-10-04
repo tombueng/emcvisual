@@ -66,6 +66,8 @@ src/
     colormaps.ts            Inferno/Turbo (Polynom-Fits) als LUT
   audio/
     sonifier.ts             Web-Audio-Graph je Quelle
+  cli/                      Feldcheck ohne Browser (fieldCheck.ts rein, main.ts Node-Aufruf)
+  report/                   EMV-Bericht (HTML) und gemeinsame Texte mit der Diagnose
   fullwave/                 Stufe 3: openEMS
     job.ts                  Job-Export (Kupfer, Drähte, Vias, Ports, Lasten, Frequenzen, Gitter)
     result.ts               Ergebnisdatei, Frequenzgewichte, Abtasten, Umrechnen aufs Gitter

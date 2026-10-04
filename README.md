@@ -54,6 +54,11 @@ neben das schnelle Modell legen: Volumen, Sonde, Scan und Fernfeld. Im quasistat
 stimmen beide auf etwa 1 dB überein. Details: [tools/openems/README.md](tools/openems/README.md),
 [docs/zukunft/STUFE-3-VOLLWELLE.md](docs/zukunft/STUFE-3-VOLLWELLE.md).
 
+**Feldcheck für die CI:** dieselbe Rechnung als Node-Skript. Es meldet je Quelle Nahfeld,
+Fernfeld-Abstand und Layout-Hinweise und schlägt an, wenn ein Pull Request etwas verschlechtert.
+Das Skript liegt unter https://tombueng.github.io/emcvisual/cli/field-check.mjs, Anleitung in
+[docs/CI-FELDCHECK.md](docs/CI-FELDCHECK.md).
+
 **Stufe 4 (in Arbeit):** Reiter „Messung“: Ein 3D-Drucker fährt eine Nahfeldsonde über die
 Platine, ein Empfänger misst je Punkt ein Spektrum, das Ergebnis erscheint als Schnitt in
 Messhöhe und als Differenz zur Simulation. Ein virtueller Prüfstand misst die Simulation und
@@ -90,7 +95,8 @@ Beispiel: [Glasgow revC3](https://tombueng.github.io/emcvisual/?board=https://ra
 | `npm test` | Tests (Physik gegen analytische Lösungen, Parser gegen pcbnew-Referenzdaten) |
 | `npm run e2e` | Playwright-Tests im Browser (vorher einmal `npx playwright install --only-shell chromium`) |
 | `npm run check` | Typprüfung (TypeScript + Svelte) |
-| `npm run build` | statische Seite nach `dist/` |
+| `npm run build` | statische Seite nach `dist/`, dazu der Feldcheck nach `dist/cli/` |
+| `npm run field-check -- board.kicad_pcb --scenario s.json` | Feldcheck ohne Browser, z. B. in der CI ([docs/CI-FELDCHECK.md](docs/CI-FELDCHECK.md)) |
 | `npm run demo-board` | Demo-Platine mit KiCad (pcbnew-Python) neu erzeugen |
 | `npm run check:codename` | prüft, dass der Arbeitstitel nur an erlaubten Stellen steht |
 

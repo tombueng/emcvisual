@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && vite build -c vite.cli.config.ts",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "test": "vitest run",
@@ -13,7 +13,8 @@
     "check:codename": "node scripts/check-codename.mjs",
     "rename": "node scripts/rename.mjs",
     "demo-board": "/usr/bin/python3 tools/demo-board/gen_demo_board.py && /usr/bin/python3 tools/demo-board/export_reference.py public/demo/demo-board.kicad_pcb tests/fixtures/demo-board.reference.json && kicad-cli pcb export glb --no-board-body --subst-models -f -o public/demo/demo-board.glb public/demo/demo-board.kicad_pcb",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "field-check": "node dist/cli/field-check.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

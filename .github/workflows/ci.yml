@@ -19,6 +19,7 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npm run build
+      - run: npm run field-check -- public/demo/demo-board.kicad_pcb --scenario public/demo/demo-board.scenario.json
 
   e2e:
     runs-on: ubuntu-latest

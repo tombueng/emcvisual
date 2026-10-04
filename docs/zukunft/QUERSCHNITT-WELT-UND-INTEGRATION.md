@@ -67,7 +67,8 @@ Browser als PDF speicherbar; Sprache wie die Oberfläche. Code: `src/report/`.
 ## W6 Plattform
 - WebGPU-Rechenkern (Stufe 1 M8), später auch für Stufe-2-Löser.
 - Kommandozeilen-Variante (Node) für CI: „Feld-Regression“ bei jedem Commit eines
-  Hardware-Projekts (Hotspot wurde 6 dB lauter → Hinweis im Pull Request).
+  Hardware-Projekts (Hotspot wurde 6 dB lauter → Hinweis im Pull Request). **Umgesetzt
+  (2026-10-04):** `src/cli/`, Anleitung in [../CI-FELDCHECK.md](../CI-FELDCHECK.md).
 - Plugin-Schnittstelle für eigene Quellentypen.
 
 ## W7 Wissen
