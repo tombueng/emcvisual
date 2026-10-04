@@ -18,6 +18,7 @@ export const de = {
     computed: (ms: number) => `berechnet in ${(ms / 1000).toFixed(1).replace('.', ',')} s`,
     help: 'Hilfe',
     language: 'Sprache',
+    examples: 'Beispiele …',
     panel: 'Einstellungen',
   },
   empty: {
@@ -28,6 +29,7 @@ export const de = {
     demoHint: 'Die Demo zeigt einen guten und einen schlechten Schaltregler, zwei Takte (einer über einem Schlitz in der GND-Fläche) und ein USB-Paar.',
     loading: 'Platine wird gelesen …',
     drop: 'Loslassen zum Öffnen',
+    examples: 'Oder eine öffentliche Platine von GitHub öffnen (wird direkt von dort geladen):',
   },
   sources: {
     title: 'Quellen',
@@ -192,6 +194,13 @@ export const de = {
     far: 'Fernfeld-Orientierung (CISPR 32 B, 3 m)',
     farHint: 'Nur Gegentakt der Platine, ohne Kabel. Grobe Orientierung, keine Prüfaussage.',
     margin: (db: number) => (db >= 0 ? `${db.toFixed(0)} dB über Grenzwert` : db < -100 ? 'mehr als 100 dB Abstand' : `${(-db).toFixed(0)} dB Abstand`),
+    rankHint: 'Reihenfolge: zuerst die Quelle am nächsten am Grenzwert (3 m), darin die Behebung mit der größten Wirkung.',
+    gainFinding: (v: string) => `3 m: behoben ${v} leiser`,
+    gainSource: (v: string) => `3 m: alle Lücken unter dieser Quelle zusammen ${v}`,
+    gainDb: (db: number) => `${db.toFixed(1).replace('.', ',')} dB`,
+    gainMore: (db: number) => `mehr als ${db} dB`,
+    sourceMargin: (s: string) => `Quelle: ${s}`,
+    shares: (ret: string, gaps: string) => `Rückstromwege ${ret}, Lücken in der Fläche ${gaps}`,
     goTo: 'Sonde hierher',
   },
   probe: {

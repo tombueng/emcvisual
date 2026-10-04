@@ -32,6 +32,13 @@ export interface Detour {
   /** For transfers: what carries the return between the planes, e.g. "C2" or "via". */
   via?: string;
   weight: number;
+  /**
+   * How the element list looks with this problem fixed (plane without the gap, or a stitching
+   * via right at the layer change): elements to drop, elements to put back, elements to add.
+   */
+  fix?: { remove: number[]; restore: { index: number; el: CurrentElement }[]; add: CurrentElement[] };
+  /** How much quieter the source's far field gets when this is fixed, dB (set by attribution). */
+  gainDb?: number;
 }
 
 export interface ReturnResult {
@@ -84,6 +91,7 @@ export function applyReturnModel(ctx: Ctx, src: Source, elements: CurrentElement
       if (!path) continue; // no copper way around: keep the stage 1 behaviour for this gap
       if (g.t0 > tPrev) out.push({ ...e, a: lerp(e.a, e.b, tPrev), b: A });
       out.push({ ...e, a: A, b: B, noImage: true });
+      const first = out.length;
       // image arrives at B' → up to the plane surface → around the gap → down to A'
       out.push(vertical(B, yImg, ys, e.w, e.r, e.net, yL));
       for (let k = 1; k < path.length; k++) {
@@ -100,6 +108,18 @@ export function applyReturnModel(ctx: Ctx, src: Source, elements: CurrentElement
         });
       }
       out.push(vertical(A, ys, yImg, e.w, e.r, e.net, yL));
+      // fixed: the return runs right under the trace, as the mirror image of the crossing
+      const image: CurrentElement = {
+        a: [A[0], yImg, A[2]],
+        b: [B[0], yImg, B[2]],
+        w: -e.w,
+        r: e.r,
+        vertical: false,
+        layer: ref.layer,
+        net: ref.net,
+        noImage: true,
+        slotY: yL,
+      };
       detours.push({
         kind: 'gap',
         path,
@@ -107,6 +127,7 @@ export function applyReturnModel(ctx: Ctx, src: Source, elements: CurrentElement
         length: Math.hypot(B[0] - A[0], B[2] - A[2]),
         extraArea: loopArea(ba, bb, path),
         weight: e.w,
+        fix: { remove: range(first, out.length), restore: [], add: [image] },
       });
       tPrev = g.t1;
     }
@@ -193,7 +214,9 @@ function transferAtVias(ctx: Ctx, out: CurrentElement[], detours: Detour[]) {
     const V = toWorld(frame, at, 0);
 
     // the via's own mirror images would duplicate the return: drop them
+    const restore = sp.idx.map((i) => ({ index: i, el: out[i]! }));
     for (const i of sp.idx) out[i] = { ...out[i]!, noImage: true };
+    const first = out.length;
     // image of the "to" side arrives at V → plane surface → to the link
     out.push(vertical(V, imgTo, sTo, w, 0.15, pTo.net, toL.y));
     pushPath(out, frame, pathTo, sTo, w, pTo);
@@ -211,8 +234,27 @@ function transferAtVias(ctx: Ctx, out: CurrentElement[], detours: Detour[]) {
       extraArea: pathLength(pathTo) * Math.abs(pTo.y - pFrom.y),
       via: link.label,
       weight: w,
+      // fixed: a stitching via right beside the signal via, so the images of the via return
+      fix: { remove: range(first, out.length), restore, add: [] },
     });
   }
+}
+
+function range(a: number, b: number): number[] {
+  return Array.from({ length: Math.max(0, b - a) }, (_, i) => a + i);
+}
+
+/** The element list with one detour fixed (see Detour.fix). */
+export function withFixed(elements: CurrentElement[], d: Detour): CurrentElement[] {
+  if (!d.fix) return elements;
+  const drop = new Set(d.fix.remove);
+  const back = new Map(d.fix.restore.map((r) => [r.index, r.el]));
+  const out: CurrentElement[] = [];
+  elements.forEach((e, i) => {
+    if (drop.has(i)) return;
+    out.push(back.get(i) ?? e);
+  });
+  return [...out, ...d.fix.add];
 }
 
 interface Link {

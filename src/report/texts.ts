@@ -8,6 +8,7 @@ import { engine } from '../state/engine.svelte';
 import { formatEng } from '../physics/units';
 import { limitAt } from '../physics/farfield';
 import type { Diagnostic } from '../physics/diagnostics';
+import { MAX_GAIN_DB, rankFindings } from '../physics/attribution';
 import type { Source } from '../physics/sources';
 
 export function diagnosticText(d: Diagnostic): string {
@@ -67,3 +68,18 @@ export function farMargins(): FarMargin[] {
 
 export const sourceName = (id: string) => app.sources.find((s) => s.id === id)?.name ?? '';
 export const sourceColor = (id: string) => app.sources.find((s) => s.id === id)?.color ?? '#888';
+
+/** Layout hints in the order to work on them (attribution.ts): worst source first, biggest fix first. */
+export function rankedDiagnostics(): { d: Diagnostic; margin: number | null }[] {
+  const margins = new Map(farMargins().map((f) => [f.id, f.worst]));
+  return rankFindings(
+    app.diagnostics.map((d) => ({ item: d, sourceMargin: margins.get(d.sourceId) ?? null, gainDb: d.gain?.db ?? null })),
+  ).map((r) => ({ d: r.item, margin: r.sourceMargin }));
+}
+
+/** "fixing this: 11 dB quieter at 3 m" and the like. */
+export function gainText(d: Diagnostic): string {
+  if (!d.gain) return '';
+  const v = d.gain.db >= MAX_GAIN_DB - 0.05 ? t.diag.gainMore(MAX_GAIN_DB) : t.diag.gainDb(d.gain.db);
+  return d.gain.scope === 'source' ? t.diag.gainSource(v) : t.diag.gainFinding(v);
+}

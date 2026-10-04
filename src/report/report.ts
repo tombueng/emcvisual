@@ -9,7 +9,7 @@ import { app } from '../state/app.svelte';
 import { engine, selectionFromView } from '../state/engine.svelte';
 import { formatEng } from '../physics/units';
 import { BANDS } from '../physics/spectrum';
-import { diagnosticText, farMargins, sourceColor, sourceName, sourceSummary } from './texts';
+import { diagnosticText, farMargins, gainText, rankedDiagnostics, sourceColor, sourceName, sourceSummary } from './texts';
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
@@ -51,8 +51,11 @@ export function buildReport(image: string | null): string {
     .join('');
 
   const findings = app.diagnostics.length
-    ? `<ol class="findings">${app.diagnostics
-        .map((d) => `<li>${dot(sourceColor(d.sourceId))}<b>${esc(sourceName(d.sourceId))}</b> · ${esc(diagnosticText(d))} <span class="at">(${fmtNum(d.at.x, 1)} / ${fmtNum(d.at.y, 1)} mm)</span></li>`)
+    ? `<p class="note">${esc(t.diag.rankHint)}</p><ol class="findings">${rankedDiagnostics()
+        .map(
+          ({ d, margin }) =>
+            `<li>${dot(sourceColor(d.sourceId))}<b>${esc(sourceName(d.sourceId))}</b>${margin !== null ? ` <span class="at">(${esc(t.diag.margin(margin))})</span>` : ''} · ${esc(diagnosticText(d))} <span class="at">(${fmtNum(d.at.x, 1)} / ${fmtNum(d.at.y, 1)} mm)</span>${d.gain ? `<br><span class="gain">${esc(gainText(d))}</span>` : ''}</li>`,
+        )
         .join('')}</ol>`
     : `<p>${esc(t.diag.none)}</p>`;
 
@@ -116,6 +119,7 @@ export function buildReport(image: string | null): string {
   ol.findings { padding-left: 22px; margin: 0; }
   ol.findings li { margin-bottom: 8px; }
   .at { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .gain { color: var(--amber); font-size: 13px; font-weight: 600; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: 13px; }
   dt { color: var(--muted); }
   dd { margin: 0; }

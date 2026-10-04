@@ -14,6 +14,7 @@ import { packWithImages } from '../physics/images';
 import { fieldAt, slotMaskTable } from '../physics/biotsavart';
 import { cispr32ClassB, dipoleMoment, farField, limitAt } from '../physics/farfield';
 import { diagnoseSource } from '../physics/diagnostics';
+import { attributeSource } from '../physics/attribution';
 import { selectionWeight } from '../compute/composer';
 import { migrateScenario, type Scenario } from '../state/scenario';
 import type { Source } from '../physics/sources';
@@ -50,7 +51,11 @@ export interface SourceCheck {
   near: Record<string, { db: number; x: number; y: number }>;
   /** Worst far-field line minus the CISPR 32 B limit at 3 m, dB (null: no line in the limit range). */
   far: { margin: number; f: number } | null;
-  hints: { kind: string; x: number; y: number; layer: string }[];
+  /** Far-field gain when fixed, dB (scope 'source': all plane gaps under the source together). */
+  hints: { kind: string; x: number; y: number; layer: string; gainDb?: number; gainScope?: 'finding' | 'source' }[];
+  /** All return-path problems / all plane gaps of the source: louder at 3 m by this much, dB. */
+  returnPathsDb: number;
+  planeGapsDb: number;
 }
 
 export interface CheckReport {
@@ -88,16 +93,20 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
   const out: SourceCheck[] = [];
   for (const src of scenario.sources) {
     if (!src.enabled) continue;
-    const res: SourceCheck = { id: src.id, name: src.name, type: src.type, near: {}, far: null, hints: [] };
+    const res: SourceCheck = { id: src.id, name: src.name, type: src.type, near: {}, far: null, hints: [], returnPathsDb: 0, planeGapsDb: 0 };
     out.push(res);
     try {
       const model = buildSource(ctx, src);
+      const base = model.elements;
       let detours: Detour[] = [];
       if (scenario.settings.returnModel === 'detour') {
         const r = applyReturnModel(ctx, src, model.elements);
         model.elements = r.elements;
         detours = r.detours;
       }
+      const attr = attributeSource(model.elements, base, detours, planes, frame);
+      res.returnPathsDb = round(attr.returnPathsDb);
+      res.planeGapsDb = round(attr.planeGapsDb);
       const pack = packWithImages(model.elements, planes, frame);
       const masks = slotMaskTable(pack.planeY.length);
       const h = new Float64Array(3);
@@ -128,12 +137,15 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
         }
       }
       res.far = Number.isFinite(worst) ? { margin: round(worst), f: fw } : null;
-      res.hints = diagnoseSource(board, planes, frame, src, model, ctx.fMax, detours).map((d) => ({
-        kind: d.kind,
-        x: round(d.at.x),
-        y: round(d.at.y),
-        layer: d.layer,
-      }));
+      res.hints = diagnoseSource(board, planes, frame, src, model, ctx.fMax, detours, attr.planeGapsDb)
+        .map((d) => ({
+          kind: d.kind,
+          x: round(d.at.x),
+          y: round(d.at.y),
+          layer: d.layer,
+          ...(d.gain ? { gainDb: round(d.gain.db), gainScope: d.gain.scope } : {}),
+        }))
+        .sort((a, b) => (b.gainDb ?? -1) - (a.gainDb ?? -1));
     } catch (e) {
       res.error = e instanceof SourceError ? e.message : (e as Error).message || String(e);
     }

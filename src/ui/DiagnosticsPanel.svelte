@@ -4,7 +4,8 @@
   import { t } from '../i18n';
   import { formatEng } from '../physics/units';
   import { toWorld } from '../model/world';
-  import { diagnosticText, farMargins } from '../report/texts';
+  import { diagnosticText, farMargins, gainText, rankedDiagnostics } from '../report/texts';
+  import { MAX_GAIN_DB } from '../physics/attribution';
   import { buildReport } from '../report/report';
   import { downloadText } from '../state/persist';
 
@@ -34,6 +35,22 @@
     engine.viewer?.focus(x, 0, z);
   }
 
+  /** " · return paths 7.9 dB, plane gaps 0 dB" for sources where either matters. */
+  function shares(id: string): string {
+    const a = app.attribution[id];
+    if (!a || (a.returnPathsDb < 0.5 && a.planeGapsDb < 0.5)) return '';
+    const f = (db: number) => (db >= MAX_GAIN_DB - 0.05 ? t.diag.gainMore(MAX_GAIN_DB) : t.diag.gainDb(db));
+    return ` · ${t.diag.shares(f(a.returnPathsDb), f(a.planeGapsDb))}`;
+  }
+
+  // layout hints in the order to work on them
+  const ranked = $derived.by(() => {
+    void app.diagnostics;
+    void app.models;
+    void app.fieldOrigin;
+    return rankedDiagnostics();
+  });
+
   // worst margin per source against the 3 m limit
   const far = $derived.by(() => {
     void app.models;
@@ -50,17 +67,20 @@
   <div class="section-title">{t.diag.warnings}</div>
   {#if app.diagnostics.length === 0}
     <p class="hint">{t.diag.none}</p>
+  {:else}
+    <p class="hint">{t.diag.rankHint}</p>
   {/if}
-  <ul>
-    {#each app.diagnostics as d, i (i)}
+  <ol class="ranked">
+    {#each ranked as { d, margin }, i (i)}
       <li style:--c={colorOf(d.sourceId)}>
         <button onclick={() => goToBoard(d.at.x, d.at.y)} title={t.diag.goTo}>
-          <span class="src">{nameOf(d.sourceId)}</span>
+          <span class="row"><span class="src">{nameOf(d.sourceId)}</span>{#if margin !== null}<span class="value" class:over={margin >= 0}>{t.diag.margin(margin)}</span>{/if}</span>
           <span class:warn={d.kind !== 'long-line'}>{diagnosticText(d)}</span>
+          {#if d.gain}<span class="gain value">{gainText(d)}</span>{/if}
         </button>
       </li>
     {/each}
-  </ul>
+  </ol>
 
   <div class="section-title">{t.diag.hotspots}</div>
   {#if app.hotspots.length === 0}
@@ -85,7 +105,7 @@
       <li style:--c={s.color}>
         <div class="static">
           <span class="row"><span class="src">{s.name}</span><span class="value" class:over={s.worst >= 0}>{t.diag.margin(s.worst)}</span></span>
-          <span class="hint value">{formatEng(s.at, 'Hz', 3)}</span>
+          <span class="hint value">{formatEng(s.at, 'Hz', 3)}{shares(s.id)}</span>
         </div>
       </li>
     {/each}
@@ -94,6 +114,32 @@
 </div>
 
 <style>
+  ol.ranked {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: rank;
+  }
+  ol.ranked li {
+    counter-increment: rank;
+    position: relative;
+  }
+  ol.ranked li button {
+    padding-left: 30px;
+  }
+  ol.ranked li::before {
+    content: counter(rank);
+    position: absolute;
+    left: 8px;
+    top: 5px;
+    font-size: 11px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .gain {
+    color: var(--field);
+    font-size: 12px;
+  }
   .report {
     display: flex;
     justify-content: flex-end;

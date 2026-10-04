@@ -9,6 +9,8 @@ test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
 
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Ziehe eine KiCad-Platine hierher' })).toBeVisible();
+  // public example boards are offered on the start page (loaded from GitHub when chosen)
+  await expect(page.getByRole('button', { name: 'Glasgow revC3' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Demo-Platine laden' }).click();
   await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
@@ -25,6 +27,9 @@ test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
   await page.getByRole('tab', { name: /Diagnose/ }).click();
   await expect(page.getByText(/Rückstrompfad unterbrochen/).first()).toBeVisible();
   await expect(page.getByText(/Bezugswechsel am Via/).first()).toBeVisible();
+  // ranked by far-field effect: the first hint is the bad clock's far transfer through C2
+  await expect(page.locator('ol.ranked li').first()).toContainText('Takt schlecht');
+  await expect(page.locator('ol.ranked li').first()).toContainText(/3 m: behoben 1\d,\d dB leiser/);
 
   // far field view with limit lines
   await page.getByRole('tab', { name: 'Fernfeld 3 m' }).click();

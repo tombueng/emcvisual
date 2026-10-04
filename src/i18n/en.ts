@@ -20,6 +20,7 @@ export const en: Strings = {
     computed: (ms: number) => `computed in ${(ms / 1000).toFixed(1)} s`,
     help: 'Help',
     language: 'Language',
+    examples: 'Examples …',
     panel: 'Settings',
   },
   empty: {
@@ -30,6 +31,7 @@ export const en: Strings = {
     demoHint: 'The demo has a good and a bad buck converter, two clocks (one across a slot in the ground plane) and a USB pair.',
     loading: 'Reading board …',
     drop: 'Drop to open',
+    examples: 'Or open a public board from GitHub (loaded straight from there):',
   },
   sources: {
     title: 'Sources',
@@ -192,6 +194,13 @@ export const en: Strings = {
     far: 'Far-field estimate (CISPR 32 B, 3 m)',
     farHint: 'Differential mode of the board only, no cables. A rough estimate, not a test result.',
     margin: (db: number) => (db >= 0 ? `${db.toFixed(0)} dB over the limit` : db < -100 ? 'more than 100 dB margin' : `${(-db).toFixed(0)} dB margin`),
+    rankHint: 'Order: the source closest to the limit (3 m) first, within it the fix with the biggest effect.',
+    gainFinding: (v: string) => `3 m: ${v} quieter when fixed`,
+    gainSource: (v: string) => `3 m: all plane gaps under this source together ${v}`,
+    gainDb: (db: number) => `${db.toFixed(1)} dB`,
+    gainMore: (db: number) => `more than ${db} dB`,
+    sourceMargin: (s: string) => `Source: ${s}`,
+    shares: (ret: string, gaps: string) => `return paths ${ret}, plane gaps ${gaps}`,
     goTo: 'Move the probe here',
   },
   probe: {

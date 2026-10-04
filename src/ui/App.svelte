@@ -14,6 +14,7 @@
   import SpectrumPanel from './SpectrumPanel.svelte';
   import { showMeasurement } from '../state/scanner.svelte';
   import { canWatch, dropHandles, follow, live, pickWithHandle, stopFollowing, type FileHandle } from '../state/liveFile.svelte';
+  import { EXAMPLE_BOARDS } from '../examples';
 
   let viewEl: HTMLDivElement;
   let viewer: Viewer | null = null;
@@ -116,22 +117,37 @@
     const url = q.get('board');
     if (q.has('demo')) return loadDemo();
     if (!url || !/^https?:\/\//i.test(url)) return;
+    await openBoardUrl(url, q.get('models'));
+  }
+
+  /** Fetch a board (and optionally its GLB models) from a server that allows cross-origin reads. */
+  async function openBoardUrl(url: string, models?: string | null) {
+    stopFollowing();
     try {
+      app.loading = true;
       const res = await fetch(url);
       if (!res.ok) throw new Error(String(res.status));
       const name = decodeURIComponent(new URL(url).pathname.split('/').pop() || 'board.kicad_pcb');
       await engine.loadBoard(await res.text(), name);
     } catch {
+      app.loading = false;
       app.toast = t.errors.fetch(url);
       return;
     }
     // optional component models: &models=<URL of a KiCad GLB export>
-    const models = q.get('models');
     if (models && /^https?:\/\//i.test(models)) {
       const glb = await fetch(models).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
       if (glb) await openModels(glb);
       else app.toast = t.errors.fetch(models);
     }
+  }
+
+  /** One of the public example boards; the address bar gets a link to share. */
+  async function openExample(id: string) {
+    const ex = EXAMPLE_BOARDS.find((e) => e.id === id);
+    if (!ex) return;
+    history.replaceState(null, '', `${location.pathname}?board=${encodeURIComponent(ex.url)}`);
+    await openBoardUrl(ex.url);
   }
 
   async function loadScenario() {
@@ -395,6 +411,22 @@
     <div class="actions">
       <button class="btn" onclick={openDialog}>{t.top.open}</button>
       <button class="btn" onclick={loadDemo}>{t.top.demo}</button>
+      <label class="quality">
+        <span class="sr-only">{t.top.examples}</span>
+        <select
+          class="examples"
+          aria-label={t.top.examples}
+          value=""
+          onchange={(e) => {
+            const sel = e.currentTarget as HTMLSelectElement;
+            void openExample(sel.value);
+            sel.value = '';
+          }}
+        >
+          <option value="" disabled>{t.top.examples}</option>
+          {#each EXAMPLE_BOARDS as ex (ex.id)}<option value={ex.id}>{ex.name}</option>{/each}
+        </select>
+      </label>
       <button class="btn" onclick={saveScenario} disabled={!app.board}>{t.top.saveScenario}</button>
       <button class="btn" onclick={loadScenario} disabled={!app.board}>{t.top.loadScenario}</button>
       <button class="btn" onclick={snapshot} disabled={!app.board}>{t.top.snapshot}</button>
@@ -447,6 +479,15 @@
           <button class="btn" onclick={openDialog}>{t.empty.open}</button>
         </div>
         <p class="hint">{t.empty.demoHint}</p>
+        <p class="hint">{t.empty.examples}</p>
+        <ul class="examples-list">
+          {#each EXAMPLE_BOARDS as ex (ex.id)}
+            <li>
+              <button class="link" onclick={() => openExample(ex.id)}>{ex.name}</button>
+              <span>{i18n.lang === 'de' ? ex.de : ex.en} · <a href={ex.project} target="_blank" rel="noopener">{ex.license}</a></span>
+            </li>
+          {/each}
+        </ul>
       </div>
     {/if}
     {#if dragging}<div class="dropzone">{t.empty.drop}</div>{/if}
@@ -559,6 +600,33 @@
   }
   .quality select.lang {
     width: 58px;
+  }
+  .quality select.examples {
+    width: 120px;
+  }
+  .examples-list {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    text-align: left;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .examples-list li {
+    margin: 4px 0;
+  }
+  .examples-list .link {
+    background: none;
+    border: 0;
+    padding: 0;
+    margin-right: 6px;
+    color: var(--probe);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+  }
+  .examples-list a {
+    color: inherit;
   }
   .sr-only {
     position: absolute;

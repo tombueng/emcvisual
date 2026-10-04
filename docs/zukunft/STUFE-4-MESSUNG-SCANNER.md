@@ -123,5 +123,7 @@ Ein RTL-SDR (24 MHz–1,7 GHz) geht auch, ist aber langsam und schmalbandig (2,4
 - Wiederholgenauigkeit: zweimal scannen, Abweichung < 1 dB erwarten.
 
 ## Offene Fragen
-- Welcher Drucker und welche Firmware sind vorhanden?
-- tinySA Ultra oder HackRF als erste Plattform?
+- Drucker: Ender 3 mit OctoPrint 1.11 auf einem Raspberry Pi 3B (vorhanden).
+- Empfänger und Sonden: Stand 2026-10-04 noch keine. Günstigster sinnvoller Einstieg:
+  tinySA Ultra und ein Satz H-Feld-Nahfeldsonden (Schleifen 1–10 mm); der Treiber für den
+  tinySA ist geschrieben. Bis dahin läuft die Kette mit dem virtuellen Prüfstand.

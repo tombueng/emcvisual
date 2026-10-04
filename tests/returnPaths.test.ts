@@ -89,3 +89,50 @@ describe('stage 2 return model on the demo board', () => {
     expect(r.elements).toHaveLength(m.elements.length);
   });
 });
+
+describe('far-field attribution of layout problems', () => {
+  const board = parseBoard(readFileSync('public/demo/demo-board.kicad_pcb', 'utf8'));
+  const frame = worldFrame(board);
+  const planes = detectPlanes(board);
+  const ctx = { board, frame, planes, fMax: 1e9 };
+  const scenario = JSON.parse(readFileSync('public/demo/demo-board.scenario.json', 'utf8')) as { sources: Source[] };
+  const run = async (id: string) => {
+    const { attributeSource } = await import('../src/physics/attribution');
+    const src = scenario.sources.find((s) => s.id === id)!;
+    const base = buildSource(ctx, src).elements;
+    const r = applyReturnModel(ctx, src, base);
+    return { r, a: attributeSource(r.elements, base, r.detours, planes, frame) };
+  };
+
+  it('says what each return-path problem of the bad clock costs at 3 m', async () => {
+    const { r, a } = await run('clk-bad');
+    const gains = r.detours.map((d) => d.gainDb!);
+    expect(gains.length).toBeGreaterThanOrEqual(3);
+    // each problem on its own makes the source louder than with ideal returns
+    for (const g of gains) expect(g).toBeGreaterThanOrEqual(0);
+    // the far transfer through C2 (bigger extra area) costs more than the near one
+    const t = r.detours.filter((d) => d.kind === 'transfer').sort((p, q) => p.extraArea - q.extraArea);
+    expect(t[1]!.gainDb!).toBeGreaterThan(t[0]!.gainDb!);
+    expect(a.returnPathsDb).toBeGreaterThan(3);
+    console.log(r.detours.map((d) => `${d.kind}${d.via ? ' ' + d.via : ''} ${d.extraArea.toFixed(0)} mm²: ${d.gainDb!.toFixed(1)} dB`).join(', '), `| together ${a.returnPathsDb.toFixed(1)} dB`);
+  });
+
+  it('charges the cut-out under the bad buck, not the good one', async () => {
+    const bad = (await run('buck-bad')).a;
+    const good = (await run('buck-good')).a;
+    expect(bad.planeGapsDb).toBeGreaterThan(10);
+    expect(good.planeGapsDb).toBeLessThan(1);
+    console.log(`buck-bad gaps ${bad.planeGapsDb.toFixed(1)} dB, buck-good ${good.planeGapsDb.toFixed(1)} dB`);
+  });
+
+  it('ranks the worst source first and the biggest fix first within it', async () => {
+    const { rankFindings } = await import('../src/physics/attribution');
+    const ranked = rankFindings([
+      { item: 'a', sourceMargin: -20, gainDb: 15 },
+      { item: 'b', sourceMargin: -1, gainDb: 2 },
+      { item: 'c', sourceMargin: -1, gainDb: 9 },
+      { item: 'd', sourceMargin: -1, gainDb: null },
+    ]);
+    expect(ranked.map((x) => x.item)).toEqual(['c', 'b', 'd', 'a']);
+  });
+});

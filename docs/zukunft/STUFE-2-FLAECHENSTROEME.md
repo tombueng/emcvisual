@@ -46,6 +46,29 @@ Am Demo-Board: Der Rückstrom des schlechten Takts läuft 15 mm um das Schlitzen
 zusätzliche Schleifenfläche) und springt an beiden Vias über C2 (35 und 52 mm Umweg, 18 und
 31 mm²); der Hotspot wandert dadurch vom Schlitz in die Schleife zum Kondensator.
 
+## Umgesetzt: Fernfeld-Wirkung jedes Hinweises (2026-10-04)
+
+`src/physics/attribution.ts`. Die Fernfeld-Abschätzung ist proportional zum magnetischen
+Dipolmoment einer Quelle, mit demselben Faktor für jede Spektrallinie. Jeder Umweg aus 2a kennt
+seine „behobene“ Form: Für eine Lücke läuft der Rückstrom dann als Spiegelbild direkt unter der
+Leitung, für einen Lagenwechsel als Stitching-Via direkt neben der Via. Daraus folgt:
+
+- **je Hinweis:** sein Anteil am Moment, Δm_k = m_jetzt − m_k behoben, zur Quelle mit idealen
+  Rückwegen addiert: Kosten_k = 20·log10(|m_ideal + Δm_k| / |m_ideal|). Einfach „einen Umweg
+  entfernen und vergleichen“ taugt nicht, denn die Umwegschleifen einer Quelle können
+  entgegengesetzt umlaufen und sich teilweise aufheben. Beim schlechten Takt der Demo macht
+  das Entfernen nur des nahen Sprungs über C2 die Quelle sogar 4 dB lauter.
+- **je Quelle:** alle Rückwege zusammen, 20·log10(|m_jetzt| / |m_ideal|), und alle Lücken in
+  der Fläche zusammen (dieselbe Quelle über lückenlosen Flächen). Das gilt auch für Lücken ohne
+  Weg drumherum und für Aussparungen unter einer Quelle. Anzeige begrenzt auf „mehr als 30 dB“:
+  Über einer idealen Fläche verschwindet das senkrechte Moment einer flachen Schleife fast ganz.
+- **Reihenfolge** (Reiter Diagnose, Bericht, Feldcheck): zuerst die Quelle mit dem kleinsten
+  Abstand zum Grenzwert in 3 m, darin die Behebung mit der größten Wirkung.
+
+Demo-Platine: schlechter Takt (0 dB unter dem Grenzwert) mit fernem Sprung über C2 11,1 dB,
+nahem Sprung 3,3 dB und Schlitz 0,9 dB, zusammen 7,9 dB. Die Aussparung unter dem schlechten
+Buck kostet mehr als 30 dB; der gute Buck hat nichts.
+
 ## Umgesetzt: 2b Quasistatisches E-Feld (2026-10-04)
 
 `src/physics/charges.ts`, `efield.ts`; Umschalter „Feldgröße: Magnetisch (H) / Elektrisch (E)“.

@@ -36,7 +36,8 @@ Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 - virtuelle Nahfeldsonde mit Spektrumanalysator, Fernfeld-Abschätzung gegen CISPR 32 B
 - Klang: jede Quelle klingt, laut wo das Feld stark ist
 - Diagnose: unterbrochene Rückstrompfade, Bezugswechsel an Vias, fehlende Stitching-Vias,
-  Hotspots mit den Netzen und Bauteilen in der Nähe
+  Hotspots mit den Netzen und Bauteilen in der Nähe; die Hinweise sind nach ihrer Wirkung auf
+  das Fernfeld in 3 m geordnet („behoben 11 dB leiser“), die lauteste Quelle zuerst
 - echte 3D-Bauteilmodelle aus KiCads GLB-Export (`.glb` zusätzlich auf das Fenster ziehen)
 - Szenario als JSON speichern, PNG- und CSV-Export, EMV-Bericht als HTML (druckbar als PDF)
 - Oberfläche auf Deutsch und Englisch (Auswahl oben rechts, Standard nach Browsersprache)
@@ -83,6 +84,21 @@ lädt die Platine neu, Quellen und Ansicht bleiben (Abzeichen „live“ neben d
 Echte Bauteilmodelle: in KiCad „Datei → Exportieren → glTF/GLB“ (ohne Platinenkörper) oder
 `kicad-cli pcb export glb --no-board-body --subst-models board.kicad_pcb`, dann die `.glb`
 zusätzlich auf das Fenster ziehen. Die Bauteile werden über ihre Referenz zugeordnet.
+
+### Beispielplatinen zum Ausprobieren
+
+Öffentliche KiCad-Projekte, direkt von GitHub geladen (auch über „Beispiele …“ in der App):
+
+| Platine | Was drauf ist | Lizenz |
+|---|---|---|
+| [Glasgow revC3](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2FGlasgowEmbedded%2Fglasgow%2FHEAD%2Fhardware%2Fboards%2Fglasgow%2FrevC3%2Fglasgow.kicad_pcb) | USB-Interface mit FPGA, Pegelwandler, 4 Lagen | 0BSD |
+| [HackRF One](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2Fgreatscottgadgets%2Fhackrf%2FHEAD%2Fhardware%2Fhackrf-one%2Fhackrf-one.kicad_pcb) | SDR 1 MHz bis 6 GHz, USB, Takte, HF-Teil | GPL-2.0 |
+| [Cynthion](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2Fgreatscottgadgets%2Fcynthion-hardware%2FHEAD%2Fcynthion.kicad_pcb) | USB-Analysator, 6 Lagen, mehrere USB-PHYs | CERN-OHL-P-2.0 |
+| [Olimex ESP32-POE Rev M2](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2FOLIMEX%2FESP32-POE%2FHEAD%2FHARDWARE%2FESP32-PoE-hardware-revision-M2%2FESP32-PoE_Rev_M2.kicad_pcb) | ESP32 mit Ethernet (50-MHz-Takt) und PoE-Wandler, geteilte Flächen | Apache-2.0 |
+| [OtterCastAudio V2](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2FOttercast%2FOtterCastAudioV2%2FHEAD%2FOtterCastAudioV2.kicad_pcb) | Audio-Streamer mit SoC, Ethernet und USB | MIT |
+
+Die Platinen gehören ihren Projekten und stehen unter deren Lizenzen; sie liegen nicht in
+diesem Repo.
 
 Platinen lassen sich auch per Link öffnen: `?demo` lädt die Demo, `?board=<URL>` eine
 `.kicad_pcb` von einem Server, der fremde Seiten lesen lässt (z. B. `raw.githubusercontent.com`),

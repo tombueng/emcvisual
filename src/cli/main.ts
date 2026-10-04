@@ -9,6 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { CHECK_BANDS, compareChecks, DEFAULT_CHECK, runCheck, type CheckReport } from './fieldCheck';
+import { MAX_GAIN_DB } from '../physics/attribution';
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -35,7 +36,16 @@ function table(r: CheckReport): string {
     const far = s.far ? `${s.far.margin >= 0 ? '+' : ''}${s.far.margin.toFixed(1)} dB @ ${(s.far.f / 1e6).toFixed(1)} MHz` : '-';
     return `${pad(s.name, 26)}${near}${pad(far, 22)}${s.hints.length}`;
   });
-  return [head, ...rows].join('\n');
+  // the hints, worst source first and the biggest far-field gain first within a source
+  const order = [...r.sources].filter((s) => s.hints.length).sort((a, b) => (b.far?.margin ?? -999) - (a.far?.margin ?? -999));
+  const hints = order.flatMap((s) =>
+    s.hints.map((h) => {
+      const amount = h.gainDb === undefined ? '' : h.gainDb >= MAX_GAIN_DB - 0.05 ? `more than ${MAX_GAIN_DB} dB` : `${h.gainDb.toFixed(1)} dB`;
+      const gain = amount ? `  3 m: ${amount} quieter when fixed${h.gainScope === 'source' ? ' (all plane gaps of the source together)' : ''}` : '';
+      return `  ${pad(s.name, 24)}${pad(h.kind, 14)}${h.x.toFixed(1)} / ${h.y.toFixed(1)} mm ${h.layer}${gain}`;
+    }),
+  );
+  return [head, ...rows, ...(hints.length ? ['', 'layout hints, in the order to work on them:', ...hints] : [])].join('\n');
 }
 
 function main() {

@@ -26,6 +26,12 @@ export interface Diagnostic {
   otherNet?: string;
   /** Stage 2: how the return current actually goes (detour length, extra loop area, link). */
   detour?: { length: number; extraArea: number; via?: string };
+  /**
+   * How much quieter the source's far field gets when this is fixed, dB (attribution.ts).
+   * scope 'finding': this problem alone; 'source': all plane gaps under the source together
+   * (gaps without a way around, cut-outs).
+   */
+  gain?: { db: number; scope: 'finding' | 'source' };
 }
 
 const STEP = 0.25;
@@ -54,6 +60,8 @@ export function diagnoseSource(
   model: SourceModel,
   fMax: number,
   detours: Detour[] = [],
+  /** All plane gaps under this source together, dB (attribution.ts), for gaps without a detour. */
+  planeGapsDb?: number,
 ): Diagnostic[] {
   const out: Diagnostic[] = [];
   const layerByY = (y: number) => board.layers.find((l) => Math.abs(l.y - y) < 1e-6);
@@ -162,7 +170,11 @@ export function diagnoseSource(
       .filter((t) => t.kind === kind)
       .map((t) => ({ t, dist: Math.min(...t.path.map(near)) }))
       .sort((a, b) => a.dist - b.dist)[0];
-    if (best && best.dist < 8) d.detour = { length: pathLen(best.t.path), extraArea: best.t.extraArea, via: best.t.via };
+    if (best && best.dist < 8) {
+      d.detour = { length: pathLen(best.t.path), extraArea: best.t.extraArea, via: best.t.via };
+      if (best.t.gainDb !== undefined) d.gain = { db: best.t.gainDb, scope: 'finding' };
+    }
+    if (!d.gain && d.kind === 'return-gap' && planeGapsDb !== undefined && planeGapsDb > 0.05) d.gain = { db: planeGapsDb, scope: 'source' };
   }
   return merge(out);
 }

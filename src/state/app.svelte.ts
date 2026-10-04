@@ -8,6 +8,7 @@ import { DEFAULT_VIEW, type ViewSettings } from './scenario';
 import type { ProbeReadout } from './engine.svelte';
 import type { Diagnostic } from '../physics/diagnostics';
 import type { Detour } from '../physics/returnPaths';
+import type { SourceAttribution } from '../physics/attribution';
 
 export type ProbeComponent = 'abs' | 'x' | 'y' | 'z';
 
@@ -98,6 +99,8 @@ class AppState {
   models3d = $state.raw<{ matched: number; total: number } | null>(null);
   diagnostics = $state.raw<Diagnostic[]>([]);
   hotspots = $state.raw<Hotspot[]>([]);
+  /** Far-field share of return-path problems and plane gaps per source (attribution.ts). */
+  attribution = $state.raw<Record<string, SourceAttribution>>({});
   spectrumMode = $state<SpectrumMode>('probe');
   rightTab = $state<'view' | 'diag' | 'scan'>('view');
   fieldLinesBusy = $state(false);

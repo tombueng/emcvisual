@@ -18,6 +18,7 @@ import type { Viewer } from '../render/viewer';
 import { footprintPoses, loadComponentModels, type FootprintPose } from '../render/componentModels';
 import { frequencyWeights, fullwaveVolume, parseFullwave, resampleBlocks, sampleAt, valueAtFrequency, type FullwaveResult } from '../fullwave/result';
 import { buildJob, DEFAULT_JOB_OPTIONS, type JobOptions } from '../fullwave/job';
+import { attributeSource, type SourceAttribution } from '../physics/attribution';
 import { buildFieldLines } from '../render/fieldLinesMesh';
 import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fieldlines';
 import { diagnoseSource } from '../physics/diagnostics';
@@ -101,6 +102,7 @@ class Engine {
   private boardText = '';
   pickIndex: PickIndex | null = null;
   private detourCache = new Map<string, Detour[]>();
+  private attribution = new Map<string, SourceAttribution>();
   /** GLB with component models (kept to re-attach after a viewer remount). */
   private modelData: ArrayBuffer | null = null;
   /** Footprints when the GLB was loaded, so models follow parts moved since. */
@@ -312,12 +314,15 @@ class Engine {
     try {
       const src = $state.snapshot(s) as Source;
       const model = buildSource(this.ctx, src);
+      const base = model.elements;
       let detours: Detour[] = [];
       if (app.returnModel === 'detour') {
         const r = applyReturnModel(this.ctx, src, model.elements);
         model.elements = r.elements;
         detours = r.detours;
       }
+      // far-field share of each return-path problem and of the plane gaps under the source
+      this.attribution.set(s.id, attributeSource(model.elements, base, detours, this.ctx.planes, this.frame));
       this.detourCache.set(s.id, detours);
       model.charges = buildCharges(this.ctx, src);
       const vw =
@@ -672,10 +677,11 @@ class Engine {
       if (!m) continue;
       detours[s.id] = this.detourCache.get(s.id) ?? [];
       if (!s.enabled) continue;
-      out.push(...diagnoseSource(board, app.planes, this.frame, $state.snapshot(s) as Source, m, app.fMax, detours[s.id]));
+      out.push(...diagnoseSource(board, app.planes, this.frame, $state.snapshot(s) as Source, m, app.fMax, detours[s.id], this.attribution.get(s.id)?.planeGapsDb));
     }
     app.diagnostics = out;
     app.detours = detours;
+    app.attribution = Object.fromEntries(app.sources.flatMap((s) => (this.attribution.has(s.id) ? [[s.id, this.attribution.get(s.id)!]] : [])));
     this.pushReturnPaths();
   }
 

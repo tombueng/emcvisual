@@ -81,3 +81,7 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     alles ohne Namensnennung und wirkt anders als Gemeinfreiheits-Erklärungen (Unlicense, CC0)
     auch dort, wo man auf das Urheberrecht nicht verzichten kann, etwa in Deutschland. Damit
     darf das Projekt „open source“ heißen (ergänzt Nr. 18 und 19).
+31. **2026-10-04 · Hinweise nach ihrer Wirkung auf das Fernfeld ordnen.** Gemessen wird jeder
+    Hinweis für sich gegen die Quelle mit idealen Rückwegen (Anteil am Dipolmoment), nicht durch
+    Weglassen. Sortiert wird zuerst nach dem Abstand der Quelle zum Grenzwert, dann nach der
+    Wirkung der Behebung: So steht oben, was eine Prüfung am ehesten rettet.
