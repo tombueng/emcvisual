@@ -34,6 +34,7 @@ export function suggestSources(board: BoardModel): Suggestion[] {
   let color = 0;
   const nextColor = () => SOURCE_COLORS[color++ % SOURCE_COLORS.length]!;
   const padsOf = (net: number) => board.pads.filter((p) => p.net === net);
+  const routed = new Set(board.tracks.map((t) => t.net));
   const used = new Set<number>();
 
   // differential pairs: name ends in +/P and a partner with -/N exists
@@ -45,7 +46,7 @@ export function suggestSources(board: BoardModel): Suggestion[] {
     if (stem.replace(/[/_.\-]/g, '').length === 0) return; // nets like "/+" are supplies, not pairs
     const partnerSuffix = suffix.replace('+', '-').replace(/P$/i, (s) => (s === 'P' ? 'N' : 'n')).replace(/DP$/i, 'DN');
     const j = board.nets.indexOf(stem + partnerSuffix);
-    if (j <= 0) return;
+    if (j <= 0 || !routed.has(i) || !routed.has(j)) return;
     used.add(i);
     used.add(j);
     const usb = /USB/i.test(name);
@@ -56,7 +57,7 @@ export function suggestSources(board: BoardModel): Suggestion[] {
         id: `s-${crypto.randomUUID().slice(0, 8)}`,
         type: 'diffpair',
         kind: 'data',
-        name: usb ? `USB ${stem.replace(/[_-]$/, '') || ''}`.trim() : `${stem}±`,
+        name: usb ? `USB ${stem.replace(/[_-]$/, '') || ''}`.trim() : name.replace(/(\+|P)$/i, '±'),
         enabled: true,
         color: nextColor(),
         netP: name,
@@ -72,7 +73,7 @@ export function suggestSources(board: BoardModel): Suggestion[] {
 
   // clocks and data lines by name
   board.nets.forEach((name, i) => {
-    if (i === 0 || used.has(i) || padsOf(i).length < 2) return;
+    if (i === 0 || used.has(i) || !routed.has(i) || padsOf(i).length < 2) return;
     const clock = CLOCK.test(name);
     const data = !clock && DATA.test(name);
     if (!clock && !data) return;

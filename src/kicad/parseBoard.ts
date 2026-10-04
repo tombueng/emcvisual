@@ -84,7 +84,8 @@ export function parseBoard(text: string, fileName = 'board.kicad_pcb'): BoardMod
     if (n.length >= 3) numbered.set(str(n, 1), str(n, 2));
   }
   const useNumbers = numbered.size > 0;
-  const internNet = (name: string): number => {
+  const internNet = (raw: string): number => {
+    const name = unescapeKicad(raw);
     let i = netIndex.get(name);
     if (i === undefined) {
       i = nets.length;
@@ -330,6 +331,15 @@ export function parseBoard(text: string, fileName = 'board.kicad_pcb'): BoardMod
     zones,
     warnings,
   };
+}
+
+/** KiCad escapes some characters in net names ("{slash}" for "/" and friends). */
+const KICAD_ESCAPES: Record<string, string> = {
+  slash: '/', backslash: '\\', lt: '<', gt: '>', colon: ':', dblquote: '"', quote: "'", bar: '|', tab: '\t', return: '\n', space: ' ', comma: ',', brace: '{',
+};
+
+export function unescapeKicad(s: string): string {
+  return s.includes('{') ? s.replace(/\{(\w+)\}/g, (m, k: string) => KICAD_ESCAPES[k] ?? m) : s;
 }
 
 function inflate(b: { x0: number; y0: number; x1: number; y1: number }, m: number) {

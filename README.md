@@ -51,6 +51,10 @@ npm run dev
 Dann im Browser „Demo-Platine“ wählen oder eine eigene `.kicad_pcb` (KiCad 6 bis 10) auf das
 Fenster ziehen.
 
+Platinen lassen sich auch per Link öffnen: `?demo` lädt die Demo, `?board=<URL>` eine
+`.kicad_pcb` von einem Server, der fremde Seiten lesen lässt (z. B. `raw.githubusercontent.com`).
+Beispiel: [Glasgow revC3](https://tombueng.github.io/emcvisual/?board=https://raw.githubusercontent.com/GlasgowEmbedded/glasgow/HEAD/hardware/boards/glasgow/revC3/glasgow.kicad_pcb).
+
 | Befehl | Zweck |
 |---|---|
 | `npm run dev` | Entwicklungsserver |

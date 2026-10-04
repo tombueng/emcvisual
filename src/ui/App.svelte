@@ -27,6 +27,7 @@
       if (e.key === 'Escape') app.pickMode = null;
     };
     window.addEventListener('keydown', onKey);
+    void openFromQuery();
     return () => {
       window.removeEventListener('keydown', onKey);
       sonifier.dispose();
@@ -63,6 +64,27 @@
       fetch(`${base}demo/demo-board.scenario${i18n.lang === 'de' ? '' : `.${i18n.lang}`}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ]);
     await engine.loadBoard(pcb, 'demo-board.kicad_pcb', scenario);
+  }
+
+  /**
+   * Links can open a board directly: ?board=<http(s) URL of a .kicad_pcb> (the server must allow
+   * cross-origin reads, as raw.githubusercontent.com does), or ?demo for the demo board.
+   * Only after the engine is idle, so a language switch (remount) does not reload it.
+   */
+  async function openFromQuery() {
+    if (app.board) return;
+    const q = new URLSearchParams(location.search);
+    const url = q.get('board');
+    if (q.has('demo')) return loadDemo();
+    if (!url || !/^https?:\/\//i.test(url)) return;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(String(res.status));
+      const name = decodeURIComponent(new URL(url).pathname.split('/').pop() || 'board.kicad_pcb');
+      await engine.loadBoard(await res.text(), name);
+    } catch {
+      app.toast = t.errors.fetch(url);
+    }
   }
 
   async function loadScenario() {

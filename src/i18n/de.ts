@@ -197,6 +197,7 @@ export const de = {
     parse: 'Die Datei ist keine lesbare KiCad-Platine.',
     scenario: 'Das Szenario passt nicht zu diesem Format.',
     scenarioOtherBoard: 'Das Szenario gehört zu einer anderen Platine; Netze und Pads können fehlen.',
+    fetch: (url: string) => `Die Platine konnte nicht geladen werden: ${url}`,
   },
   units: {
     dBuAm: 'dBµA/m',

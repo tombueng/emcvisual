@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseBoard } from '../src/kicad/parseBoard';
+import { parseBoard, unescapeKicad } from '../src/kicad/parseBoard';
 import { parseSExpr } from '../src/kicad/sexpr';
 import type { BoardModel } from '../src/model/types';
 import { dist } from '../src/model/geometry';
@@ -22,7 +22,17 @@ interface Reference {
 
 const norm = (a: number) => ((a % 360) + 360) % 360;
 
-function compare(board: BoardModel, ref: Reference) {
+function compare(board: BoardModel, rawRef: Reference) {
+  // pcbnew reports net names in KiCad's escaped form ("{slash}"); the parser unescapes them
+  const u = unescapeKicad;
+  const ref: Reference = {
+    ...rawRef,
+    nets: rawRef.nets.map(u),
+    pads: rawRef.pads.map((p) => ({ ...p, net: u(p.net) })),
+    vias: rawRef.vias.map((v) => ({ ...v, net: u(v.net) })),
+    zones: rawRef.zones.map((z) => ({ ...z, net: u(z.net) })),
+    trackLengthByNet: Object.fromEntries(Object.entries(rawRef.trackLengthByNet).map(([k, v]) => [u(k), v])),
+  };
   expect(board.layers.map((l) => l.name)).toEqual(ref.copperLayers);
   expect(new Set(board.nets.filter(Boolean))).toEqual(new Set(ref.nets));
   expect(board.footprints.map((f) => f.ref).sort()).toEqual([...ref.footprints].sort());
@@ -92,6 +102,13 @@ function compare(board: BoardModel, ref: Reference) {
   expect(board.bbox.y1).toBeLessThanOrEqual(b.y1 + 1e-6);
   expect(b.x1 - b.x0 - (board.bbox.x1 - board.bbox.x0)).toBeLessThan(0.5);
 }
+
+describe('net name escapes', () => {
+  it('turns KiCad escapes back into characters', () => {
+    expect(unescapeKicad('Net-(U4-RXD2{slash}RMIISEL)')).toBe('Net-(U4-RXD2/RMIISEL)');
+    expect(unescapeKicad('A{lt}B{gt}{unknown}')).toBe('A<B>{unknown}');
+  });
+});
 
 describe('S-expression reader', () => {
   it('parses nested lists, quoted strings with escapes and atoms', () => {

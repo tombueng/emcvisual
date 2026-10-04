@@ -88,3 +88,9 @@ test.describe('without JavaScript (crawlers)', () => {
     await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
   });
 });
+
+test('a link with ?demo opens the demo board', async ({ page }) => {
+  await page.goto('/?demo');
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('.list li')).toHaveCount(6);
+});

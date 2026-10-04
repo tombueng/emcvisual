@@ -1,8 +1,10 @@
 /**
  * Reference planes: detection and coverage rasters (docs/stufe-1/PHYSIK.md §8.1).
  *
- * A copper layer is a plane for net N when N's filled zones cover more than half of the
- * board area on that layer. Each plane is rasterised (scanline, cell 0.1–0.25 mm) so that
+ * A copper layer is a plane when one net's filled zones cover at least a quarter of the board
+ * area on that layer (that net names the plane). Copper of other nets with large pours on the
+ * same layer (split planes: GND and 3V3 side by side) joins the coverage raster, because for
+ * AC return currents any solid copper is a reference. Each plane is rasterised (scanline, cell 0.1–0.25 mm) so that
  * "is there copper under this point?" is an O(1) lookup.
  */
 import { signedArea } from './geometry';
@@ -38,7 +40,7 @@ export function boardArea(board: BoardModel): number {
   return Math.abs(signedArea(outer)) - holes.reduce((s, h) => s + Math.abs(signedArea(h)), 0);
 }
 
-export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, threshold = 0.5): PlaneLayer[] {
+export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, threshold = 0.25, splitShare = 0.05): PlaneLayer[] {
   const area = boardArea(board) || 1;
   const planes: PlaneLayer[] = [];
   for (const layer of board.layers) {
@@ -63,7 +65,10 @@ export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, 
       }
       if (net < 0 || best / area < threshold) continue;
     }
-    const polys = board.zones.filter((z) => z.layer === layer.index && z.net === net).flatMap((z) => z.polygons);
+    // the plane net plus other large pours on this layer (not for explicit overrides)
+    const nets = new Set([net]);
+    if (!override) for (const [n, a] of byNet) if (a / area >= splitShare) nets.add(n);
+    const polys = board.zones.filter((z) => z.layer === layer.index && nets.has(z.net)).flatMap((z) => z.polygons);
     planes.push({
       layer: layer.index,
       net,

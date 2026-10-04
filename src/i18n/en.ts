@@ -197,6 +197,7 @@ export const en: Strings = {
     parse: 'The file is not a readable KiCad board.',
     scenario: 'The scenario does not match this format.',
     scenarioOtherBoard: 'The scenario belongs to another board; nets and pads may be missing.',
+    fetch: (url: string) => `Could not load the board: ${url}`,
   },
   units: {
     dBuAm: 'dBµA/m',
