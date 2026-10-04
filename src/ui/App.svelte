@@ -36,7 +36,21 @@
   });
 
   // --- loading ------------------------------------------------------------------------------------
+  async function openModels(data: ArrayBuffer) {
+    if (!app.board) {
+      app.toast = t.models.needBoard;
+      return;
+    }
+    try {
+      const r = await engine.loadModels(data);
+      app.toast = t.models.loaded(r.matched, r.total);
+    } catch {
+      app.toast = t.models.failed;
+    }
+  }
+
   async function openBoardFile(file: File) {
+    if (/\.(glb|gltf)$/i.test(file.name)) return openModels(await file.arrayBuffer());
     if (file.name.endsWith('.json')) {
       try {
         engine.applyScenario(JSON.parse(await file.text()));
@@ -53,7 +67,7 @@
   }
 
   async function openDialog() {
-    const f = await pickFile('.kicad_pcb,.json');
+    const f = await pickFile('.kicad_pcb,.json,.glb');
     if (f) await openBoardFile(f);
   }
 
@@ -64,6 +78,8 @@
       fetch(`${base}demo/demo-board.scenario${i18n.lang === 'de' ? '' : `.${i18n.lang}`}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ]);
     await engine.loadBoard(pcb, 'demo-board.kicad_pcb', scenario);
+    const glb = await fetch(`${base}demo/demo-board.glb`).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
+    if (glb) await engine.loadModels(glb).catch(() => undefined);
   }
 
   /**
@@ -84,6 +100,14 @@
       await engine.loadBoard(await res.text(), name);
     } catch {
       app.toast = t.errors.fetch(url);
+      return;
+    }
+    // optional component models: &models=<URL of a KiCad GLB export>
+    const models = q.get('models');
+    if (models && /^https?:\/\//i.test(models)) {
+      const glb = await fetch(models).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
+      if (glb) await openModels(glb);
+      else app.toast = t.errors.fetch(models);
     }
   }
 
@@ -123,11 +147,18 @@
     ant = !ant;
   }
 
-  function onDrop(e: DragEvent) {
+  async function onDrop(e: DragEvent) {
     e.preventDefault();
     dragging = false;
-    const f = e.dataTransfer?.files?.[0];
-    if (f) void openBoardFile(f);
+    // board first, then models and scenarios, so several files can be dropped at once
+    const rank = (f: File) => (f.name.endsWith('.kicad_pcb') ? 0 : /\.(glb|gltf)$/i.test(f.name) ? 1 : 2);
+    const files = [...(e.dataTransfer?.files ?? [])].sort((a, b) => rank(a) - rank(b));
+    for (const f of files) await openBoardFile(f);
+  }
+
+  async function pickModels() {
+    const f = await pickFile('.glb');
+    if (f) await openModels(await f.arrayBuffer());
   }
 
   // --- pointer: probe, picking ------------------------------------------------------------------
@@ -387,7 +418,7 @@
   </main>
 
   <aside class="right">
-    <ViewPanel />
+    <ViewPanel onpickmodels={pickModels} />
   </aside>
 
   <footer class="spectrum">

@@ -33,6 +33,7 @@ Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 - Klang: jede Quelle klingt, laut wo das Feld stark ist
 - Diagnose: unterbrochene Rückstrompfade, Bezugswechsel an Vias, fehlende Stitching-Vias,
   Hotspots mit den Netzen und Bauteilen in der Nähe
+- echte 3D-Bauteilmodelle aus KiCads GLB-Export (`.glb` zusätzlich auf das Fenster ziehen)
 - Szenario als JSON speichern, PNG- und CSV-Export
 - Oberfläche auf Deutsch und Englisch (Auswahl oben rechts, Standard nach Browsersprache)
 
@@ -51,8 +52,13 @@ npm run dev
 Dann im Browser „Demo-Platine“ wählen oder eine eigene `.kicad_pcb` (KiCad 6 bis 10) auf das
 Fenster ziehen.
 
+Echte Bauteilmodelle: in KiCad „Datei → Exportieren → glTF/GLB“ (ohne Platinenkörper) oder
+`kicad-cli pcb export glb --no-board-body --subst-models board.kicad_pcb`, dann die `.glb`
+zusätzlich auf das Fenster ziehen. Die Bauteile werden über ihre Referenz zugeordnet.
+
 Platinen lassen sich auch per Link öffnen: `?demo` lädt die Demo, `?board=<URL>` eine
-`.kicad_pcb` von einem Server, der fremde Seiten lesen lässt (z. B. `raw.githubusercontent.com`).
+`.kicad_pcb` von einem Server, der fremde Seiten lesen lässt (z. B. `raw.githubusercontent.com`),
+optional mit `&models=<URL>` für das GLB.
 Beispiel: [Glasgow revC3](https://tombueng.github.io/emcvisual/?board=https://raw.githubusercontent.com/GlasgowEmbedded/glasgow/HEAD/hardware/boards/glasgow/revC3/glasgow.kicad_pcb).
 
 | Befehl | Zweck |

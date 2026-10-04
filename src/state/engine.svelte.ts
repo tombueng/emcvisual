@@ -15,6 +15,7 @@ import { BANDS } from '../physics/spectrum';
 import { MU0 } from '../physics/units';
 import type { Source } from '../physics/sources';
 import type { Viewer } from '../render/viewer';
+import { loadComponentModels } from '../render/componentModels';
 import { buildFieldLines } from '../render/fieldLinesMesh';
 import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fieldlines';
 import { diagnoseSource } from '../physics/diagnostics';
@@ -88,6 +89,8 @@ class Engine {
   private saveTimer = 0;
   private boardText = '';
   pickIndex: PickIndex | null = null;
+  /** GLB with component models (kept to re-attach after a viewer remount). */
+  private modelData: ArrayBuffer | null = null;
   private boardName = '';
 
   attach(viewer: Viewer) {
@@ -96,6 +99,7 @@ class Engine {
     if (app.board) {
       viewer.setBoard(app.board, this.frame);
       this.pushVolume();
+      if (this.modelData) void this.attachModels();
     }
   }
 
@@ -118,6 +122,8 @@ class Engine {
       this.boardName = fileName;
       app.board = board;
       app.boardHash = hash;
+      app.models3d = null;
+      this.modelData = null;
       this.pickIndex = new PickIndex(board);
       app.layerVisible = board.layers.map(() => true);
       this.frame = worldFrame(board);
@@ -304,6 +310,21 @@ class Engine {
     const js = [...this.jobs.values()];
     app.compute.busy = js.length > 0;
     app.compute.progress = js.length ? js.reduce((s, j) => s + j.progress, 0) / js.length : 1;
+  }
+
+  /** Component models from a KiCad GLB export; returns how many parts got a model. */
+  async loadModels(data: ArrayBuffer): Promise<{ matched: number; total: number }> {
+    this.modelData = data;
+    return this.attachModels();
+  }
+
+  private async attachModels(): Promise<{ matched: number; total: number }> {
+    if (!app.board || !this.modelData || !this.viewer) return { matched: 0, total: 0 };
+    // GLTFLoader may detach the buffer: hand it a copy and keep ours for later remounts
+    const models = await loadComponentModels(this.modelData.slice(0), app.board, this.frame);
+    this.viewer.setComponentModels(models);
+    app.models3d = { matched: models.matched.size, total: models.total };
+    return app.models3d;
   }
 
   // --- composition ------------------------------------------------------------------------------

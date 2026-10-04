@@ -56,6 +56,7 @@ src/
   render/
     viewer.ts               Szene, Kamera, Steuerung, Render-Schleife, Picking
     boardMesh.ts            Platinen-Geometrie aus BoardModel
+    componentModels.ts      Bauteilmodelle aus KiCads GLB-Export (Knoten = Referenz, Meter → mm)
     volumePass.ts           Vollbild-Pass: Szene + Raymarching mit Tiefentextur
     slicePlane.ts           Heatmap-Ebene
     fieldLinesMesh.ts       Linien mit Fluss-Animation

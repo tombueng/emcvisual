@@ -8,6 +8,11 @@
   import DiagnosticsPanel from './DiagnosticsPanel.svelte';
   import { downloadText } from '../state/persist';
 
+  interface Props {
+    onpickmodels: () => void;
+  }
+  let { onpickmodels }: Props = $props();
+
   function exportSlice() {
     const csv = engine.sliceCsv(app.view.sliceHeight);
     if (csv) downloadText(`${(app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '')}-schnitt-${app.view.sliceHeight}mm.csv`, csv, 'text/csv');
@@ -158,6 +163,12 @@
     {/if}
     <label class="check"><input type="checkbox" checked={app.view.substrateOpacity < 1} onchange={(e) => { app.view.substrateOpacity = (e.currentTarget as HTMLInputElement).checked ? 0.25 : 1; restyle(); }} /> {t.view.substrate}</label>
     <label class="check"><input type="checkbox" bind:checked={app.view.showComponents} onchange={restyle} /> {t.view.components}</label>
+    <div class="models">
+      <button class="btn small" onclick={onpickmodels} disabled={!app.board}>{t.models.load}</button>
+      {#if app.models3d}<span class="hint value">{t.models.loaded(app.models3d.matched, app.models3d.total)}</span>{/if}
+    </div>
+    <p class="hint">{t.models.hint}</p>
+    <code class="cmd">kicad-cli pcb export glb --no-board-body --subst-models board.kicad_pcb</code>
 
     <div class="section-title">{t.view.fMax}</div>
     <select value={String(app.fMax)} onchange={(e) => engine.setFMax(Number((e.currentTarget as HTMLSelectElement).value))} aria-label={t.view.fMax}>
@@ -275,6 +286,27 @@
   .slider .value {
     text-align: right;
     font-size: 12px;
+  }
+  .models {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .models .hint {
+    margin: 0;
+  }
+  .cmd {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--viewport);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-s);
+    padding: 4px 6px;
+    word-break: break-all;
+    user-select: all;
   }
   .layers {
     width: 100%;

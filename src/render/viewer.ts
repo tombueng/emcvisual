@@ -9,6 +9,7 @@ import type { WorldFrame } from '../model/world';
 import { covered, type CoverageRaster } from '../model/planes';
 import type { Grid } from '../compute/grid';
 import { buildBoardMeshes, highlightNets, type BoardMeshes } from './boardMesh';
+import { disposeObject, type ComponentModels } from './componentModels';
 import { colormapLut, type ColormapId } from './colormaps';
 import { sliceFragment, sliceVertex, volumeFragment, volumeVertex } from './volumeShader';
 
@@ -225,6 +226,7 @@ export class Viewer {
 
   setBoard(board: BoardModel, frame: WorldFrame) {
     this.frame = frame;
+    this.setComponentModels(null);
     if (this.board) {
       this.scene.remove(this.board.group);
       this.board.dispose();
@@ -327,8 +329,45 @@ export class Viewer {
     this.requestRender();
   }
 
+  private models: ComponentModels | null = null;
+  private componentsVisible = true;
+
   setComponentsVisible(v: boolean) {
+    this.componentsVisible = v;
     if (this.board?.components) this.board.components.visible = v;
+    if (this.models) this.models.root.visible = v;
+    this.requestRender();
+  }
+
+  /** Real component models (from a KiCad GLB) replace the boxes of the parts they cover. */
+  setComponentModels(models: ComponentModels | null) {
+    if (this.models) {
+      this.scene.remove(this.models.root);
+      disposeObject(this.models.root);
+    }
+    this.models = models;
+    const boxes = this.board?.components;
+    if (boxes) {
+      const bodies = boxes.userData.footprints as { ref: string }[];
+      const base = boxes.userData.baseMatrices as THREE.Matrix4[] | undefined;
+      if (!base) {
+        const saved: THREE.Matrix4[] = [];
+        for (let i = 0; i < boxes.count; i++) {
+          const m = new THREE.Matrix4();
+          boxes.getMatrixAt(i, m);
+          saved.push(m);
+        }
+        boxes.userData.baseMatrices = saved;
+      }
+      const matrices = boxes.userData.baseMatrices as THREE.Matrix4[];
+      const hidden = new THREE.Matrix4().makeScale(0, 0, 0);
+      bodies.forEach((f, i) => boxes.setMatrixAt(i, models?.matched.has(f.ref) ? hidden : matrices[i]!));
+      boxes.instanceMatrix.needsUpdate = true;
+    }
+    if (models) {
+      models.root.visible = this.componentsVisible;
+      this.scene.add(models.root);
+    }
     this.requestRender();
   }
 

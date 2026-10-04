@@ -76,6 +76,8 @@ class AppState {
   pickMode = $state<null | { kind: 'pad' | 'net'; onPick: (value: string) => void }>(null);
   toast = $state('');
   readout = $state.raw<ProbeReadout | null>(null);
+  /** Component models from a GLB: how many footprints got one. */
+  models3d = $state.raw<{ matched: number; total: number } | null>(null);
   diagnostics = $state.raw<Diagnostic[]>([]);
   hotspots = $state.raw<Hotspot[]>([]);
   spectrumMode = $state<SpectrumMode>('probe');

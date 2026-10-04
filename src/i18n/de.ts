@@ -193,6 +193,13 @@ export const de = {
     pitch: 'Tonhöhe für 25 MHz',
     hint: 'Takte klingen als Ton, Schaltregler schnarren. Laut, wo das Feld stark ist.',
   },
+  models: {
+    load: '3D-Modelle (GLB) laden',
+    hint: 'Echte Bauteilmodelle: in KiCad „Datei → Exportieren → glTF/GLB“ (ohne Platinenkörper) und die .glb auf das Fenster ziehen, oder per Kommandozeile:',
+    loaded: (m: number, n: number) => `3D-Modelle für ${m} von ${n} Bauteilen`,
+    needBoard: 'Erst die Platine öffnen, dann die 3D-Modelle.',
+    failed: 'Die GLB-Datei konnte nicht gelesen werden.',
+  },
   errors: {
     parse: 'Die Datei ist keine lesbare KiCad-Platine.',
     scenario: 'Das Szenario passt nicht zu diesem Format.',

@@ -193,6 +193,13 @@ export const en: Strings = {
     pitch: 'Pitch for 25 MHz',
     hint: 'Clocks sound like tones, switchers buzz. Loud where the field is strong.',
   },
+  models: {
+    load: 'Load 3D models (GLB)',
+    hint: 'Real part models: in KiCad use “File → Export → glTF/GLB” (without board body) and drop the .glb on the window, or on the command line:',
+    loaded: (m: number, n: number) => `3D models for ${m} of ${n} parts`,
+    needBoard: 'Open the board first, then the 3D models.',
+    failed: 'Could not read the GLB file.',
+  },
   errors: {
     parse: 'The file is not a readable KiCad board.',
     scenario: 'The scenario does not match this format.',
