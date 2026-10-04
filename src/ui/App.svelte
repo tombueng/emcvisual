@@ -14,6 +14,10 @@
   import SpectrumPanel from './SpectrumPanel.svelte';
   import Callouts from './Callouts.svelte';
   import { buildCallouts } from './calloutData';
+  import FocusLabels from './FocusLabels.svelte';
+  import FocusPanel from './FocusPanel.svelte';
+  import { buildFocus, diagKey, type FocusSpec } from './focusData';
+  import { buildFocusScene, type FocusAnchor } from '../render/focusScene';
   import { showMeasurement } from '../state/scanner.svelte';
   import { canWatch, dropHandles, follow, live, pickWithHandle, stopFollowing, type FileHandle } from '../state/liveFile.svelte';
   import { EXAMPLE_BOARDS } from '../examples';
@@ -33,7 +37,10 @@
     void viewer.enableXR();
     viewer.controls.addEventListener('change', () => scheduleAudio());
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') app.pickMode = null;
+      if (e.key === 'Escape') {
+        app.pickMode = null;
+        app.focusKey = null;
+      }
     };
     window.addEventListener('keydown', onKey);
     void openFromQuery();
@@ -283,13 +290,41 @@
   }
 
   // --- reactions --------------------------------------------------------------------------------
+  // problem view: rebuilt when the finding, the models or the parts change
+  let focusSpec = $state.raw<FocusSpec | null>(null);
+  let focusAnchors = $state.raw<FocusAnchor[]>([]);
+  let shownFocusKey: string | null = null;
+  $effect(() => {
+    const v = viewer;
+    const key = app.focusKey;
+    if (!v) return;
+    void [app.models, app.diagnostics, app.detours, app.models3d];
+    const d = key && app.board ? app.diagnostics.find((x) => diagKey(x) === key) : undefined;
+    const spec = d ? buildFocus(d) : null;
+    untrack(() => {
+      if (!spec || !app.board) {
+        if (v.inFocus) v.exitFocus();
+        focusSpec = null;
+        focusAnchors = [];
+        shownFocusKey = null;
+        if (key && !d) app.focusKey = null;
+        return;
+      }
+      const scene = buildFocusScene(app.board, engine.frame, spec, v.componentModelRoot);
+      v.enterFocus(scene, key !== shownFocusKey);
+      shownFocusKey = key;
+      focusSpec = spec;
+      focusAnchors = scene.anchors;
+    });
+  });
+
   // speech bubbles inside the 3D world (HTML-in-Canvas), when chosen and supported, and in VR
   $effect(() => {
     const v = viewer;
     if (!v) return;
     void [app.models, app.fieldOrigin, app.diagnostics, app.hotspots];
     const list = app.board ? buildCallouts(v) : [];
-    const wanted = !!app.view.callouts.inWorld && !ant;
+    const wanted = !!app.view.callouts.inWorld && !ant && !app.focusKey;
     untrack(() => v.setWorldCallouts(list, wanted));
   });
 
@@ -504,7 +539,11 @@
     {/if}
     {#if dragging}<div class="dropzone">{t.empty.drop}</div>{/if}
 
-    {#if viewer && app.board && !ant && !(app.view.callouts.inWorld && viewer.htmlInCanvas)}<Callouts {viewer} />{/if}
+    {#if viewer && app.board && !ant && !focusSpec && !(app.view.callouts.inWorld && viewer.htmlInCanvas)}<Callouts {viewer} />{/if}
+    {#if viewer && focusSpec}
+      <FocusLabels {viewer} anchors={focusAnchors} inset={viewer.focusInset} />
+      <FocusPanel spec={focusSpec} onclose={() => (app.focusKey = null)} />
+    {/if}
 
     <div class="statusline value">
       {#if app.pickMode}<span class="pick">{app.pickMode.kind === 'pad' ? t.editor.picking : t.editor.pickingNet}</span>{/if}

@@ -248,3 +248,29 @@ test('parts data for AI: export, and an answer with sources of values and missin
   await expect(page.getByText('Herkunft der Werte')).toBeVisible();
   await expect(page.locator('.origin')).toContainText('Datenblatt · Y1');
 });
+
+test('problem view: a click on a hint shows only what matters, with labels and editable inputs', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?demo');
+  await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
+  await page.locator('.bubble.hint').filter({ has: page.locator('.badge', { hasText: /^1$/ }) }).click();
+  const card = page.locator('aside.card');
+  await expect(card).toContainText('Was die Rechnung hier bemängelt');
+  await expect(card).toContainText('3 m: behoben');
+  // labels in the scene: the net with its values, the planes, the capacitor that carries the return
+  await expect(page.locator('.labels .label.net')).toContainText('CLK_BAD');
+  await expect(page.locator('.labels')).toContainText('GND · In1.Cu');
+  await expect(page.locator('.labels')).toContainText('C2');
+  // the bubbles of the whole board are gone while the problem view is open
+  await expect(page.locator('.bubble')).toHaveCount(0);
+  // correcting an input reruns the calculation: slower edges, less emission
+  const tr = card.locator('#fx-waveform\\.tr');
+  await tr.fill('5 ns');
+  await tr.press('Enter');
+  await expect(card.locator('#fx-waveform\\.tr')).toHaveValue('5 ns');
+  await page.keyboard.press('Escape');
+  await expect(card).toHaveCount(0);
+  await expect(page.locator('.bubble').first()).toBeAttached();
+  expect(errors).toEqual([]);
+});

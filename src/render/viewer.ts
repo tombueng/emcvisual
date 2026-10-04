@@ -14,6 +14,7 @@ import { colormapLut, type ColormapId } from './colormaps';
 import { buildIsosurfaces } from './isosurface';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { WorldCallouts, htmlInCanvasSupported } from './worldCallouts';
+import type { FocusScene } from './focusScene';
 import type { Callout } from '../ui/calloutData';
 import { sliceFragment, sliceVertex, volumeFragment, volumeVertex } from './volumeShader';
 
@@ -172,6 +173,7 @@ export class Viewer {
         this.renderer.render(this.scene, this.camera);
         return;
       }
+      this.stepFlight(now);
       const moving = this.controls.update();
       if (this.animating > 0) {
         this.time += dt;
@@ -220,6 +222,7 @@ export class Viewer {
     this.renderer.domElement.style.height = `${h}px`;
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    if (this.problem) this.applyInset();
     const pr = this.renderer.getPixelRatio();
     this.rt.setSize(Math.floor(w * pr), Math.floor(h * pr));
     this.requestRender();
@@ -275,8 +278,93 @@ export class Viewer {
     this.requestRender();
   }
 
+  // --- problem view: a separate scene with only what matters for one finding --------------------------
+  private problem: { scene: THREE.Scene; content: FocusScene; home: { pos: THREE.Vector3; target: THREE.Vector3 } } | null = null;
+  private flight: { from: [THREE.Vector3, THREE.Vector3]; to: [THREE.Vector3, THREE.Vector3]; t0: number; ms: number } | null = null;
+
+  get inFocus() {
+    return !!this.problem;
+  }
+
+  /** Show a problem view; with fly = true the camera moves to its oblique view. */
+  enterFocus(content: FocusScene, fly: boolean) {
+    if (!this.problem) {
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color('#0b0f14');
+      scene.add(new THREE.HemisphereLight('#dfe8ff', '#202830', 1.2));
+      const sun = new THREE.DirectionalLight('#ffffff', 1.5);
+      sun.position.set(40, 120, 60);
+      scene.add(sun);
+      this.problem = { scene, content, home: { pos: this.camera.position.clone(), target: this.controls.target.clone() } };
+    } else {
+      this.problem.scene.remove(this.problem.content.group);
+      this.problem.content.dispose();
+      this.problem.content = content;
+    }
+    this.problem.scene.add(content.group);
+    this.renderer.localClippingEnabled = true;
+    this.applyInset();
+    if (fly) this.flyTo(content.position, content.target);
+    this.requestRender();
+  }
+
+  exitFocus() {
+    if (!this.problem) return;
+    const home = this.problem.home;
+    this.problem.scene.remove(this.problem.content.group);
+    this.problem.content.dispose();
+    this.problem = null;
+    this.renderer.localClippingEnabled = false;
+    this.applyInset();
+    this.flyTo(home.pos, home.target);
+    this.requestRender();
+  }
+
+  /** Width (px) covered by the problem view's card on the left; the view centre moves right. */
+  focusInset = 354;
+
+  private applyInset() {
+    const w = Math.max(1, this.container.clientWidth);
+    const h = Math.max(1, this.container.clientHeight);
+    if (this.problem && w > 760) this.camera.setViewOffset(w, h, -this.focusInset / 2, 0, w, h);
+    else this.camera.clearViewOffset();
+    this.camera.updateProjectionMatrix();
+  }
+
+  /** Smooth camera move (ease in-out). */
+  flyTo(position: THREE.Vector3, target: THREE.Vector3, ms = 650) {
+    this.flight = { from: [this.camera.position.clone(), this.controls.target.clone()], to: [position.clone(), target.clone()], t0: performance.now(), ms };
+    this.requestRender();
+  }
+
+  private stepFlight(now: number) {
+    const f = this.flight;
+    if (!f) return;
+    const k = Math.min(1, (now - f.t0) / f.ms);
+    const e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+    this.camera.position.lerpVectors(f.from[0], f.to[0], e);
+    this.controls.target.lerpVectors(f.from[1], f.to[1], e);
+    this.needsRender = true;
+    if (k >= 1) this.flight = null;
+  }
+
   private render() {
     this.camera.updateMatrixWorld();
+    if (this.problem) {
+      // the problem view: its own scene, no glow
+      this.renderer.setRenderTarget(this.rt);
+      this.renderer.render(this.problem.scene, this.camera);
+      this.renderer.setRenderTarget(null);
+      const u = this.volumeMat.uniforms;
+      const on = u.volumeOn!.value;
+      u.volumeOn!.value = false;
+      u.tColor!.value = this.rt.texture;
+      u.tDepth!.value = this.rt.depthTexture;
+      this.renderer.render(this.quadScene, this.quadCamera);
+      u.volumeOn!.value = on;
+      for (const fn of this.renderListeners) fn();
+      return;
+    }
     this.world?.update();
     this.renderer.setRenderTarget(this.rt);
     this.renderer.render(this.scene, this.camera);
@@ -746,6 +834,11 @@ export class Viewer {
     this.camera.position.copy(this.controls.target).add(offset);
     this.controls.update();
     this.requestRender();
+  }
+
+  /** The loaded component models (for the problem view). */
+  get componentModelRoot(): THREE.Object3D | null {
+    return this.models?.root ?? null;
   }
 
   get overlayGroup() {

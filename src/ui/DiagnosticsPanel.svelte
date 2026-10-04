@@ -6,6 +6,7 @@
   import { toWorld } from '../model/world';
   import { diagnosticText, farMargins, gainText, rankedDiagnostics } from '../report/texts';
   import { MAX_GAIN_DB } from '../physics/attribution';
+  import { diagKey } from './focusData';
   import { buildReport } from '../report/report';
   import { buildAiRequest } from '../ai/request';
   import { suggestSources } from '../physics/suggest';
@@ -122,7 +123,7 @@
   <ol class="ranked">
     {#each ranked as { d, margin }, i (i)}
       <li style:--c={colorOf(d.sourceId)}>
-        <button onclick={() => goToBoard(d.at.x, d.at.y)} title={t.diag.goTo}>
+        <button onclick={() => (app.focusKey = diagKey(d))} title={t.focus.open}>
           <span class="row"><span class="src">{nameOf(d.sourceId)}</span>{#if margin !== null}<span class="value" class:over={margin >= 0}>{t.diag.margin(margin)}</span>{/if}</span>
           <span class:warn={d.kind !== 'long-line'}>{diagnosticText(d)}</span>
           {#if d.gain}<span class="gain value">{gainText(d)}</span>{/if}

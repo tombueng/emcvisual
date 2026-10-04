@@ -13,6 +13,7 @@ import type { Diagnostic } from '../physics/diagnostics';
 import { cispr32ClassB } from '../physics/farfield';
 import { MAX_GAIN_DB } from '../physics/attribution';
 import { miniSpectrumSvg } from './spectrumSvg';
+import { diagKey } from './focusData';
 
 export interface Callout {
   key: string;
@@ -82,7 +83,7 @@ export function buildCallouts(viewer: Viewer): Callout[] {
           accent: d.gain ? gainText(d) : margin !== null ? t.diag.margin(margin) : undefined,
           more: diagnosticText(d),
           spectrum: chart(d.sourceId, sourceColor(d.sourceId), d.gain?.db),
-          onclick: () => probeTo(w[0], w[2]),
+          onclick: () => (app.focusKey = diagKey(d)),
         });
       });
   }

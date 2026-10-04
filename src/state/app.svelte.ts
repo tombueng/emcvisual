@@ -103,6 +103,8 @@ class AppState {
   attribution = $state.raw<Record<string, SourceAttribution>>({});
   /** Parts data that came with the scenario: origin of values, missing parts (AI-PARTS-MANUAL.md). */
   partsInfo = $state.raw<PartsInfo>(EMPTY_PARTS_INFO);
+  /** Problem view: key of the finding shown (ui/focusData.ts diagKey), or null. */
+  focusKey = $state<string | null>(null);
   spectrumMode = $state<SpectrumMode>('probe');
   rightTab = $state<'view' | 'diag' | 'scan'>('view');
   fieldLinesBusy = $state(false);
