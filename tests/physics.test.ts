@@ -238,3 +238,29 @@ describe('demo board sources', () => {
     expect(at(bad, 113, 120)).toBeGreaterThan(10 * at(loop, 119, 88));
   });
 });
+
+describe('inductor stray field (stage 2c)', () => {
+  it('triangle ripple at 50 % has 4·A/(π² n²) on odd harmonics only', async () => {
+    const { triangleLines } = await import('../src/physics/spectrum');
+    const lines = triangleLines({ f0: 1e6, duty: 0.5, tr: 0, amplitude: 1 }, 10e6);
+    expect(lines[0]!.amp).toBeCloseTo(4 / (Math.PI * Math.PI) / Math.SQRT2, 9);
+    expect(lines.find((l) => l.f === 3e6)!.amp).toBeCloseTo(4 / (9 * Math.PI * Math.PI) / Math.SQRT2, 9);
+    expect(lines.some((l) => l.f === 2e6)).toBe(false);
+  });
+
+  it('an open drum core leaks more field than a shielded one', () => {
+    const board = parseBoard(readFileSync('public/demo/demo-board.kicad_pcb', 'utf8'));
+    const frame = worldFrame(board);
+    const planes = detectPlanes(board);
+    const ctx: PhysicsContext = { board, frame, planes, fMax: 1e9 };
+    const at = (shielding: 'open' | 'shielded') => {
+      const m = buildSource(ctx, { id: 'i', type: 'inductor', name: '', enabled: true, color: '#fff', ref: 'L3', shielding, waveform: { f0: 5e5, duty: 0.3, tr: 0, amplitude: 0.6 } });
+      const p = packWithImages(m.elements, planes, frame);
+      const out = new Float64Array(3);
+      const l3 = board.footprints.find((f) => f.ref === 'L3')!;
+      fieldAt(p, slotMaskTable(p.planeY.length), l3.body.center.x - frame.ox, 4, l3.body.center.y - frame.oy, 0, out);
+      return mag(out);
+    };
+    expect(at('open')).toBeGreaterThan(10 * at('shielded'));
+  });
+});

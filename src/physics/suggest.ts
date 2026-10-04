@@ -97,12 +97,14 @@ export function suggestSources(board: BoardModel): Suggestion[] {
   });
 
   // switching regulators: a part with VIN, GND and SW pins plus a capacitor between VIN and GND
+  const swNets = new Set<number>();
   for (const fp of board.footprints) {
     const pads = fp.pads.map((i) => board.pads[i]!);
     const vin = pads.find((p) => VIN_FN.test(p.pinFunction));
     const gnd = pads.find((p) => GND_FN.test(p.pinFunction));
     const sw = pads.find((p) => SW_FN.test(p.pinFunction));
     if (!vin || !gnd || !sw || vin.net === 0 || gnd.net === 0) continue;
+    if (sw.net > 0) swNets.add(sw.net);
     let best: { d: number; a: string; b: string } | null = null;
     for (const c of board.footprints) {
       if (c === fp || c.pads.length !== 2) continue;
@@ -126,6 +128,25 @@ export function suggestSources(board: BoardModel): Suggestion[] {
         waveform: { f0: 500e3, duty: 0.3, tr: 5e-9, amplitude: 1 },
         // switching node for the E field; the input voltage is unknown here, 12 V is a guess
         node: sw.net > 0 ? { net: board.nets[sw.net]!, voltage: 12 } : undefined,
+      },
+    });
+  }
+  // storage inductors: two-pin parts named L… with a pad on a switching node
+  for (const fp of board.footprints) {
+    const sw = fp.pads.map((i) => board.pads[i]!).find((p) => p.net > 0 && swNets.has(p.net));
+    if (!/^L\d/i.test(fp.ref) || fp.pads.length !== 2 || !sw) continue;
+    out.push({
+      key: `ind:${fp.ref}`,
+      reason: 'inductor',
+      source: {
+        id: `s-${crypto.randomUUID().slice(0, 8)}`,
+        type: 'inductor',
+        name: `${fp.ref} ${fp.value}`.trim(),
+        enabled: true,
+        color: nextColor(),
+        ref: fp.ref,
+        shielding: 'semi',
+        waveform: { f0: 500e3, duty: 0.3, tr: 0, amplitude: 0.6 },
       },
     });
   }

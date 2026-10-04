@@ -83,3 +83,27 @@ export function bandPower(lines: Line[], f0: number, f1: number): number {
 export function mapLines(lines: Line[], factor: (f: number) => number): Line[] {
   return lines.map((l) => ({ f: l.f, amp: l.amp * factor(l.f) }));
 }
+
+/**
+ * Triangle current of a storage inductor: ripple peak-to-peak A, rising for D·T, falling for
+ * (1-D)·T. Peak coefficients c_n = A·|sin(nπD)| / (π² n² D (1-D)); RMS lines, decimated like
+ * the trapezoid for very many harmonics.
+ */
+export function triangleLines(w: Waveform, fMax: number, maxLines = 4096, floorDb = -80): Line[] {
+  if (!(w.f0 > 0) || !(fMax > 0)) return [];
+  const D = Math.min(0.99, Math.max(0.01, w.duty));
+  const nMax = Math.floor(fMax / w.f0);
+  let step = Math.max(1, Math.ceil(nMax / maxLines));
+  if (step > 1 && step % 2 === 0) step++;
+  const scale = Math.sqrt(step);
+  const lines: Line[] = [];
+  let peak = 0;
+  for (let n = 1; n <= nMax; n += step) {
+    const c = (w.amplitude * Math.abs(Math.sin(n * Math.PI * D))) / (Math.PI * Math.PI * n * n * D * (1 - D));
+    const amp = (c / Math.SQRT2) * (n === 1 ? 1 : scale);
+    if (amp > peak) peak = amp;
+    lines.push({ f: n * w.f0, amp });
+  }
+  const floor = peak * 10 ** (floorDb / 20);
+  return lines.filter((l) => l.amp > floor);
+}

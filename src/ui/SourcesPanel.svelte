@@ -15,6 +15,7 @@
   function keyOf(s: Source): string {
     if (s.type === 'signal') return `sig:${s.nets[0]}`;
     if (s.type === 'diffpair') return `diff:${s.netP}`;
+    if (s.type === 'inductor') return `ind:${s.ref}`;
     return `loop:${s.pads.join(',')}`;
   }
 
@@ -34,7 +35,8 @@
       s = { ...base, type, kind: 'clock', name: t.sources.newSignal, nets: [''], driver: '', waveform: { f0: 25e6, duty: 0.5, tr: 1e-9, amplitude: 3.3 }, load: { model: 'capacitive', cLoad: 5e-12 } };
     else if (type === 'diffpair')
       s = { ...base, type, kind: 'data', name: t.sources.newDiff, netP: '', netN: '', driverP: '', driverN: '', waveform: { f0: 6e6, duty: 0.5, tr: 4e-9, amplitude: 3.3 }, load: { model: 'capacitive', cLoad: 5e-12 }, imbalance: 0.05 };
-    else s = { ...base, type, name: t.sources.newLoop, pads: [], waveform: { f0: 500e3, duty: 0.3, tr: 5e-9, amplitude: 1 } };
+    else if (type === 'loop') s = { ...base, type, name: t.sources.newLoop, pads: [], waveform: { f0: 500e3, duty: 0.3, tr: 5e-9, amplitude: 1 } };
+    else s = { ...base, type, name: t.sources.newInductor, ref: '', shielding: 'semi', waveform: { f0: 500e3, duty: 0.3, tr: 0, amplitude: 0.6 } };
     engine.addSource(s);
   }
 
@@ -44,7 +46,8 @@
   }
 
   function summary(s: Source): string {
-    const f = s.type !== 'loop' && s.kind === 'data' ? formatEng(s.waveform.f0 * 2, 'bit/s') : formatEng(s.waveform.f0, 'Hz');
+    const f = (s.type === 'signal' || s.type === 'diffpair') && s.kind === 'data' ? formatEng(s.waveform.f0 * 2, 'bit/s') : formatEng(s.waveform.f0, 'Hz');
+    if (s.type === 'inductor') return `${t.sources.types.inductor}, ${f}, ${formatEng(s.waveform.amplitude, 'A')}`;
     return `${t.sources.types[s.type]}, ${f}, ${formatEng(s.waveform.tr, 's')}`;
   }
 </script>
@@ -59,6 +62,7 @@
           <button role="menuitem" onclick={() => add('signal')}>{t.sources.addSignal}</button>
           <button role="menuitem" onclick={() => add('diffpair')}>{t.sources.addDiff}</button>
           <button role="menuitem" onclick={() => add('loop')}>{t.sources.addLoop}</button>
+          <button role="menuitem" onclick={() => add('inductor')}>{t.sources.addInductor}</button>
         </div>
       {/if}
     </div>

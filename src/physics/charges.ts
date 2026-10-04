@@ -36,7 +36,7 @@ export function buildCharges(ctx: PhysicsContext, src: Source): ChargeElement[] 
             { name: src.netP, v: 1 },
             { name: src.netN, v: -(1 - src.imbalance) },
           ]
-        : src.node?.net
+        : src.type === 'loop' && src.node?.net
           ? [{ name: src.node.net, v: 1 }]
           : [];
   const out: ChargeElement[] = [];
@@ -117,6 +117,6 @@ function samplePolygon(rings: { x: number; y: number }[][], step: number): { x: 
 export function chargeNets(src: Source): string[] {
   if (src.type === 'signal') return src.nets;
   if (src.type === 'diffpair') return [src.netP, src.netN];
-  return src.node?.net ? [src.node.net] : [];
+  return src.type === 'loop' && src.node?.net ? [src.node.net] : [];
 }
 

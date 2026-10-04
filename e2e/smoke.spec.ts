@@ -12,7 +12,7 @@ test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Demo-Platine laden' }).click();
   await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
-  await expect(page.locator('.list li')).toHaveCount(6);
+  await expect(page.locator('.list li')).toHaveCount(8);
 
   // hover over the bad buck converter: the probe spectrum gets a peak line
   const canvas = page.locator('.canvas canvas');
@@ -42,7 +42,7 @@ test('editing sources: remove one, change a rise time, show field lines', async 
   await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
 
   await page.locator('.list li').filter({ hasText: 'LED 1 kHz' }).getByRole('button', { name: 'Quelle entfernen' }).click();
-  await expect(page.locator('.list li')).toHaveCount(5);
+  await expect(page.locator('.list li')).toHaveCount(7);
 
   // select the bad clock and make its edges slower: the list summary follows
   await page.locator('.list li').filter({ hasText: 'Takt schlecht' }).locator('.pick').click();
@@ -65,7 +65,7 @@ test('switching to English keeps the board and the results', async ({ page }) =>
 
   await page.getByLabel('Sprache').selectOption('en');
   await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible();
-  await expect(page.locator('.list li')).toHaveCount(6);
+  await expect(page.locator('.list li')).toHaveCount(8);
   await expect(page.getByText(/computed in \d+\.\d s/)).toBeVisible();
   await page.getByRole('tab', { name: /Diagnostics/ }).click();
   await expect(page.getByText(/Return path broken/).first()).toBeVisible();
@@ -92,5 +92,5 @@ test.describe('without JavaScript (crawlers)', () => {
 test('a link with ?demo opens the demo board', async ({ page }) => {
   await page.goto('/?demo');
   await expect(page.getByText(/berechnet in/)).toBeVisible({ timeout: 30_000 });
-  await expect(page.locator('.list li')).toHaveCount(6);
+  await expect(page.locator('.list li')).toHaveCount(8);
 });

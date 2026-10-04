@@ -67,6 +67,8 @@ export function geometryKey(s: Source): string {
       return JSON.stringify(['diff', s.netP, s.netN, s.driverP, s.driverN, s.load, s.imbalance]);
     case 'loop':
       return JSON.stringify(['loop', s.pads, s.node?.net ?? '']);
+    case 'inductor':
+      return JSON.stringify(['inductor', s.ref, s.shielding]);
   }
 }
 
@@ -294,7 +296,8 @@ class Engine {
       }
       this.detourCache.set(s.id, detours);
       model.charges = buildCharges(this.ctx, src);
-      const vw = src.type === 'loop' ? (src.node ? { ...src.waveform, amplitude: src.node.voltage } : null) : src.waveform;
+      const vw =
+        src.type === 'loop' ? (src.node ? { ...src.waveform, amplitude: src.node.voltage } : null) : src.type === 'inductor' ? null : src.waveform;
       model.vLines = vw ? trapezoidLines(vw, this.ctx.fMax) : [];
       return { model };
     } catch (e) {

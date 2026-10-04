@@ -8,8 +8,8 @@ import { coveredNear, type PlaneLayer } from '../model/planes';
 import type { BoardModel, Pad } from '../model/types';
 import { toWorld, type Vec3, type WorldFrame } from '../model/world';
 import { microstrip, shortLineLimit, stripline, unreferenced, type LineParams } from './lines';
-import { mapLines, trapezoidLines, type Line } from './spectrum';
-import { splitPadRef, type DiffPairSource, type LoadModel, type LoopSource, type SignalSource, type Source } from './sources';
+import { mapLines, trapezoidLines, triangleLines, type Line } from './spectrum';
+import { splitPadRef, STRAY_TURNS, type DiffPairSource, type InductorSource, type LoadModel, type LoopSource, type SignalSource, type Source } from './sources';
 
 export interface CurrentElement {
   a: Vec3;
@@ -74,7 +74,40 @@ export function buildSource(ctx: PhysicsContext, src: Source): SourceModel {
       return diffPairModel(ctx, src);
     case 'loop':
       return loopModel(ctx, src);
+    case 'inductor':
+      return inductorModel(ctx, src);
   }
+}
+
+// --- inductor stray field (stage 2c) ------------------------------------------------------------
+
+function inductorModel(ctx: PhysicsContext, src: InductorSource): SourceModel {
+  const { board } = ctx;
+  const fp = board.footprints.find((f) => f.ref === src.ref);
+  if (!fp) throw new SourceError(`part-not-found:${src.ref}`);
+  const L = board.layers;
+  const top = L[0]!;
+  const bottom = L[L.length - 1]!;
+  const h = Math.max(fp.height, 0.5);
+  const y = fp.side === 'top' ? top.y + top.thickness / 2 + h / 2 : bottom.y - bottom.thickness / 2 - h / 2;
+  const radius = Math.max(0.3, 0.35 * Math.min(fp.body.size.x, fp.body.size.y));
+  const turns = STRAY_TURNS[src.shielding];
+  const n = 16;
+  const elements: CurrentElement[] = [];
+  for (let k = 0; k < n; k++) {
+    const a0 = (2 * Math.PI * k) / n;
+    const a1 = (2 * Math.PI * (k + 1)) / n;
+    const p0 = { x: fp.body.center.x + radius * Math.cos(a0), y: fp.body.center.y + radius * Math.sin(a0) };
+    const p1 = { x: fp.body.center.x + radius * Math.cos(a1), y: fp.body.center.y + radius * Math.sin(a1) };
+    elements.push({ a: toWorld(ctx.frame, p0, y), b: toWorld(ctx.frame, p1, y), w: turns, r: 0.2, vertical: false, layer: -1, net: 0 });
+  }
+  return {
+    id: src.id,
+    elements,
+    lines: triangleLines(src.waveform, ctx.fMax),
+    info: { lengthMm: 2 * Math.PI * radius, eeff: 1, fShort: Infinity, warnings: [] },
+    centre: toWorld(ctx.frame, fp.body.center, y),
+  };
 }
 
 // --- helpers ------------------------------------------------------------------------------------

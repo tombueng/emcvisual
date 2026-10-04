@@ -47,7 +47,21 @@ export interface LoopSource extends SourceBase {
   node?: { net: string; voltage: number };
 }
 
-export type Source = SignalSource | DiffPairSource | LoopSource;
+/** Stray field of a storage inductor (stage 2c): a small horizontal multi-turn loop in its body. */
+export interface InductorSource extends SourceBase {
+  type: 'inductor';
+  /** Footprint reference, e.g. "L1". */
+  ref: string;
+  /** How much field leaves the core: open drum core, semi-shielded, shielded. */
+  shielding: 'open' | 'semi' | 'shielded';
+  /** f0 = switching frequency, duty = converter duty cycle, amplitude = ripple current peak-to-peak (A); tr unused. */
+  waveform: Waveform;
+}
+
+/** Effective turns of the stray loop per shielding class (rough, see PHYSIK/Stufe-2 doc). */
+export const STRAY_TURNS: Record<InductorSource['shielding'], number> = { open: 12, semi: 4, shielded: 0.8 };
+
+export type Source = SignalSource | DiffPairSource | LoopSource | InductorSource;
 
 export const SOURCE_COLORS = ['#f59e0b', '#38bdf8', '#f472b6', '#a3e635', '#c084fc', '#fb7185', '#2dd4bf', '#facc15'];
 

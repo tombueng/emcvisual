@@ -1,6 +1,6 @@
 # Stufe 2: Rückströme in Flächen, Leitungseffekte, E-Feld
 
-Stand: 2026-10-04 · Status: **2a umgesetzt** (Umwegmodell), **2b E-Feld umgesetzt**; Flächenlöser, Leitungseffekte, Spulen-Streufeld offen
+Stand: 2026-10-04 · Status: **2a Umwegmodell, 2b E-Feld, 2c Spulen-Streufeld umgesetzt**; Flächenlöser (genaue Stromverteilung) und Leitungseffekte offen
 
 ## Ziel
 
@@ -59,6 +59,14 @@ zusätzliche Schleifenfläche) und springt an beiden Vias über C2 (35 und 52 mm
 - Spannungsspektrum: Trapez des Signals; bei Stromschleifen optional ein Schaltknoten
   (SW-Netz und Spannungshub, Standard 12 V in Vorschlägen), weil das E-Feld dort sitzt.
 - Anzeige in dBµV/m; Sonde, Linienliste, Hotspots und Feldlinien folgen der Feldgröße.
+
+## Umgesetzt: 2c Streufeld von Speicherdrosseln (2026-10-04)
+
+Quellentyp „Spule“: eine waagerechte Schleife mit 16 Segmenten auf halber Bauteilhöhe, Radius
+0,35 × kleinste Gehäusekante, gespeist mit dem dreieckförmigen Rippelstrom (Spitze-Spitze,
+Tastgrad des Wandlers; c_n = A·|sin(nπD)| / (π² n² D(1−D))). Die Bauform setzt die
+effektiven Windungen des Streuflusses: offen 12, halb geschirmt 4, geschirmt 0,8 (grobe
+Erfahrungswerte, keine Herstellerdaten). Vorschläge für Drosseln am Schaltknoten eines Reglers.
 
 ## Methode (Ausbau, offen)
 

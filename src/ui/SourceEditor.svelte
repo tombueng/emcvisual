@@ -17,6 +17,7 @@
 
   const nets = $derived(app.board ? app.board.nets.filter(Boolean) : []);
   const allPads = $derived(app.board ? app.board.pads.map((p) => `${p.ref}.${p.number}`) : []);
+  const parts = $derived(app.board ? app.board.footprints.map((f) => f.ref).filter(Boolean) : []);
   const model = $derived(app.models[source.id]);
   const error = $derived(app.sourceErrors[source.id]);
   const corners = $derived(trapezoidCorners(source.waveform));
@@ -31,7 +32,7 @@
   const changed = () => engine.sourceChanged(source.id);
 
   function setLoad(model: LoadModel['model']) {
-    if (source.type === 'loop') return;
+    if (source.type !== 'signal' && source.type !== 'diffpair') return;
     source.load = model === 'capacitive' ? { model, cLoad: 5e-12 } : { model, z0: 0, endPad: '' };
     changed();
   }
@@ -105,7 +106,7 @@
       <label for="src-imb">{t.editor.imbalance}</label>
       <EngInput id="src-imb" value={source.imbalance * 100} unit="%" min={0} max={100} onchange={(v) => { if (source.type === 'diffpair') { source.imbalance = v / 100; changed(); } }} />
     </div>
-  {:else}
+  {:else if source.type === 'loop'}
     <div class="field wide">
       <span class="label">{t.editor.pads}</span>
       {#each source.pads as _, i (i)}
@@ -133,30 +134,45 @@
         <EngInput id="src-nodev" value={source.node.voltage} unit="V" min={0} onchange={(v) => { if (source.type === 'loop' && source.node) { source.node.voltage = v; changed(); } }} />
       </div>
     {/if}
+  {:else}
+    <div class="field">
+      <label for="src-ref">{t.editor.part}</label>
+      <NetInput id="src-ref" value={source.ref} options={parts} onchange={(v) => { if (source.type === 'inductor') { source.ref = v; changed(); } }} />
+    </div>
+    <div class="field">
+      <label for="src-shield">{t.editor.shielding}</label>
+      <select id="src-shield" value={source.shielding} onchange={(e) => { if (source.type === 'inductor') { source.shielding = (e.currentTarget as HTMLSelectElement).value as 'open' | 'semi' | 'shielded'; changed(); } }}>
+        <option value="open">{t.editor.shieldings.open}</option>
+        <option value="semi">{t.editor.shieldings.semi}</option>
+        <option value="shielded">{t.editor.shieldings.shielded}</option>
+      </select>
+    </div>
   {/if}
 
   <div class="field">
-    <label for="src-f0">{source.type !== 'loop' && source.kind === 'data' ? t.editor.bitrate : t.editor.f0}</label>
-    {#if source.type !== 'loop' && source.kind === 'data'}
+    <label for="src-f0">{(source.type === 'signal' || source.type === 'diffpair') && source.kind === 'data' ? t.editor.bitrate : t.editor.f0}</label>
+    {#if (source.type === 'signal' || source.type === 'diffpair') && source.kind === 'data'}
       <EngInput id="src-f0" value={source.waveform.f0 * 2} unit="bit/s" min={1} onchange={(v) => { source.waveform.f0 = v / 2; changed(); }} />
     {:else}
       <EngInput id="src-f0" value={source.waveform.f0} unit="Hz" min={1} onchange={(v) => { source.waveform.f0 = v; changed(); }} />
     {/if}
   </div>
-  <div class="field">
-    <label for="src-tr">{t.editor.tr}</label>
-    <EngInput id="src-tr" value={source.waveform.tr} unit="s" min={1e-12} onchange={(v) => { source.waveform.tr = v; changed(); }} />
-  </div>
+  {#if source.type !== 'inductor'}
+    <div class="field">
+      <label for="src-tr">{t.editor.tr}</label>
+      <EngInput id="src-tr" value={source.waveform.tr} unit="s" min={1e-12} onchange={(v) => { source.waveform.tr = v; changed(); }} />
+    </div>
+  {/if}
   <div class="field">
     <label for="src-duty">{t.editor.duty}</label>
     <EngInput id="src-duty" value={source.waveform.duty * 100} unit="%" min={1} max={99} onchange={(v) => { source.waveform.duty = v / 100; changed(); }} />
   </div>
   <div class="field">
-    <label for="src-amp">{source.type === 'loop' ? t.editor.amplitudeA : t.editor.amplitudeV}</label>
-    <EngInput id="src-amp" value={source.waveform.amplitude} unit={source.type === 'loop' ? 'A' : 'V'} min={0} onchange={(v) => { source.waveform.amplitude = v; changed(); }} />
+    <label for="src-amp">{source.type === 'loop' ? t.editor.amplitudeA : source.type === 'inductor' ? t.editor.ripple : t.editor.amplitudeV}</label>
+    <EngInput id="src-amp" value={source.waveform.amplitude} unit={source.type === 'loop' || source.type === 'inductor' ? 'A' : 'V'} min={0} onchange={(v) => { source.waveform.amplitude = v; changed(); }} />
   </div>
 
-  {#if source.type !== 'loop'}
+  {#if source.type === 'signal' || source.type === 'diffpair'}
     <div class="field">
       <label for="src-load">{t.editor.load}</label>
       <select id="src-load" value={source.load.model} onchange={(e) => setLoad((e.currentTarget as HTMLSelectElement).value as LoadModel['model'])}>
@@ -187,7 +203,7 @@
       {#if model.info.driver}<dt>{t.editor.driver}</dt><dd>{model.info.driver}</dd>{/if}
       <dt>{t.editor.length}</dt><dd>{formatEng(model.info.lengthMm / 1000, 'm')}</dd>
       {#if model.info.cTotal}<dt>{t.editor.cTotal}</dt><dd>{formatEng(model.info.cTotal, 'F')}</dd>{/if}
-      {#if source.type !== 'loop' && model.info.z0}<dt>{t.editor.z0Info}</dt><dd>{formatEng(model.info.z0, 'Ω')}</dd>{/if}
+      {#if (source.type === 'signal' || source.type === 'diffpair') && model.info.z0}<dt>{t.editor.z0Info}</dt><dd>{formatEng(model.info.z0, 'Ω')}</dd>{/if}
       <dt>{t.editor.fShort}</dt><dd>{formatEng(model.info.fShort, 'Hz')}</dd>
       <dt>{t.editor.corners}</dt><dd>{formatEng(corners.f1, 'Hz')} / {formatEng(corners.f2, 'Hz')}</dd>
     </dl>
