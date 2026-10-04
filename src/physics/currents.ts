@@ -260,6 +260,7 @@ interface NetCurrents {
 function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string, load: LoadModel): NetCurrents {
   const { board } = ctx;
   const nets = netIndices(board, netNames);
+  if (!board.tracks.some((t) => nets.includes(t.net))) throw new SourceError('not-routed');
   const g = buildNetGraph(board, nets, true);
   const warnings: string[] = [];
   let driver = driverRef ? findPad(board, driverRef) : detectDriver(board, nets);
@@ -282,8 +283,16 @@ function netCurrents(ctx: PhysicsContext, netNames: string[], driverRef: string,
     if (e.kind !== 'bridge') continue;
     for (const nid of [e.a, e.b]) if (g.nodes[nid]!.pad !== undefined) bridgePads.add(g.nodes[nid]!.pad!);
   }
+  // one load per pin: pads of a footprint sharing a number are one pin
   const loads: number[] = [];
-  for (const [pi] of g.padNodes) if (pi !== driver && !bridgePads.has(pi)) loads.push(pi);
+  const seenPins = new Set<string>([`${board.pads[driver]!.footprint}/${board.pads[driver]!.number}`]);
+  for (const [pi] of g.padNodes) {
+    const p = board.pads[pi]!;
+    const pin = `${p.footprint}/${p.number}`;
+    if (pi === driver || bridgePads.has(pi) || seenPins.has(pin)) continue;
+    seenPins.add(pin);
+    loads.push(pi);
+  }
 
   // line length, capacitance and Z0 along the tree
   const n = g.nodes.length;

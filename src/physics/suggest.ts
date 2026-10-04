@@ -42,6 +42,7 @@ export function suggestSources(board: BoardModel): Suggestion[] {
     if (!m || i === 0) return;
     const stem = m[1]!;
     const suffix = m[2]!;
+    if (stem.replace(/[/_.\-]/g, '').length === 0) return; // nets like "/+" are supplies, not pairs
     const partnerSuffix = suffix.replace('+', '-').replace(/P$/i, (s) => (s === 'P' ? 'N' : 'n')).replace(/DP$/i, 'DN');
     const j = board.nets.indexOf(stem + partnerSuffix);
     if (j <= 0) return;

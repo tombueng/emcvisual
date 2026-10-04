@@ -135,8 +135,12 @@ export function buildNetGraph(board: BoardModel, nets: number[], bridge = true):
     edge(prev, ib, 'track', t.width, t.layer, t.net);
   });
 
-  // track ends inside pads and vias
+  // track ends inside pads and vias (a track end touches when its half width reaches the copper)
   const trackEnds = new Set<number>(trackNodes.flatMap(([a, b]) => [a, b]));
+  const endHalfWidth = new Map<number, number>();
+  tracks.forEach((t, ti) => {
+    for (const id of trackNodes[ti]!) endHalfWidth.set(id, Math.max(endHalfWidth.get(id) ?? 0, t.width / 2));
+  });
   for (const [pi, ids] of padNodes) {
     const p = board.pads[pi]!;
     ids.forEach((pid) => {
@@ -144,7 +148,7 @@ export function buildNetGraph(board: BoardModel, nets: number[], bridge = true):
       for (const id of trackEnds) {
         const n = nodes[id]!;
         if (n.layer !== layer || id === pid) continue;
-        if (insidePad(p, n.x, n.y, 1e-3)) edge(id, pid, 'pad', Math.min(p.size.x, p.size.y) || 0.3, layer, p.net);
+        if (insidePad(p, n.x, n.y, (endHalfWidth.get(id) ?? 0) + 1e-3)) edge(id, pid, 'pad', Math.min(p.size.x, p.size.y) || 0.3, layer, p.net);
       }
     });
   }
@@ -153,8 +157,18 @@ export function buildNetGraph(board: BoardModel, nets: number[], bridge = true):
     for (const id of trackEnds) {
       const n = nodes[id]!;
       if (n.layer !== v.layer || id === v.id) continue;
-      if (Math.hypot(n.x - vn.x, n.y - vn.y) <= v.r + 1e-3) edge(id, v.id, 'pad', v.r * 2, v.layer, board.vias[vn.via!]!.net);
+      if (Math.hypot(n.x - vn.x, n.y - vn.y) <= v.r + (endHalfWidth.get(id) ?? 0) + 1e-3) edge(id, v.id, 'pad', v.r * 2, v.layer, board.vias[vn.via!]!.net);
     }
+  }
+
+  // pads of one footprint sharing a number are the same pin (alternative holes, exposed pads)
+  const samePin = new Map<string, number>();
+  for (const [pi, ids] of padNodes) {
+    const p = board.pads[pi]!;
+    const key = `${p.footprint}/${p.number}/${p.net}`;
+    const first = samePin.get(key);
+    if (first === undefined) samePin.set(key, pi);
+    else edge(padNodes.get(first)![0]!, ids[0]!, 'pad', 0.3, nodes[ids[0]!]!.layer, p.net);
   }
 
   // bridges over two-pin parts whose pads sit on two different nets of this graph

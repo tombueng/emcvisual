@@ -36,7 +36,8 @@
 
   function errorText(e: string): string {
     const [code, arg] = e.split(':');
-    return t.editor.errors[code ?? ''] ?? (arg ? `${code}: ${arg}` : e);
+    const text = t.editor.errors[code ?? ''];
+    return text ? (arg ? `${text}: ${arg}` : text) : e;
   }
 
   function pickPad(onPick: (v: string) => void) {
@@ -179,7 +180,7 @@
       <dt>{t.editor.corners}</dt><dd>{formatEng(corners.f1, 'Hz')} / {formatEng(corners.f2, 'Hz')}</dd>
     </dl>
     {#each model.info.warnings as w (w)}
-      <p class="warn-text">{t.editor.warnings[w.split(':')[0] ?? ''] ?? w}</p>
+      <p class="warn-text">{t.editor.warnings[w.split(':')[0] ?? ''] ?? w}{w.includes(':') ? ` ${w.slice(w.indexOf(':') + 1)}` : ''}</p>
     {/each}
   {/if}
 </div>
