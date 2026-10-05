@@ -199,6 +199,76 @@
    ]
   }
  },
+ "filter-far": {
+  "layers": 4,
+  "w": 80,
+  "h": 60,
+  "title": "I/O-Filter am IC statt am Stecker",
+  "mistake": "Das RC-Filter (R1, C1) der Eingangsleitung sitzt neben dem IC, 50 mm vom Stecker J1. Die Strecke dazwischen ist ungeschützt.",
+  "fix": "Filter direkt an den Stecker (hier innerhalb 4 mm), Kondensator mit Via direkt am Pad.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "filter-far"
+   ],
+   "good_absent": [
+    "filter-far",
+    "filter-ground"
+   ]
+  }
+ },
+ "filter-ground": {
+  "layers": 4,
+  "w": 80,
+  "h": 60,
+  "title": "Filterkondensator am Stecker mit langer Masseanbindung",
+  "mistake": "Der Filterkondensator C1 sitzt zwar am Stecker, erreicht die Massefläche aber erst über 10 mm Leitung zu einer Via. Bei 100 MHz ist das eine Induktivität von rund 10 nH: Der Kondensator leitet kaum noch ab.",
+  "fix": "Masse-Via direkt am Pad des Kondensators.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "filter-ground"
+   ],
+   "good_absent": [
+    "filter-ground"
+   ]
+  }
+ },
+ "usb-shield": {
+  "layers": 4,
+  "w": 60,
+  "h": 40,
+  "title": "USB-C-Buchse mit offenem Schirm",
+  "mistake": "Die Schirmlaschen (SH) der USB-C-Buchse haben kein Netz. Der Kabelschirm kann seinen Strom nicht zur Platine zurückführen und wird selbst zur Antenne.",
+  "fix": "Schirmpads an Masse (oder Gehäuse), mit Vias direkt an den Pads.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "shield-open"
+   ],
+   "good_absent": [
+    "shield-open",
+    "shield-weak"
+   ]
+  }
+ },
+ "decoupling": {
+  "layers": 4,
+  "w": 60,
+  "h": 40,
+  "title": "Abblockkondensator 15 mm vom Versorgungspin",
+  "mistake": "Der einzige Kondensator für die 3,3-V-Versorgung des ICs U1 sitzt 15 mm vom Pin entfernt und ist über eine Leitung angeschlossen; die Stromspitzen des ICs fließen über eine große Schleife.",
+  "fix": "Kondensator direkt am Versorgungspin, Vias direkt an den Pads.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "decoupling"
+   ],
+   "good_absent": [
+    "decoupling"
+   ]
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

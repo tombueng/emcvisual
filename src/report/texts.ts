@@ -24,6 +24,9 @@ export function diagnosticText(d: Diagnostic): string {
         return k['no-stitching'](d);
       case 'long-line':
         return k['long-line'](d, (v) => formatEng(v, 'Hz', 2));
+      default:
+        // every other kind takes the diagnostic alone
+        return (k[d.kind] as (x: Diagnostic) => string)(d);
     }
   })();
   return main + (d.detour ? t.diag.detour(d.detour) : '');
@@ -67,8 +70,9 @@ export function farMargins(): FarMargin[] {
     .sort((a, b) => b.worst - a.worst);
 }
 
-export const sourceName = (id: string) => app.sources.find((s) => s.id === id)?.name ?? '';
-export const sourceColor = (id: string) => app.sources.find((s) => s.id === id)?.color ?? '#888';
+/** Name of a finding's source; board rules (no source) show "Board". */
+export const sourceName = (id: string) => (id === '' ? t.diag.board : (app.sources.find((s) => s.id === id)?.name ?? ''));
+export const sourceColor = (id: string) => app.sources.find((s) => s.id === id)?.color ?? '#9aa4b2';
 
 /** Layout hints in the order to work on them (attribution.ts): worst source first, biggest fix first. */
 export function rankedDiagnostics(): { d: Diagnostic; margin: number | null; severity: Severity }[] {

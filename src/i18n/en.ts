@@ -208,9 +208,21 @@ export const en: Strings = {
         const m = e.worst.margin >= 0 ? `${e.worst.margin.toFixed(0)} dB over the limit` : `${(-e.worst.margin).toFixed(0)} dB below`;
         return `Crosstalk into ${d.otherNet ?? '?'} (leaves on the cable at ${e.connector}): ${e.length.toFixed(0)} mm parallel at ${e.spacing.toFixed(1)} mm spacing, with the cable estimated up to ${e.worst.db.toFixed(0)} dBµV/m at 3 m (${m}, worst case).`;
       },
+      'filter-far': (d) => `Filter ${d.parts?.[1] ?? '?'} on ${d.nets?.[0] ?? '?'} sits ${d.value.toFixed(0)} mm from connector ${d.parts?.[0] ?? '?'} (guide value: at most 10 mm).`,
+      'filter-ground': (d) =>
+        d.value >= 99
+          ? `Filter capacitor ${d.parts?.[1] ?? '?'} at connector ${d.parts?.[0] ?? '?'} has no short ground connection (no via, no pour nearby).`
+          : `Filter capacitor ${d.parts?.[1] ?? '?'} at connector ${d.parts?.[0] ?? '?'}: nearest ground connection ${d.value.toFixed(1)} mm from the pad (guide value: at most 3 mm).`,
+      'shield-open': (d) => `The shield of ${d.parts?.[0] ?? '?'} is not connected.`,
+      'shield-weak': (d) => `The shield of ${d.parts?.[0] ?? '?'} reaches ground only ${Number.isFinite(d.value) ? `${d.value.toFixed(1)} mm` : 'not at all'} away (guide value: via or pour right at the pad).`,
+      decoupling: (d) =>
+        d.decoupling?.none
+          ? `${d.decoupling.pin}: no decoupling capacitor within 20 mm.`
+          : `${d.decoupling?.pin ?? '?'}: nearest decoupling capacitor ${d.decoupling?.cap ?? '?'} is ${d.value.toFixed(0)} mm away, mounting inductance roughly ${(d.decoupling?.nh ?? 0).toFixed(0)} nH.`,
       'edge-trace': (d) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
+    board: 'Board',
     cmLine: (m: string, f: string, mech: string) => `with cables, worst case: ${m} (${f}; ${mech})`,
     farCompensated: 'Far field not quantifiable here: the solid plane under the flat loop cancels its dipole moment in the model. The measure is the loop area (see the hint).',
     detour: (d: { length: number; extraArea: number; via?: string }) =>
@@ -401,6 +413,11 @@ export const en: Strings = {
       'edge-trace': 'Line at the edge of its plane',
       'cable-cm': 'Cables driven against each other',
       'io-coupling': 'Crosstalk into a cable line',
+      'filter-far': 'Filter far from the connector',
+      'filter-ground': 'Filter capacitor without short ground',
+      'shield-open': 'Connector shield open',
+      'shield-weak': 'Connector shield poorly connected',
+      decoupling: 'Decoupling missing or far away',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -422,6 +439,7 @@ export const en: Strings = {
     bases: { datasheet: 'datasheet', calculated: 'calculated', schematic: 'schematic/value', assumed: 'assumption' },
   },
   focus: {
+    groundReach: (mm: string) => `nearest ground ${mm} mm`,
     back: 'Back to the whole board',
     open: 'Explain in 3D',
     why: 'What the calculation objects to here',
@@ -442,6 +460,9 @@ export const en: Strings = {
     noStitch: (net: string, mm: string) => `no ${net} via within ${mm} mm`,
     longLine: (f: string) => `resonance at ${f} (λ/4, unterminated)`,
     suggest: {
+      shieldToGround: 'shield to ground, vias right at the pad',
+      filterHere: 'filter here, right at the connector',
+      decoupleHere: (pin: string) => `capacitor right at ${pin}, vias at the pads`,
       capPlanes: (a: string, b: string) => `Suggestion: 100 nF between ${a} and ${b} here, less than 2 mm from the via`,
       stitchVia: (net: string) => `Suggestion: ${net} stitching via here`,
       bridgeCap: 'Suggestion: reroute the line; otherwise a 100 nF bridge across the gap here',
@@ -552,6 +573,7 @@ export const en: Strings = {
       johnson: 'H. Johnson, M. Graham: High-Speed Digital Design. Prentice Hall, 1993 (electrically long lines, termination).',
       hubing2003: 'T. Hubing: Printed Circuit Board EMI Source Mechanisms. IEEE EMC Symposium 2003 (voltage- and current-driven common-mode sources).',
       hockanson1996: 'D. M. Hockanson, J. L. Drewniak, T. H. Hubing et al.: Investigation of Fundamental EMI Source Mechanisms Driving Common-Mode Radiation from Printed Circuit Boards with Attached Cables. IEEE Trans. EMC 38(4), 1996.',
+      wyatt: 'K. Wyatt: The Top Five Reasons Products Fail EMI Testing. Interference Technology; Top Ten EMC Problems (IEEE EMC Society, Vortrag).',
       clemson: 'Clemson University CVEL, EMC Expert System: Grid Point Voltage Algorithm and Current-Driven Common-Mode Radiation Algorithm (cecas.clemson.edu/cvel).',
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (hot loop, input capacitor).',
@@ -713,6 +735,51 @@ export const en: Strings = {
           'A worst-case estimate: weak coupling, resonant cable, phases of the contributions added (the source says itself this can be high). The load on the I/O line (100 Ω assumed), filters at the connector and the actual cable length are not taken into account; a filter right at the connector can make the coupling practically harmless. Which footprints carry cables, the app guesses from library and reference.',
         refs: ['clemson', 'hubing2003'] as const,
       },
+      filterFar: {
+        what: () => 'A filter part (resistor, ferrite, inductor or capacitor to ground) on a line that leaves the board through a connector sits far from the connector.',
+        why: () => 'A filter only acts on what lies behind it. The line between connector and filter is unprotected and picks up noise on its way across the board, which then goes onto the cable unhindered. Test labs list filters far from the entry among the typical layout causes.',
+        detected: () => 'For each pin of a cable connector the app looks for two-terminal parts on the same net: in series (R, L, FB) or as a capacitor to ground. It measures the straight distance from the connector pin to the part\'s pad; reported from 10 mm.',
+        fixes: () => ['Put the filter right at the connector, then route the filtered line to the IC.', 'Connect the filter capacitor with its own via (better two) right at the pad to the ground plane; with a metal enclosure, reference it to the enclosure at the connector.', 'Keep other lines away from the unfiltered stretch up to the filter.'],
+        avoid: () => ['Do not place the filter "neatly" next to the IC.', 'Do not route the unfiltered stretch across the digital area.'],
+        limits: () => 'A distance rule, not a calculation. Whether the unfiltered stretch really picks up noise depends on what runs next to it (see crosstalk into cable lines). Not every line needs a filter; whether the part is meant as a filter at all, the app guesses from reference and net.',
+        refs: ['wyatt', 'clemson'] as const,
+      },
+      filterGround: {
+        what: () => 'The capacitor of a filter at the connector reaches ground only over a longer way.',
+        why: () => 'A shunt capacitor is only as good as its mounting inductance: every millimetre of track to ground is roughly a nanohenry, and 2.5 cm already have about 12 Ω at 100 MHz (Wyatt). Then the capacitor no longer diverts the noise.',
+        detected: () => 'The app checks whether the capacitor\'s ground pad lies in a ground pour on its layer; otherwise it measures the distance to the nearest ground via. Reported from 3 mm.',
+        fixes: () => ['A ground via right at the capacitor pad, better two.', 'Or put the pad directly into a ground pour on its layer.'],
+        avoid: () => ['Do not hang the filter capacitor on ground over a long, thin track.', 'Do not share the via with other parts.'],
+        limits: () => 'Straight distance to the nearest via, not the actual track; the threshold is a guide value.',
+        refs: ['wyatt'] as const,
+      },
+      shieldOpen: {
+        what: () => 'The connector\'s shield pads (shell, solder tabs) have no net, or hang on a net that goes nowhere else.',
+        why: () => 'A cable shield only helps if the common-mode current on its inside can flow back to the board. With a floating connector shell the shield itself becomes the antenna. Poorly terminated shields are among the most common reasons for failures (Wyatt: up to 25 dB more with poorly connected HDMI cables).',
+        detected: () => 'Pads numbered like S1, SH, SHIELD or MP on connectors; reported when they have no net or their net leads nowhere else.',
+        fixes: () => ['Connect the shield pads short and wide to ground or the enclosure, with vias right at the pads.', 'With a metal enclosure, bond the shield to the enclosure all round at the connector.'],
+        avoid: () => ['Do not leave shield pads open.', 'No thin track as the shield connection.'],
+        limits: () => 'The app only sees the board: a connection through enclosure springs or a sheet that is not in the board file is not recognised. Whether a ferrite or RC in the shield path makes sense is disputed in the literature; the app does not rate it.',
+        refs: ['wyatt', 'hubing2003'] as const,
+      },
+      shieldWeak: {
+        what: () => 'The connector\'s shield pads are connected, but reach ground only over a longer way.',
+        why: () => 'A track as shield connection is an inductance (a "pigtail" on the board): exactly across it drops the voltage that drives the shield from outside. 2.5 cm have about 12 Ω at 100 MHz.',
+        detected: () => 'As for the open shield; in addition the app checks whether the shield pads lie in a pour of their net or have a via right next to them. Reported when the way is longer than 3 mm.',
+        fixes: () => ['Put the shield pads directly into a ground pour or several vias at each pad.', 'With a separate chassis ground: a short, wide connection to the enclosure at the connector.'],
+        avoid: () => ['No thin track as the shield connection.'],
+        limits: () => 'Straight distance to the nearest via, not the track; the threshold is a guide value. Enclosure springs and sheets outside the board are not visible to the app.',
+        refs: ['wyatt'] as const,
+      },
+      decoupling: {
+        what: () => 'A supply pin of an IC has no decoupling capacitor nearby, or the nearest one is connected over a longer way.',
+        why: () => 'Switching ICs draw short current spikes from the supply. Without a capacitor nearby they flow over large loops through the supply, and the noise on supply and plane drives cables and plane resonances. What matters is not the capacitance value but the mounting inductance of package, track and vias.',
+        detected: () => 'For each supply pin (net name like VCC, VDD, 3V3 or pin type power) of an IC with at least five pins the app looks for the nearest capacitor between that net and ground. Reported from 5 mm distance, or when there is none within 20 mm. The mounting inductance is a rough estimate: line inductance of the stretch plus about 1 nH for package and vias.',
+        fixes: () => ['A small capacitor (0402/0603) right at every supply pin, vias right at the pads.', 'Do not share vias with the IC; with tightly coupled supply planes rather several equal capacitors than one large one.', 'A larger capacitor at the board\'s supply entry.'],
+        avoid: () => ['Do not place the capacitor close and then connect it over long tracks.', 'Do not rely on "100 nF + 10 nF per pin" as a rule: the mounting inductance matters more than the value, and different values can form parallel resonances.'],
+        limits: () => 'A distance rule with a rough inductance estimate, not a calculation of the supply network. ICs with internal decoupling and slow analog parts need less; a close capacitor on the other side of the board with a single via can be worse than the distance suggests.',
+        refs: ['clemson', 'archambeault'] as const,
+      },
       edgeTrace: {
         what: (p: P) =>
           `The line on ${p.layer} runs for ${p.run} mm only ${p.gap} mm beside the edge of its reference plane ${p.planeNet} (${p.plane}). The edge can be the board edge, a slot or the border to another plane.`,
@@ -784,6 +851,7 @@ export const en: Strings = {
     scale: 'Priority in the model: red = the source is near or over the limit at 3 m in the model and this finding contributes a lot, or it is a mistake tests are known to fail on (gap under fast lines, large hot loop); yellow = worth a look; green = far below the limit in the model. This orders the work and says nothing about the test result: the app computes common-mode currents on cables and on the board itself only as a rough worst-case estimate, and they often exceed the differential-mode emission by 20 dB or more.',
     reason: (margin: string, gain: string) => `${margin}; ${gain}`,
     noGain: 'effect not quantified',
+    rule: 'Layout rule from the literature, not computed: the priority is fixed per rule.',
   },
   standards: {
     title: 'Standard for the limit',

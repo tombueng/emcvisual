@@ -323,6 +323,91 @@ def io_crosstalk(b, bad):
         b.track('IO_BTN', b.F, [r, (r[0], 37), (j[0] - 2, 37), (j[0] - 2, j[1]), j])
 
 
+def io_board(b):
+    """4 layers, GND on In1, 3V3 on In2, a header J1 at the left edge with an I/O line to U1."""
+    b.zone('GND', b.In1)
+    b.zone('+3V3', b.In2)
+    b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x02_P2.54mm_Vertical', 'J1', 'IO', 4, 30, pins={'1': 'IO_IN', '2': 'GND'})
+    b.place('Package_SO', 'SOIC-8_3.9x4.9mm_P1.27mm', 'U1', 'MCU', 62, 30, pins={'1': 'IO_U', '4': 'GND', '8': '+3V3'})
+
+
+def filter_parts(b, x, gnd_via_at=None):
+    """R1 in series (IO_IN to IO_U) and C1 from IO_U to GND at x; C1's ground via at gnd_via_at."""
+    b.place('Resistor_SMD', 'R_0603_1608Metric', 'R1', '100R', x, 30, pins={'1': 'IO_IN', '2': 'IO_U'})
+    b.place('Capacitor_SMD', 'C_0402_1005Metric', 'C1', '1nF', x + 2.5, 32, rot=90, pins={'1': 'IO_U', '2': 'GND'})
+    j, r1, r2 = b.pad('J1', '1'), b.pad('R1', '1'), b.pad('R1', '2')
+    c1, c2 = b.pad('C1', '1'), b.pad('C1', '2')
+    u = b.pad('U1', '1')
+    b.track('IO_IN', b.F, [j, r1])
+    b.track('IO_U', b.F, [r2, (c1[0], r2[1]), c1])
+    b.track('IO_U', b.F, [(c1[0], r2[1]), (u[0] - 3, r2[1]), (u[0] - 3, u[1]), u])
+    gx, gy = gnd_via_at if gnd_via_at else (c2[0], c2[1] + 0.9)
+    b.track('GND', b.F, [c2, (c2[0], gy), (gx, gy)], width=0.25)
+    b.via('GND', gx, gy)
+    g = b.pad('J1', '2')
+    b.via('GND', g[0], g[1] + 1.4)
+    b.track('GND', b.F, [g, (g[0], g[1] + 1.4)], width=0.4)
+    b.via('GND', b.pad('U1', '4')[0], b.pad('U1', '4')[1] + 1.2)
+    b.via('+3V3', b.pad('U1', '8')[0], b.pad('U1', '8')[1] - 1.2)
+
+
+@case('filter-far', 4, 80, 60,
+      title='I/O-Filter am IC statt am Stecker',
+      mistake='Das RC-Filter (R1, C1) der Eingangsleitung sitzt neben dem IC, 50 mm vom Stecker J1. Die Strecke dazwischen ist ungeschützt.',
+      fix='Filter direkt an den Stecker (hier innerhalb 4 mm), Kondensator mit Via direkt am Pad.',
+      sources=[],
+      expect={'bad': ['filter-far'], 'good_absent': ['filter-far', 'filter-ground']})
+def filter_far(b, bad):
+    io_board(b)
+    filter_parts(b, 54 if bad else 9)
+
+
+@case('filter-ground', 4, 80, 60,
+      title='Filterkondensator am Stecker mit langer Masseanbindung',
+      mistake='Der Filterkondensator C1 sitzt zwar am Stecker, erreicht die Massefläche aber erst über 10 mm Leitung zu einer Via. Bei 100 MHz ist das eine Induktivität von rund 10 nH: Der Kondensator leitet kaum noch ab.',
+      fix='Masse-Via direkt am Pad des Kondensators.',
+      sources=[],
+      expect={'bad': ['filter-ground'], 'good_absent': ['filter-ground']})
+def filter_ground(b, bad):
+    io_board(b)
+    filter_parts(b, 9, gnd_via_at=(21.5, 33.9) if bad else None)
+
+
+@case('usb-shield', 4, 60, 40,
+      title='USB-C-Buchse mit offenem Schirm',
+      mistake='Die Schirmlaschen (SH) der USB-C-Buchse haben kein Netz. Der Kabelschirm kann seinen Strom nicht zur Platine zurückführen und wird selbst zur Antenne.',
+      fix='Schirmpads an Masse (oder Gehäuse), mit Vias direkt an den Pads.',
+      sources=[],
+      expect={'bad': ['shield-open'], 'good_absent': ['shield-open', 'shield-weak']})
+def usb_shield(b, bad):
+    b.zone('GND', b.In1)
+    b.zone('+5V', b.In2)
+    pins = {'A1': 'GND', 'B1': 'GND', 'A12': 'GND', 'B12': 'GND', 'A4': 'VBUS', 'B4': 'VBUS', 'A9': 'VBUS', 'B9': 'VBUS', 'A6': 'D+', 'B6': 'D+', 'A7': 'D-', 'B7': 'D-'}
+    if not bad:
+        pins['SH'] = 'GND'
+    b.place('Connector_USB', 'USB_C_Receptacle_GCT_USB4085', 'J1', 'USB-C', 6, 20, rot=-90, pins=pins)
+
+
+@case('decoupling', 4, 60, 40,
+      title='Abblockkondensator 15 mm vom Versorgungspin',
+      mistake='Der einzige Kondensator für die 3,3-V-Versorgung des ICs U1 sitzt 15 mm vom Pin entfernt und ist über eine Leitung angeschlossen; die Stromspitzen des ICs fließen über eine große Schleife.',
+      fix='Kondensator direkt am Versorgungspin, Vias direkt an den Pads.',
+      sources=[],
+      expect={'bad': ['decoupling'], 'good_absent': ['decoupling']})
+def decoupling(b, bad):
+    b.zone('GND', b.In1)
+    b.zone('+3V3', b.In2)
+    b.place('Package_SO', 'SOIC-8_3.9x4.9mm_P1.27mm', 'U1', 'MCU', 30, 20, pins={'4': 'GND', '8': '+3V3'})
+    v = b.pad('U1', '8')
+    cx, cy = (v[0] + 15, v[1]) if bad else (v[0] + 1.6, v[1] - 1.6)
+    b.place('Capacitor_SMD', 'C_0402_1005Metric', 'C1', '100nF', cx, cy, pins={'1': '+3V3', '2': 'GND'})
+    c1, c2 = b.pad('C1', '1'), b.pad('C1', '2')
+    b.track('+3V3', b.F, [v, (v[0], cy), c1] if bad else [v, c1], width=0.25)
+    b.via('GND', c2[0] + 0.8, c2[1])
+    b.via('+3V3', c1[0], c1[1] - 0.8)
+    b.via('GND', b.pad('U1', '4')[0], b.pad('U1', '4')[1] + 1.2)
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

@@ -8,7 +8,7 @@ import { t, fmtNum } from '../i18n';
 import { app } from '../state/app.svelte';
 import { formatEng } from '../physics/units';
 import { MAX_GAIN_DB } from '../physics/attribution';
-import type { Diagnostic } from '../physics/diagnostics';
+import { BOARD_KINDS, type Diagnostic } from '../physics/diagnostics';
 import { engine } from '../state/engine.svelte';
 import { limitAt } from '../physics/farfield';
 import { limitsFor } from '../physics/standards';
@@ -100,6 +100,21 @@ export function explain(d: Diagnostic): Explanation {
       if (e && w) figures.push(E.fig.io(d.otherNet ?? '?', e.connector, fmtNum(e.mutual * 1e9, 2), fmtNum(e.capacitance * 1e12, 2), fmtNum(e.zAnt, 0), E.fig.ioKind[e.kind]));
       break;
     }
+    case 'filter-far':
+      k = 'filterFar';
+      break;
+    case 'filter-ground':
+      k = 'filterGround';
+      break;
+    case 'shield-open':
+      k = 'shieldOpen';
+      break;
+    case 'shield-weak':
+      k = 'shieldWeak';
+      break;
+    case 'decoupling':
+      k = 'decoupling';
+      break;
     case 'no-reference':
       k = 'noReference';
       figures.push(E.fig.noReference(p.loopArea));
@@ -187,7 +202,7 @@ export function explain(d: Diagnostic): Explanation {
   const margin = d.kind === 'cable-cm' ? (d.cm?.worst?.margin ?? null) : d.kind === 'io-coupling' ? (d.io?.worst?.margin ?? null) : worst ? worst.db - worst.lim : null;
   const severity = findingSeverity(margin, d.gain?.db ?? null, d.kind, d.value);
   const fAt = d.kind === 'cable-cm' ? d.cm?.worst?.f : d.kind === 'io-coupling' ? d.io?.worst?.f : worst?.f;
-  const reason = t.severity.reason(margin !== null && fAt !== undefined ? `${t.diag.margin(margin)} (${formatEng(fAt, 'Hz', 3)})` : '–', gain ? gainText(d) : t.severity.noGain);
+  const reason = BOARD_KINDS.includes(d.kind) ? t.severity.rule : t.severity.reason(margin !== null && fAt !== undefined ? `${t.diag.margin(margin)} (${formatEng(fAt, 'Hz', 3)})` : '–', gain ? gainText(d) : t.severity.noGain);
 
   return {
     what: text.what(p),

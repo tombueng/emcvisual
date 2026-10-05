@@ -29,11 +29,15 @@ function check(id: string, variant: 'bad' | 'good', meta: CaseMeta): CheckReport
   return runCheck(readFileSync(`${DIR}/${file}`, 'utf8'), file, scenario, opts);
 }
 
-const kinds = (r: CheckReport) => r.sources.flatMap((s) => s.hints.map((h) => h.kind));
+const kinds = (r: CheckReport) => [...r.sources.flatMap((s) => s.hints.map((h) => h.kind)), ...(r.rules ?? []).map((x) => x.kind)];
 const RANK: Record<SeverityLevel, number> = { minor: 0, check: 1, critical: 2 };
 /** The worst rating among the hints, as the app shows it. */
 function worstLevel(r: CheckReport): SeverityLevel {
   let best: SeverityLevel = 'minor';
+  for (const x of r.rules ?? []) {
+    const lvl = findingSeverity(null, null, x.kind as DiagnosticKind, x.value).level;
+    if (RANK[lvl] > RANK[best]) best = lvl;
+  }
   for (const s of r.sources)
     for (const h of s.hints) {
       const lvl = findingSeverity(sevMargin(s, h.kind), h.gainDb ?? null, h.kind as DiagnosticKind, h.value).level;
@@ -52,18 +56,18 @@ describe('known EMC mistakes: bad board vs. good twin', () => {
       for (const r of [bad, good]) for (const s of r.sources) expect(s.error, `${id}: ${s.error}`).toBeUndefined();
       const kb = kinds(bad);
       const kg = kinds(good);
-      const farBad = Math.max(...bad.sources.map((s) => s.far?.margin ?? -200));
-      const farGood = Math.max(...good.sources.map((s) => s.far?.margin ?? -200));
-      const nearBad = Math.max(...bad.sources.map((s) => s.nearMax ?? -200));
-      const nearGood = Math.max(...good.sources.map((s) => s.nearMax ?? -200));
+      const farBad = Math.max(-200, ...bad.sources.map((s) => s.far?.margin ?? -200));
+      const farGood = Math.max(-200, ...good.sources.map((s) => s.far?.margin ?? -200));
+      const nearBad = Math.max(-200, ...bad.sources.map((s) => s.nearMax ?? -200));
+      const nearGood = Math.max(-200, ...good.sources.map((s) => s.nearMax ?? -200));
       const level = worstLevel(bad);
       matrix.push({ case: id, bad: kb.join(',') || '-', good: kg.join(',') || '-', level, far: `${farBad} → ${farGood}`, near: `${nearBad} → ${nearGood}` });
       for (const k of meta.expect.bad ?? []) expect(has(kb, k), `${id}: bad board should report ${k}, got [${kb}]`).toBe(true);
       for (const k of meta.expect.good_absent ?? []) expect(has(kg, k), `${id}: good board should not report ${k}, got [${kg}]`).toBe(false);
-      const cmBad = Math.max(...bad.sources.map((s) => s.cm?.margin ?? -200));
-      const cmGood = Math.max(...good.sources.map((s) => s.cm?.margin ?? -200));
+      const cmBad = Math.max(-200, ...bad.sources.map((s) => s.cm?.margin ?? -200));
+      const cmGood = Math.max(-200, ...good.sources.map((s) => s.cm?.margin ?? -200));
       matrix[matrix.length - 1]!.cm = `${cmBad} → ${cmGood}`;
-      matrix[matrix.length - 1]!.io = `${Math.max(...bad.sources.map((s) => s.io?.margin ?? -200))} → ${Math.max(...good.sources.map((s) => s.io?.margin ?? -200))}`;
+      matrix[matrix.length - 1]!.io = `${Math.max(-200, ...bad.sources.map((s) => s.io?.margin ?? -200))} → ${Math.max(-200, ...good.sources.map((s) => s.io?.margin ?? -200))}`;
       if (meta.expect.cm_gain_min !== undefined) expect(cmBad - cmGood, `${id}: cable common mode bad ${cmBad} vs good ${cmGood}`).toBeGreaterThanOrEqual(meta.expect.cm_gain_min);
       if (meta.expect.bad_split) expect(bad.sources.some((s) => s.hints.some((h) => h.split)), `${id}: the split should be named`).toBe(true);
       if (meta.expect.near_gain_min !== undefined) expect(nearBad - nearGood, `${id}: near field bad ${nearBad} vs good ${nearGood}`).toBeGreaterThanOrEqual(meta.expect.near_gain_min);

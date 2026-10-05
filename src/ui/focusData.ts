@@ -29,7 +29,8 @@ export interface FocusLabel {
 export interface FocusSpec {
   key: string;
   diag: Diagnostic;
-  source: Source;
+  /** The finding's source; null for board rules (filters, shields, decoupling). */
+  source: Source | null;
   color: string;
   /** Nets of the source (drawn in its colour). */
   nets: number[];
@@ -100,8 +101,50 @@ export function sourceFacts(s: Source): string {
   return `${f} · tr ${formatEng(w.tr, 's')} · ${formatEng(w.amplitude, 'V')}`;
 }
 
+/**
+ * Board rules (no source): the parts and nets involved, their reference plane, the dimension the
+ * rule measures, and the fix drawn at its place.
+ */
+function buildBoardFocus(board: BoardModel, d: Diagnostic): FocusSpec {
+  const color = '#9aa4b2';
+  const refs = new Set(d.parts ?? []);
+  const parts = board.footprints.map((f, i) => (refs.has(f.ref) ? i : -1)).filter((i) => i >= 0);
+  const nets = [...new Set((d.nets ?? []).map((n) => board.nets.indexOf(n)).filter((i) => i > 0))];
+  const netSet = new Set(nets);
+  const path: FocusSpec['path'] = board.tracks.filter((tr) => netSet.has(tr.net)).map((tr) => ({ a: tr.a, b: tr.b, layer: tr.layer, width: tr.width }));
+  const pts: Vec2[] = [d.at, ...parts.flatMap((i) => board.footprints[i]!.pads.map((pi) => board.pads[pi]!.at)), ...(d.dims ?? []).flatMap((x) => [x.a, x.b])];
+  const region = { x0: Math.min(...pts.map((p) => p.x)) - 5, y0: Math.min(...pts.map((p) => p.y)) - 5, x1: Math.max(...pts.map((p) => p.x)) + 5, y1: Math.max(...pts.map((p) => p.y)) + 5 };
+  const inRegion = (p: Vec2) => p.x >= region.x0 && p.x <= region.x1 && p.y >= region.y0 && p.y <= region.y1;
+  const top = board.footprints[parts[0] ?? -1]?.side === 'bottom' ? board.layers.length - 1 : 0;
+  const ref = referencePlane(board, app.planes, top);
+  const planes: FocusSpec['planes'] = ref ? [{ layer: ref.layer, net: ref.net, role: t.focus.referenceOf(board.layers[top]!.name) }] : [];
+  const vias: number[] = [];
+  board.vias.forEach((v, i) => {
+    if (inRegion(v.at) && (netSet.has(v.net) || (ref && v.net === ref.net))) vias.push(i);
+  });
+  const labels: FocusLabel[] = parts.map((i) => {
+    const f = board.footprints[i]!;
+    return { at: f.body.center, layer: 'parts' as const, text: f.value && f.value !== f.ref ? `${f.ref} · ${f.value}` : f.ref, kind: 'part' as const };
+  });
+  for (const n of nets) {
+    const tr = board.tracks.filter((x) => x.net === n).sort((a, b) => Math.hypot(b.b.x - b.a.x, b.b.y - b.a.y) - Math.hypot(a.b.x - a.a.x, a.b.y - a.a.y))[0];
+    if (tr) labels.push({ at: { x: (tr.a.x + tr.b.x) / 2, y: (tr.a.y + tr.b.y) / 2 }, layer: tr.layer, text: board.nets[n]!, kind: 'net', color });
+  }
+  const dims: FocusSpec['dims'] = (d.dims ?? []).map((x) => ({ a: x.a, b: x.b, layer: top, text: x.text }));
+  const circles: FocusSpec['circles'] = [];
+  const suggestions: FocusSpec['suggestions'] = [];
+  if (d.kind === 'filter-ground' || d.kind === 'shield-weak') {
+    circles.push({ c: d.at, r: Math.min(d.value, 6), layer: top, text: t.focus.groundReach(fmtNum(d.value >= 99 ? 0 : d.value, 1)) });
+    suggestions.push({ at: { x: d.at.x + 0.9, y: d.at.y }, layer: top, kind: 'via', text: t.focus.suggest.stitchVia(ref ? (board.nets[ref.net] ?? 'GND') : 'GND') });
+  } else if (d.kind === 'shield-open') suggestions.push({ at: { x: d.at.x + 1.2, y: d.at.y }, layer: top, kind: 'via', text: t.focus.suggest.shieldToGround });
+  else if (d.kind === 'filter-far' && d.dims?.[0]) suggestions.push({ at: { x: d.dims[0].a.x + 3, y: d.dims[0].a.y + 2 }, layer: top, kind: 'res', text: t.focus.suggest.filterHere });
+  else if (d.kind === 'decoupling') suggestions.push({ at: { x: d.at.x + 1.5, y: d.at.y - 1.5 }, layer: top, kind: 'cap', text: t.focus.suggest.decoupleHere(d.decoupling?.pin ?? '') });
+  return { key: diagKey(d), diag: d, source: null, color, nets, path, planes, parts, vias, stitchVias: [], detour: null, region, labels, dims, areas: [], circles, paths: [], suggestions, field: null };
+}
+
 export function buildFocus(d: Diagnostic): FocusSpec | null {
   const board = app.board;
+  if (board && d.sourceId === '') return buildBoardFocus(board, d);
   const s = app.sources.find((x) => x.id === d.sourceId);
   if (!board || !s) return null;
   const nets = sourceNets(board, s);

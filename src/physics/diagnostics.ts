@@ -18,7 +18,25 @@ import type { IoCouplingEstimate } from './ioCoupling';
 /** A common-mode estimate this close to the limit (dB) or above becomes a finding. */
 export const CM_REPORT = -6;
 
-export type DiagnosticKind = 'return-gap' | 'ref-change' | 'no-stitching' | 'long-line' | 'hot-loop' | 'no-reference' | 'edge-trace' | 'cable-cm' | 'io-coupling';
+export type DiagnosticKind =
+  | 'return-gap'
+  | 'ref-change'
+  | 'no-stitching'
+  | 'long-line'
+  | 'hot-loop'
+  | 'no-reference'
+  | 'edge-trace'
+  | 'cable-cm'
+  | 'io-coupling'
+  // board rules without a source (layoutRules.ts)
+  | 'filter-far'
+  | 'filter-ground'
+  | 'shield-open'
+  | 'shield-weak'
+  | 'decoupling';
+
+/** Findings of the board rules, not tied to a field source (sourceId ''). */
+export const BOARD_KINDS: DiagnosticKind[] = ['filter-far', 'filter-ground', 'shield-open', 'shield-weak', 'decoupling'];
 
 export interface Diagnostic {
   kind: DiagnosticKind;
@@ -43,6 +61,12 @@ export interface Diagnostic {
   cm?: CmEstimate;
   /** io-coupling: crosstalk into a line that leaves through a connector (ioCoupling.ts). */
   io?: IoCouplingEstimate;
+  /** Board rules: the parts and nets involved, and dimensions to draw (board mm). */
+  parts?: string[];
+  nets?: string[];
+  dims?: { a: Vec2; b: Vec2; text: string }[];
+  /** decoupling: the supply pin, the nearest capacitor and its estimated mounting inductance. */
+  decoupling?: { pin: string; cap?: string; nh?: number; none?: boolean };
   otherNet?: string;
   /** Stage 2: how the return current actually goes (detour length, extra loop area, link). */
   detour?: { length: number; extraArea: number; via?: string };

@@ -24,13 +24,13 @@
   }
   let { spec, onclose }: Props = $props();
 
-  const source = $derived(app.sources.find((s) => s.id === spec.source.id));
+  const source = $derived(spec.source ? app.sources.find((s) => s.id === spec.source!.id) : undefined);
   const model = $derived(source ? app.models[source.id] : undefined);
   const rank = $derived(rankedDiagnostics().findIndex((r) => diagKey(r.d) === spec.key) + 1);
-  const margin = $derived(farMargins().find((f) => f.id === spec.source.id)?.worst ?? null);
+  const margin = $derived(spec.source ? (farMargins().find((f) => f.id === spec.source!.id)?.worst ?? null) : null);
   const chart = $derived.by(() => {
     void app.models;
-    const lines = engine.farReadout(3)?.sources.find((s) => s.id === spec.source.id)?.lines ?? [];
+    const lines = spec.source ? (engine.farReadout(3)?.sources.find((s) => s.id === spec.source!.id)?.lines ?? []) : [];
     if (!lines.length) return '';
     return miniSpectrumSvg(lines, {
       width: 300,
@@ -48,7 +48,7 @@
     return explain(spec.diag);
   });
   /** Origin of an input: from the scenario's provenance, else "not documented". */
-  const origin = (path: string) => app.partsInfo.provenance[`${spec.source.id}/${path}`];
+  const origin = (path: string) => app.partsInfo.provenance[`${spec.source?.id ?? ''}/${path}`];
 </script>
 
 {#snippet originTag(path: string)}
@@ -68,7 +68,7 @@
 <aside class="card" aria-label={t.focus.why}>
   <header>
     {#if rank > 0}<span class="badge" style:--c={spec.color}>{rank}</span>{/if}
-    <span class="title" style:--c={spec.color}>{spec.source.name}</span>
+    <span class="title" style:--c={spec.color}>{spec.source?.name ?? t.diag.board}</span>
     <button class="btn small" onclick={onclose}>{t.focus.back}</button>
   </header>
 

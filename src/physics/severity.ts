@@ -50,6 +50,12 @@ export function marginOf(
   return sourceMargin;
 }
 
+/**
+ * Board rules (layoutRules.ts): a floating connector shield is a well documented cause of
+ * failures (high), the others are worth a look; none of them is quantified.
+ */
+const RULE_SCORE = { 'shield-open': 0.65, 'shield-weak': 0.45, 'filter-far': 0.45, 'filter-ground': 0.4, decoupling: 0.4 } as const;
+
 /** Below this far-field margin (dB) a gap under the source is left to the normal rating. */
 export const GAP_RELEVANT = -30;
 
@@ -62,6 +68,8 @@ export function findingSeverity(margin: number | null, gain: number | null, kind
   const share = gain !== null ? clamp(gain / 6, 0.15, 1) : kind === 'long-line' ? 0.3 : 0.4;
   let score = marginScore(margin) * (0.35 + 0.65 * share);
   if (kind === 'hot-loop' && value !== undefined) score = Math.max(score, hotLoopScore(value));
+  // board rules have no margin of their own: a fixed priority per rule
+  if (kind in RULE_SCORE) score = RULE_SCORE[kind as keyof typeof RULE_SCORE];
   // a gap in the return plane under a source with spectrum in the measured range: the voltage
   // across the gap drives the plane halves and cables against each other (common mode), which
   // the differential-mode figures do not contain. The literature treats it as one of the most

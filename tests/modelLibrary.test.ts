@@ -59,5 +59,5 @@ describe('STEP to triangles', () => {
     expect([span(0), span(1)].map((v) => Math.round(v * 100) / 100)).toEqual([2, 1.5]);
     expect(span(2)).toBeGreaterThan(0.85);
     expect(span(2)).toBeLessThan(1.01);
-  });
+  }, 30_000); // loading the 7.6 MB WebAssembly can take a while on a busy machine
 });

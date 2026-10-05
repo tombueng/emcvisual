@@ -210,9 +210,23 @@ export const de = {
         const m = e.worst.margin >= 0 ? `${e.worst.margin.toFixed(0)} dB über Grenzwert` : `${(-e.worst.margin).toFixed(0)} dB darunter`;
         return `Übersprechen auf ${d.otherNet ?? '?'} (geht über ${e.connector} aufs Kabel): ${e.length.toFixed(0)} mm parallel im Abstand ${e.spacing.toFixed(1).replace('.', ',')} mm, mit Kabel geschätzt bis ${e.worst.db.toFixed(0)} dBµV/m in 3 m (${m}, ungünstigster Fall).`;
       },
+      'filter-far': (d: { value: number; parts?: string[]; nets?: string[] }) =>
+        `Filter ${d.parts?.[1] ?? '?'} auf ${d.nets?.[0] ?? '?'} sitzt ${d.value.toFixed(0)} mm vom Stecker ${d.parts?.[0] ?? '?'} entfernt (Richtwert: höchstens 10 mm).`,
+      'filter-ground': (d: { value: number; parts?: string[] }) =>
+        d.value >= 99
+          ? `Filterkondensator ${d.parts?.[1] ?? '?'} am Stecker ${d.parts?.[0] ?? '?'} hat keine kurze Masseverbindung (kein Via, keine Fläche in der Nähe).`
+          : `Filterkondensator ${d.parts?.[1] ?? '?'} am Stecker ${d.parts?.[0] ?? '?'}: nächste Masseverbindung ${d.value.toFixed(1).replace('.', ',')} mm vom Pad (Richtwert: höchstens 3 mm).`,
+      'shield-open': (d: { parts?: string[] }) => `Schirm von ${d.parts?.[0] ?? '?'} ist nicht angeschlossen.`,
+      'shield-weak': (d: { value: number; parts?: string[] }) =>
+        `Schirm von ${d.parts?.[0] ?? '?'} erreicht Masse erst ${Number.isFinite(d.value) ? `${d.value.toFixed(1).replace('.', ',')} mm` : 'gar nicht'} weiter (Richtwert: Via oder Fläche direkt am Pad).`,
+      decoupling: (d: { value: number; decoupling?: { pin: string; cap?: string; nh?: number; none?: boolean } }) =>
+        d.decoupling?.none
+          ? `${d.decoupling.pin}: kein Abblockkondensator im Umkreis von 20 mm.`
+          : `${d.decoupling?.pin ?? '?'}: nächster Abblockkondensator ${d.decoupling?.cap ?? '?'} ist ${d.value.toFixed(0)} mm entfernt, Anschlussinduktivität grob ${(d.decoupling?.nh ?? 0).toFixed(0)} nH.`,
       'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
+    board: 'Platine',
     cmLine: (m: string, f: string, mech: string) => `mit Kabeln, ungünstigster Fall: ${m} (${f}; ${mech})`,
     farCompensated: 'Fernfeld hier nicht bezifferbar: Die durchgehende Fläche unter der flachen Schleife hebt ihr Dipolmoment im Modell auf. Maß ist die Schleifenfläche (siehe Hinweis).',
     detour: (d: { length: number; extraArea: number; via?: string }) =>
@@ -403,6 +417,11 @@ export const de = {
       'edge-trace': 'Leitung am Rand der Bezugsfläche',
       'cable-cm': 'Kabel werden gegeneinander getrieben',
       'io-coupling': 'Übersprechen auf eine Kabelleitung',
+      'filter-far': 'Filter weit vom Stecker',
+      'filter-ground': 'Filterkondensator ohne kurze Masse',
+      'shield-open': 'Steckerschirm offen',
+      'shield-weak': 'Steckerschirm schlecht angebunden',
+      decoupling: 'Entkopplung fehlt oder ist weit weg',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -424,6 +443,7 @@ export const de = {
     bases: { datasheet: 'Datenblatt', calculated: 'berechnet', schematic: 'Schaltplan/Wert', assumed: 'Annahme' },
   },
   focus: {
+    groundReach: (mm: string) => `nächste Masse ${mm} mm`,
     back: 'Zurück zur Gesamtansicht',
     open: 'In 3D erklären',
     why: 'Was die Rechnung hier bemängelt',
@@ -444,6 +464,9 @@ export const de = {
     noStitch: (net: string, mm: string) => `kein ${net}-Via im Umkreis von ${mm} mm`,
     longLine: (f: string) => `Resonanz bei ${f} (λ/4, ohne Abschluss)`,
     suggest: {
+      shieldToGround: 'Schirm an Masse, Vias direkt am Pad',
+      filterHere: 'Filter hierher, direkt an den Stecker',
+      decoupleHere: (pin: string) => `Kondensator direkt an ${pin}, Vias an den Pads`,
       capPlanes: (a: string, b: string) => `Vorschlag: 100 nF zwischen ${a} und ${b} hier, weniger als 2 mm von der Via`,
       stitchVia: (net: string) => `Vorschlag: ${net}-Stitching-Via hier`,
       bridgeCap: 'Vorschlag: Leitung umlegen; sonst Brücken-C 100 nF über die Lücke hier',
@@ -555,6 +578,7 @@ export const de = {
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (heiße Schleife, Eingangskondensator).',
       hubing2003: 'T. Hubing: Printed Circuit Board EMI Source Mechanisms. IEEE EMC Symposium 2003 (spannungs- und stromgetriebene Gleichtaktquellen).',
       hockanson1996: 'D. M. Hockanson, J. L. Drewniak, T. H. Hubing u. a.: Investigation of Fundamental EMI Source Mechanisms Driving Common-Mode Radiation from Printed Circuit Boards with Attached Cables. IEEE Trans. EMC 38(4), 1996.',
+      wyatt: 'K. Wyatt: The Top Five Reasons Products Fail EMI Testing. Interference Technology; Top Ten EMC Problems (IEEE EMC Society, Vortrag).',
       clemson: 'Clemson University CVEL, EMC Expert System: Grid Point Voltage Algorithm und Current-Driven Common-Mode Radiation Algorithm (cecas.clemson.edu/cvel).',
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
     },
@@ -715,6 +739,51 @@ export const de = {
           'Eine Abschätzung für den ungünstigsten Fall: schwache Kopplung, resonantes Kabel, Phasen der Teilbeiträge addiert (die Quelle sagt selbst, das kann zu hoch liegen). Die Last auf der I/O-Leitung (100 Ω angesetzt), Filter am Stecker und die tatsächliche Kabellänge sind nicht berücksichtigt; ein Filter direkt am Stecker kann die Kopplung praktisch unschädlich machen. Welche Footprints Kabel tragen, rät die App aus Bibliothek und Referenz.',
         refs: ['clemson', 'hubing2003'] as const,
       },
+      filterFar: {
+        what: () => 'Ein Filterbauteil (Widerstand, Ferrit, Spule oder Kondensator nach Masse) auf einer Leitung, die über einen Stecker die Platine verlässt, sitzt weit vom Stecker weg.',
+        why: () => 'Ein Filter wirkt nur auf das, was hinter ihm liegt. Die Leitung zwischen Stecker und Filter ist ungeschützt und nimmt auf ihrem Weg über die Platine Störungen auf, die dann ungehindert aufs Kabel gehen. Prüflabore führen Filter weit vom Eingang unter den typischen Layoutursachen.',
+        detected: () => 'Für jeden Pin eines Kabelsteckers sucht die App zweipolige Bauteile auf demselben Netz: in Reihe (R, L, FB) oder als Kondensator nach Masse. Gemessen wird der direkte Abstand vom Steckerpin zum Pad des Bauteils; gemeldet ab 10 mm.',
+        fixes: () => ['Filter direkt an den Stecker setzen, die gefilterte Leitung danach zum IC.', 'Den Kondensator des Filters mit eigenem Via (besser zwei) direkt am Pad an die Massefläche, bei Metallgehäuse Bezug auf das Gehäuse am Stecker.', 'Bis zum Filter keine anderen Leitungen nah an der ungefilterten Strecke führen.'],
+        avoid: () => ['Den Filter nicht „ordentlich“ neben den IC setzen.', 'Die ungefilterte Strecke nicht quer durch die Digitalzone führen.'],
+        limits: () => 'Eine Abstandsregel, keine Rechnung. Ob die ungefilterte Strecke wirklich Störungen aufnimmt, hängt davon ab, was neben ihr läuft (siehe Übersprechen auf Kabelleitungen). Nicht jede Leitung braucht einen Filter; ob das Bauteil überhaupt als Filter gemeint ist, rät die App aus Referenz und Netz.',
+        refs: ['wyatt', 'clemson'] as const,
+      },
+      filterGround: {
+        what: () => 'Der Kondensator eines Filters am Stecker erreicht die Masse erst über eine längere Strecke.',
+        why: () => 'Ein Querkondensator wirkt nur so gut wie seine Anschlussinduktivität: Jeder Millimeter Leitung zur Masse ist grob ein Nanohenry, und 2,5 cm haben bei 100 MHz schon etwa 12 Ω (Wyatt). Dann leitet der Kondensator die Störung nicht mehr ab.',
+        detected: () => 'Die App prüft, ob das Massepad des Kondensators in einer Massefläche seiner Lage liegt; sonst misst sie den Abstand zur nächsten Masse-Via. Gemeldet ab 3 mm.',
+        fixes: () => ['Masse-Via direkt am Pad des Kondensators, besser zwei.', 'Oder das Pad direkt in eine Massefläche auf seiner Lage legen.'],
+        avoid: () => ['Den Filterkondensator nicht über eine lange, dünne Leitung an Masse hängen.', 'Die Via nicht mit anderen Bauteilen teilen.'],
+        limits: () => 'Abstand in Luftlinie zur nächsten Via, nicht der tatsächliche Leitungsweg; die Schwelle ist ein Richtwert.',
+        refs: ['wyatt'] as const,
+      },
+      shieldOpen: {
+        what: () => 'Die Schirmpads des Steckers (Gehäuse, Lötlaschen) haben kein Netz oder hängen an einem Netz ohne weitere Verbindung.',
+        why: () => 'Ein Kabelschirm hilft nur, wenn der Gleichtaktstrom auf seiner Innenseite zur Platine zurückfließen kann. Schwebt das Steckergehäuse, wird der Schirm selbst zur Antenne. Schlecht abgeschlossene Schirme gehören zu den häufigsten Gründen für Fehlschläge (Wyatt: bis 25 dB mehr bei schlecht angebundenen HDMI-Kabeln).',
+        detected: () => 'Pads mit Nummern wie S1, SH, SHIELD oder MP an Steckern; gemeldet, wenn sie kein Netz haben oder ihr Netz sonst nirgends hinführt.',
+        fixes: () => ['Schirmpads kurz und breit an Masse oder Gehäuse, mit Vias direkt an den Pads.', 'Bei Metallgehäuse den Schirm am Stecker rundum mit dem Gehäuse verbinden.'],
+        avoid: () => ['Schirmpads nicht offen lassen.', 'Keine dünne Leitung als Schirmanbindung.'],
+        limits: () => 'Die App sieht nur die Platine: Eine Anbindung über Gehäusefedern oder ein Blech, die nicht in der Platine stehen, erkennt sie nicht. Ob ein Ferrit oder RC-Glied im Schirmpfad sinnvoll ist, ist in der Literatur umstritten; die App bewertet das nicht.',
+        refs: ['wyatt', 'hubing2003'] as const,
+      },
+      shieldWeak: {
+        what: () => 'Die Schirmpads des Steckers sind angeschlossen, erreichen die Masse aber erst über eine längere Strecke.',
+        why: () => 'Eine Leitung als Schirmanbindung ist eine Induktivität (ein „Pigtail“ auf der Platine): Genau an ihr fällt die Spannung ab, die den Schirm außen antreibt. 2,5 cm haben bei 100 MHz etwa 12 Ω.',
+        detected: () => 'Wie beim offenen Schirm; dazu prüft die App, ob die Schirmpads in einer Fläche ihres Netzes liegen oder eine Via direkt daneben haben. Gemeldet, wenn der Weg länger als 3 mm ist.',
+        fixes: () => ['Schirmpads direkt in eine Massefläche legen oder mehrere Vias an jedes Pad.', 'Bei getrennter Gehäusemasse: kurze, breite Verbindung zum Gehäuse am Stecker.'],
+        avoid: () => ['Keine dünne Leitung als Schirmanbindung.'],
+        limits: () => 'Luftlinie zur nächsten Via, nicht der Leitungsweg; die Schwelle ist ein Richtwert. Gehäusefedern und Bleche außerhalb der Platine sieht die App nicht.',
+        refs: ['wyatt'] as const,
+      },
+      decoupling: {
+        what: () => 'Ein Versorgungspin eines ICs hat keinen Abblockkondensator in der Nähe, oder der nächste ist über eine längere Strecke angeschlossen.',
+        why: () => 'Schaltende ICs ziehen kurze Stromspitzen aus der Versorgung. Fehlt ein naher Kondensator, fließen sie über große Schleifen durch die Versorgung, und das Rauschen auf Versorgung und Fläche treibt Kabel und Flächenresonanzen. Entscheidend ist nicht der Kapazitätswert, sondern die Anschlussinduktivität aus Gehäuse, Leitung und Vias.',
+        detected: () => 'Für jeden Versorgungspin (Netzname wie VCC, VDD, 3V3 oder Pintyp Versorgung) eines ICs mit mindestens fünf Pins sucht die App den nächsten Kondensator zwischen diesem Netz und Masse. Gemeldet ab 5 mm Abstand, oder wenn im Umkreis von 20 mm keiner ist. Die Anschlussinduktivität ist grob geschätzt: Leitungsinduktivität der Strecke plus etwa 1 nH für Gehäuse und Vias.',
+        fixes: () => ['Je Versorgungspin einen kleinen Kondensator (0402/0603) direkt am Pin, Vias direkt an den Pads.', 'Vias nicht mit dem IC teilen; bei eng gekoppelten Versorgungsflächen lieber mehrere gleiche Kondensatoren als einen großen.', 'Einen größeren Kondensator am Versorgungseingang der Platine.'],
+        avoid: () => ['Den Kondensator nicht nah setzen und dann über lange Leitungen anschließen.', 'Nicht auf „100 nF + 10 nF je Pin“ als Regel verlassen: Die Einbauinduktivität zählt mehr als der Wert, und verschiedene Werte können Parallelresonanzen bilden.'],
+        limits: () => 'Eine Abstandsregel mit grober Induktivitätsschätzung, keine Rechnung des Versorgungsnetzes. ICs mit internem Abblockkondensator und langsame Analogbausteine brauchen weniger; ein naher Kondensator auf der anderen Platinenseite mit nur einer Via kann schlechter sein, als der Abstand vermuten lässt.',
+        refs: ['clemson', 'archambeault'] as const,
+      },
       edgeTrace: {
         what: (p: P) =>
           `Die Leitung auf ${p.layer} läuft über ${p.run} mm nur ${p.gap} mm neben dem Rand ihrer Bezugsfläche ${p.planeNet} (${p.plane}). Der Rand kann die Platinenkante sein, ein Schlitz oder die Grenze zu einer anderen Fläche.`,
@@ -789,6 +858,7 @@ export const de = {
     scale: 'Priorität im Modell: rot = die Quelle liegt im Modell nahe am oder über dem Grenzwert (3 m) und dieser Hinweis trägt viel dazu bei, oder es ist ein Fehler, an dem Prüfungen erfahrungsgemäß scheitern (Lücke unter schnellen Leitungen, große heiße Schleife); gelb = ansehen; grün = im Modell weit unter dem Grenzwert. Das ordnet die Arbeit und sagt nichts über das Prüfergebnis: Gleichtaktströme auf Kabeln und auf der Platine selbst rechnet die App nur als grobe Abschätzung im ungünstigsten Fall, und sie übertreffen die Gegentaktabstrahlung oft um 20 dB und mehr.',
     reason: (margin: string, gain: string) => `${margin}; ${gain}`,
     noGain: 'Wirkung nicht beziffert',
+    rule: 'Layoutregel aus der Literatur, nicht berechnet: Die Priorität ist fest je Regel.',
   },
   standards: {
     title: 'Norm für den Grenzwert',

@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import { readFileSync } from 'node:fs';
 
 test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
   const errors: string[] = [];
@@ -368,5 +369,24 @@ test('speech bubbles: red and yellow always stay in view, green ones are points'
   // arrows at the edge point to where they belong
   expect(await page.locator('.callouts svg polygon').count()).toBeGreaterThanOrEqual(1);
   await page.screenshot({ path: 'e2e/output/bubbles-zoomed.png' });
+  expect(errors).toEqual([]);
+});
+
+test('board rules: an open USB shield is found and shown in the problem view', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const board = readFileSync('tests/fixtures/emc-cases/usb-shield.bad.kicad_pcb', 'utf8');
+  await page.route('**/usb-shield.kicad_pcb', (r) => r.fulfill({ body: board, contentType: 'text/plain', headers: { 'access-control-allow-origin': '*' } }));
+  await page.goto('/?board=' + encodeURIComponent('http://localhost:5175/usb-shield.kicad_pcb'));
+  await page.getByRole('tab', { name: /Diagnose/ }).click();
+  const item = page.locator('ol.ranked li').filter({ hasText: 'Schirm von J1 ist nicht angeschlossen' });
+  await expect(item).toBeVisible({ timeout: 30_000 });
+  await item.getByRole('button').click();
+  const card = page.locator('aside.card');
+  await expect(card.locator('.title')).toHaveText('Platine');
+  await expect(card.locator('.severity .chip')).toHaveText('hohe Priorität');
+  await expect(card).toContainText('Kabelschirm hilft nur');
+  await expect(page.locator('.labels')).toContainText('J1');
+  await page.screenshot({ path: 'e2e/output/board-rule.png' });
   expect(errors).toEqual([]);
 });

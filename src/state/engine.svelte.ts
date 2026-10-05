@@ -27,6 +27,7 @@ import { diagnoseSource, referencePlane } from '../physics/diagnostics';
 import { applyReturnModel, type Detour } from '../physics/returnPaths';
 import { commonModeEstimate, type CmEstimate } from '../physics/commonMode';
 import { ioCouplingEstimates } from '../physics/ioCoupling';
+import { layoutRules } from '../physics/layoutRules';
 import { buildCharges } from '../physics/charges';
 import { eFieldAt } from '../physics/efield';
 import { packCharges } from '../physics/images';
@@ -753,6 +754,8 @@ class Engine {
       const io = this.ctx ? ioCouplingEstimates(this.ctx, snap, m, limitsFor(app.standard, 3), (l) => referencePlane(board, app.planes, l)) : [];
       out.push(...diagnoseSource(board, app.planes, this.frame, snap, m, app.fMax, detours[s.id], this.attribution.get(s.id)?.planeGapsDb, cm, io));
     }
+    // board rules without a source: filters, shields, decoupling
+    if (this.ctx) out.push(...layoutRules(this.ctx));
     app.commonMode = cms;
     app.diagnostics = out;
     app.detours = detours;

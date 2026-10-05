@@ -329,6 +329,26 @@ Für jedes parallele Stück einer schnellen Leitung (Winkel unter 15°, Abstand 
 resonantes Kabel, Teilbeiträge phasengleich addiert (eher zu hoch), Filter am Stecker und die
 Last der I/O-Leitung (100 Ω angesetzt) nicht berücksichtigt.
 
+## 11d. Platinenregeln ohne Quelle
+
+`src/physics/layoutRules.ts`, Regeln aus dem Fehlerkatalog, ohne Feldrechnung und mit fester
+Priorität je Regel:
+
+- **Filter weit vom Stecker** (K-18): Reihenbauteil (R, L, FB, kein Pull-up/-down) oder
+  Kondensator nach Masse auf einer Steckerleitung (einen Reihenteil weiter), mehr als 10 mm vom
+  Steckerpin; ein Befund je Pin.
+- **Filterkondensator ohne kurze Masse** (K-18): Massepad nicht in einer Massefläche seiner
+  Lage und die nächste Masse-Via weiter als 3 mm.
+- **Steckerschirm offen / schlecht angebunden** (K-20): Pads S*, SH*, SHIELD, MP ohne Netz oder
+  ohne weitere Verbindung (hohe Priorität); angeschlossen, aber Fläche oder Via weiter als 3 mm.
+- **Entkopplung** (K-24): je IC mit mindestens fünf Pins der schlechteste Versorgungspin; kein
+  Kondensator nach Masse im Umkreis von 20 mm, oder der nächste weiter als 5 mm. Die
+  Anschlussinduktivität ist grob geschätzt: Leitungsinduktivität der Strecke plus 1 nH für
+  Gehäuse und Vias (Clemson).
+
+Die Abstände sind Luftlinien, nicht Leitungswege; ob ein Bauteil als Filter gemeint ist und ob
+ein Footprint ein Kabel trägt, wird aus Referenz, Netz und Bibliothek geraten.
+
 ## 11a. Diagnose-Regeln
 
 - **Rückstrompfad unterbrochen:** Unter einem waagerechten Stromelement fehlt auf der

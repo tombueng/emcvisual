@@ -17,6 +17,7 @@ import { limitsFor } from '../physics/standards';
 import { diagnoseSource, referencePlane } from '../physics/diagnostics';
 import { commonModeEstimate } from '../physics/commonMode';
 import { ioCouplingEstimates } from '../physics/ioCoupling';
+import { layoutRules } from '../physics/layoutRules';
 import { attributeSource } from '../physics/attribution';
 import { selectionWeight } from '../compute/composer';
 import { migrateScenario, type Scenario } from '../state/scenario';
@@ -76,6 +77,8 @@ export interface CheckReport {
   board: { fileName: string };
   options: CheckOptions & { returnModel: string };
   sources: SourceCheck[];
+  /** Board rules without a source (filters, shields, decoupling; layoutRules.ts). */
+  rules?: { kind: string; x: number; y: number; value: number; parts: string[]; nets: string[] }[];
 }
 
 const round = (v: number, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
@@ -172,12 +175,14 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
       res.error = e instanceof SourceError ? e.message : (e as Error).message || String(e);
     }
   }
+  const rules = layoutRules(ctx).map((d) => ({ kind: d.kind, x: round(d.at.x), y: round(d.at.y), value: round(d.value), parts: d.parts ?? [], nets: d.nets ?? [] }));
   return {
     kind: CHECK_KIND,
     version: 1,
     board: { fileName },
     options: { ...opts, returnModel: scenario.settings.returnModel },
     sources: out,
+    rules,
   };
 }
 
