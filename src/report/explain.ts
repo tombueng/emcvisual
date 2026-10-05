@@ -115,6 +115,18 @@ export function explain(d: Diagnostic): Explanation {
     case 'decoupling':
       k = 'decoupling';
       break;
+    case 'crystal-placement':
+      k = 'crystalPlacement';
+      break;
+    case 'crystal-under':
+      k = 'crystalUnder';
+      break;
+    case 'sw-node':
+      k = 'swNode';
+      break;
+    case 'no-adjacent-plane':
+      k = 'noAdjacentPlane';
+      break;
     case 'no-reference':
       k = 'noReference';
       figures.push(E.fig.noReference(p.loopArea));

@@ -222,6 +222,18 @@ export const en: Strings = {
         d.decoupling?.none
           ? `${d.decoupling.pin}: no decoupling capacitor within 20 mm.`
           : `${d.decoupling?.pin ?? '?'}: nearest decoupling capacitor ${d.decoupling?.cap ?? '?'} is ${d.value.toFixed(0)} mm away, mounting inductance roughly ${(d.decoupling?.nh ?? 0).toFixed(0)} nH.`,
+      'crystal-placement': (d) => {
+        const c = d.crystal;
+        const where = [c && c.edge < 5 ? `${c.edge.toFixed(1)} mm from the board edge` : '', c && c.connector < 10 ? `${c.connector.toFixed(0)} mm from a cable connector` : ''].filter(Boolean).join(' and ');
+        return `Crystal/oscillator ${d.parts?.[0] ?? '?'} sits ${where}.`;
+      },
+      'crystal-under': (d) => `Foreign lines run under ${d.parts?.[0] ?? '?'} (crystal/oscillator): ${(d.nets ?? []).slice(0, 4).join(', ')}.`,
+      'sw-node': (d) => {
+        const s = d.sw;
+        const extra = [s && s.layers > 1 ? `on ${s.layers} layers` : '', s && s.edge < 3 ? `${s.edge.toFixed(1)} mm from the edge` : '', s && s.connector < 10 ? `${s.connector.toFixed(0)} mm from a connector` : ''].filter(Boolean).join(', ');
+        return `Switch node ${d.nets?.[0] ?? '?'}: ${(s?.area ?? 0).toFixed(0)} mm² of copper${extra ? ` (${extra})` : ''}; compact is about 40 mm².`;
+      },
+      'no-adjacent-plane': (d) => `${d.layer} has no adjacent plane: its reference is ${d.planeNet} on ${d.plane}, ${d.value.toFixed(2)} mm away with a copper layer in between.`,
       'edge-trace': (d) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
@@ -424,6 +436,10 @@ export const en: Strings = {
       'shield-open': 'Connector shield open',
       'shield-weak': 'Connector shield poorly connected',
       decoupling: 'Decoupling missing or far away',
+      'crystal-placement': 'Crystal at edge or connector',
+      'crystal-under': 'Lines under the crystal',
+      'sw-node': 'Switch node too large',
+      'no-adjacent-plane': 'Signal layer without adjacent plane',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -580,6 +596,8 @@ export const en: Strings = {
       hubing2003: 'T. Hubing: Printed Circuit Board EMI Source Mechanisms. IEEE EMC Symposium 2003 (voltage- and current-driven common-mode sources).',
       hockanson1996: 'D. M. Hockanson, J. L. Drewniak, T. H. Hubing et al.: Investigation of Fundamental EMI Source Mechanisms Driving Common-Mode Radiation from Printed Circuit Boards with Attached Cables. IEEE Trans. EMC 38(4), 1996.',
       wyatt: 'K. Wyatt: The Top Five Reasons Products Fail EMI Testing. Interference Technology; Top Ten EMC Problems (IEEE EMC Society, Vortrag).',
+      infineon: 'Infineon AP24026: General PCB Design Guidelines for Microcontrollers (crystal, placement).',
+      st2867: 'STMicroelectronics AN2867: Oscillator design guide for STM8AF/AL/S, STM32 MCUs and MPUs.',
       clemson: 'Clemson University CVEL, EMC Expert System: Grid Point Voltage Algorithm and Current-Driven Common-Mode Radiation Algorithm (cecas.clemson.edu/cvel).',
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (hot loop, input capacitor).',
@@ -785,6 +803,42 @@ export const en: Strings = {
         avoid: () => ['Do not place the capacitor close and then connect it over long tracks.', 'Do not rely on "100 nF + 10 nF per pin" as a rule: the mounting inductance matters more than the value, and different values can form parallel resonances.'],
         limits: () => 'A distance rule with a rough inductance estimate, not a calculation of the supply network. ICs with internal decoupling and slow analog parts need less; a close capacitor on the other side of the board with a single via can be worse than the distance suggests.',
         refs: ['clemson', 'archambeault'] as const,
+      },
+      crystalPlacement: {
+        what: () => 'A crystal or oscillator sits close to the board edge or to a cable connector.',
+        why: () => 'The oscillator is a strong, narrowband source with all the harmonics of its frequency. Close to an edge or connector it couples straight into the cables and the board edge, which act as antennas. Manufacturers therefore ask for crystals close to the IC, away from edges and I/O.',
+        detected: () => 'Footprints from crystal or oscillator libraries or with references like Y, XTAL, OSC; distance of the package corners and pads to the board outline (reported under 5 mm) and to the pins of cable connectors (under 10 mm). The thresholds are guide values; the manufacturer notes give no numbers.',
+        fixes: () => ['Place the crystal right next to the IC, keep its lines short.', 'Away from board edge and connectors; an undisturbed ground plane underneath.'],
+        avoid: () => ['Do not put the crystal in the corner "because there is room there".', 'Do not route clock lines towards the connector.'],
+        limits: () => 'A distance rule without calculation. Watch crystals (32 kHz) are far less critical than MHz oscillators; the app does not tell them apart.',
+        refs: ['infineon', 'st2867'] as const,
+      },
+      crystalUnder: {
+        what: () => 'Lines of other nets run under a crystal or oscillator, without a ground plane in between.',
+        why: () => 'The lines pick up the field of the oscillator and its harmonics and carry it on, in the worst case onto a cable. The other way round they disturb the crystal.',
+        detected: () => 'Track pieces of other nets (not ground) lying under the crystal package, on its layer or on a layer without a plane in between.',
+        fixes: () => ['Route foreign lines around the crystal; only ground under the crystal.'],
+        avoid: () => ['No signal lines under crystals and oscillators.'],
+        limits: () => 'Detects the position, not the coupling; whether the line is a cable line shows in the finding "crosstalk into a cable line" when the clock is set up as a source. Whether a local ground island under the crystal helps is disputed.',
+        refs: ['st2867', 'infineon'] as const,
+      },
+      swNode: {
+        what: () => 'The copper of a switching regulator\'s switch node is larger than needed, spread over several layers or close to an edge or connector.',
+        why: () => 'The switch node jumps by the full input voltage with nanosecond edges. Every copper area on it is a capacitor plate that couples into neighbouring lines, cables, enclosure and heat sinks (voltage-driven emission, electric field).',
+        detected: () => 'Nets on pins with the function SW/LX/PH or named like that; copper area from pours, tracks and pads per layer. Reported from 100 mm², with copper on more than one layer, or from 40 mm² when the node is less than 3 mm from the edge or 10 mm from a connector.',
+        fixes: () => ['Keep the switch node compact: only the connection switch–inductor, one layer, a solid ground plane underneath.', 'Away from board edge, connectors and the feedback line.', 'Cool through the regulator\'s GND or VIN connection instead of the switch node.'],
+        avoid: () => ['Do not flood the switch node over several layers for cooling.', 'Do not route sensitive lines past the switch node.'],
+        limits: () => 'The area is a measure of coupling capacitance, not a level. A large area fully over ground and far from cables is less critical; TI found less than 1 dB in the far field for a switch node twice as long over ground, but clearly more in the near field.',
+        refs: ['slyt682', 'an1149'] as const,
+      },
+      noAdjacentPlane: {
+        what: (p: P) => `The line runs on ${p.layer}, but its nearest reference plane (${p.planeNet} on ${p.plane}) is not on the next layer: another copper layer lies in between.`,
+        why: () => 'The area enclosed by signal and return is length times distance to the reference plane. With the plane two dielectrics away the loop gets larger, and the field spreads into the layer in between (crosstalk). Ott and Hartley name "every signal layer next to a plane" as the first rule of a stack-up.',
+        detected: () => 'For each layer of a fast source the app checks whether its reference plane is the directly adjacent copper layer.',
+        fixes: () => ['Choose a stack-up where every signal layer is next to a ground plane (e.g. signal–GND–power–signal with ground also on the power layer, or signal–GND–GND–signal).', 'Put fast lines on the layer next to the plane.', 'Make the layer in between a plane.'],
+        avoid: () => ['No two signal layers next to each other without a plane for fast signals.'],
+        limits: () => 'The larger loop is already in the source\'s far field (through the distance to the plane); the hint names the cause. If the app does not recognise a plane (View → Layers), the finding is wrong.',
+        refs: ['ott', 'bogatin'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

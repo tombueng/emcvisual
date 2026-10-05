@@ -269,6 +269,98 @@
    ]
   }
  },
+ "crystal-edge": {
+  "layers": 4,
+  "w": 60,
+  "h": 40,
+  "title": "Oszillator in der Ecke neben dem USB-Stecker",
+  "mistake": "Der 25-MHz-Oszillator sitzt 2 mm von der Platinenkante und 6 mm vom Kabelstecker J1 entfernt; seine Oberwellen koppeln direkt in Kabel und Rand.",
+  "fix": "Oszillator nah an den IC in die Platinenmitte, weg von Rand und Steckern.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "crystal-placement"
+   ],
+   "good_absent": [
+    "crystal-placement"
+   ]
+  }
+ },
+ "crystal-under": {
+  "layers": 2,
+  "w": 40,
+  "h": 30,
+  "title": "Signalleitung unter dem Oszillator",
+  "mistake": "Eine LED-Leitung läuft auf der Bestückungsseite direkt unter dem Oszillator hindurch und nimmt dessen Oberwellen auf.",
+  "fix": "Fremde Leitungen um den Oszillator herum führen; darunter nur Masse.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "crystal-under"
+   ],
+   "good_absent": [
+    "crystal-under"
+   ]
+  }
+ },
+ "sw-node-area": {
+  "layers": 4,
+  "w": 60,
+  "h": 40,
+  "title": "Schaltknoten großflächig auf zwei Lagen geflutet",
+  "mistake": "Die SW-Fläche des Abwärtswandlers ist zur Kühlung 15 × 20 mm groß und auf der Unterseite gespiegelt. Jede Kupferfläche am Schaltknoten koppelt über das elektrische Feld in die Umgebung.",
+  "fix": "Schaltknoten nur als kurze, kompakte Verbindung Schalter–Drossel auf einer Lage.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "sw-node"
+   ],
+   "good_absent": [
+    "sw-node"
+   ]
+  }
+ },
+ "no-adjacent-plane": {
+  "layers": 4,
+  "w": 40,
+  "h": 30,
+  "title": "Takt auf der Oberseite, Massefläche erst auf der dritten Lage",
+  "mistake": "Lagenaufbau Signal–Signal–GND–Signal: Die Taktleitung auf F.Cu sieht ihre Massefläche erst auf In2, 1,3 mm tiefer, mit einer Signallage dazwischen. Die Schleife wird sechsmal so hoch wie über In1.",
+  "fix": "Massefläche auf die Lage direkt unter der Taktleitung (In1).",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "no-adjacent-plane"
+   ],
+   "good_absent": [
+    "no-adjacent-plane"
+   ],
+   "far_gain_min": 6
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

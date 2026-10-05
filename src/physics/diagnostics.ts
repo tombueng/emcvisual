@@ -33,10 +33,15 @@ export type DiagnosticKind =
   | 'filter-ground'
   | 'shield-open'
   | 'shield-weak'
-  | 'decoupling';
+  | 'decoupling'
+  | 'crystal-placement'
+  | 'crystal-under'
+  | 'sw-node'
+  // per source: the reference plane is not on the next layer
+  | 'no-adjacent-plane';
 
 /** Findings of the board rules, not tied to a field source (sourceId ''). */
-export const BOARD_KINDS: DiagnosticKind[] = ['filter-far', 'filter-ground', 'shield-open', 'shield-weak', 'decoupling'];
+export const BOARD_KINDS: DiagnosticKind[] = ['filter-far', 'filter-ground', 'shield-open', 'shield-weak', 'decoupling', 'crystal-placement', 'crystal-under', 'sw-node'];
 
 export interface Diagnostic {
   kind: DiagnosticKind;
@@ -67,6 +72,10 @@ export interface Diagnostic {
   dims?: { a: Vec2; b: Vec2; text: string }[];
   /** decoupling: the supply pin, the nearest capacitor and its estimated mounting inductance. */
   decoupling?: { pin: string; cap?: string; nh?: number; none?: boolean };
+  /** crystal-placement: distances to the board edge and the nearest cable connector, mm. */
+  crystal?: { edge: number; connector: number };
+  /** sw-node: copper area (mm²), layers with copper, distances to edge and connector (mm). */
+  sw?: { area: number; layers: number; edge: number; connector: number };
   otherNet?: string;
   /** Stage 2: how the return current actually goes (detour length, extra loop area, link). */
   detour?: { length: number; extraArea: number; via?: string };
@@ -302,6 +311,27 @@ export function diagnoseSource(
   for (const e of io.slice(0, 2)) {
     if (!e.worst || e.worst.margin <= CM_REPORT) continue;
     out.push({ kind: 'io-coupling', sourceId: src.id, at: e.at, layer: '', plane: '', planeNet: '', otherNet: e.ioNet, value: e.worst.db, io: e });
+  }
+
+  // the line's reference plane is not on the next layer: another copper layer lies in between
+  if (src.type === 'signal' || src.type === 'diffpair') {
+    const seen = new Set<number>();
+    for (const e of model.elements) {
+      if (e.vertical || e.layer < 0 || e.tag === 'return' || seen.has(e.layer)) continue;
+      seen.add(e.layer);
+      const ref = referencePlane(board, planes, e.layer);
+      if (!ref || Math.abs(ref.layer - e.layer) <= 1) continue;
+      const h = Math.abs(board.layers[e.layer]!.y - ref.y);
+      out.push({
+        kind: 'no-adjacent-plane',
+        sourceId: src.id,
+        at: toBoard(frame, (e.a[0] + e.b[0]) / 2, (e.a[2] + e.b[2]) / 2),
+        layer: board.layers[e.layer]!.name,
+        plane: board.layers[ref.layer]!.name,
+        planeNet: board.nets[ref.net] ?? '',
+        value: h,
+      });
+    }
   }
 
   // hot loop of a switching stage: larger than the parts need

@@ -54,7 +54,16 @@ export function marginOf(
  * Board rules (layoutRules.ts): a floating connector shield is a well documented cause of
  * failures (high), the others are worth a look; none of them is quantified.
  */
-const RULE_SCORE = { 'shield-open': 0.65, 'shield-weak': 0.45, 'filter-far': 0.45, 'filter-ground': 0.4, decoupling: 0.4 } as const;
+const RULE_SCORE = {
+  'shield-open': 0.65,
+  'shield-weak': 0.45,
+  'filter-far': 0.45,
+  'filter-ground': 0.4,
+  decoupling: 0.4,
+  'crystal-placement': 0.4,
+  'crystal-under': 0.45,
+  'sw-node': 0.45,
+} as const;
 
 /**
  * The cable estimates (commonMode.ts, ioCoupling.ts) assume a resonant cable at every frequency

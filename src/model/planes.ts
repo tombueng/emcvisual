@@ -1,7 +1,7 @@
 /**
  * Reference planes: detection and coverage rasters (docs/stufe-1/PHYSIK.md §8.1).
  *
- * A copper layer is a plane when one net's filled zones cover at least a quarter of the board
+ * A copper layer is a plane when one net's filled zones cover at least 15 % of the board
  * area on that layer (that net names the plane). Copper of other nets with large pours on the
  * same layer (split planes: GND and 3V3 side by side) joins the coverage raster, because for
  * AC return currents any solid copper is a reference. Each plane is rasterised (scanline, cell 0.1–0.25 mm) so that
@@ -63,7 +63,7 @@ export function boardArea(board: BoardModel): number {
  */
 export const HOLE_EXTENT = 2.5;
 
-export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, threshold = 0.25, splitShare = 0.05): PlaneLayer[] {
+export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, threshold = 0.15, splitShare = 0.05): PlaneLayer[] {
   const area = boardArea(board) || 1;
   const planes: PlaneLayer[] = [];
   for (const layer of board.layers) {

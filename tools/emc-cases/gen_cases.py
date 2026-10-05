@@ -408,6 +408,83 @@ def decoupling(b, bad):
     b.via('GND', b.pad('U1', '4')[0], b.pad('U1', '4')[1] + 1.2)
 
 
+@case('crystal-edge', 4, 60, 40,
+      title='Oszillator in der Ecke neben dem USB-Stecker',
+      mistake='Der 25-MHz-Oszillator sitzt 2 mm von der Platinenkante und 6 mm vom Kabelstecker J1 entfernt; seine Oberwellen koppeln direkt in Kabel und Rand.',
+      fix='Oszillator nah an den IC in die Platinenmitte, weg von Rand und Steckern.',
+      sources=[],
+      expect={'bad': ['crystal-placement'], 'good_absent': ['crystal-placement']})
+def crystal_edge(b, bad):
+    b.zone('GND', b.In1)
+    b.zone('+3V3', b.In2)
+    b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x02_P2.54mm_Vertical', 'J1', 'USB', 4, 12, pins={'1': 'VBUS', '2': 'GND'})
+    if bad:
+        clock_driver(b, 'Y1', 4, 3.5, 'CLK')
+    else:
+        clock_driver(b, 'Y1', 30, 20, 'CLK')
+    receiver(b, 'U1', 40, 20, 'CLK')
+    b.track('CLK', b.F, [b.pad('Y1', '3'), b.pad('U1', '1')])
+
+
+@case('crystal-under', 2, 40, 30,
+      title='Signalleitung unter dem Oszillator',
+      mistake='Eine LED-Leitung läuft auf der Bestückungsseite direkt unter dem Oszillator hindurch und nimmt dessen Oberwellen auf.',
+      fix='Fremde Leitungen um den Oszillator herum führen; darunter nur Masse.',
+      sources=[],
+      expect={'bad': ['crystal-under'], 'good_absent': ['crystal-under']})
+def crystal_under(b, bad):
+    b.zone('GND', b.B)
+    clock_driver(b, 'Y1', 20, 15, 'CLK')
+    b.place('Resistor_SMD', 'R_0603_1608Metric', 'R1', '1k', 8, 15, pins={'1': 'LED', '2': '+3V3'})
+    b.place('Resistor_SMD', 'R_0603_1608Metric', 'R2', '1k', 32, 15, pins={'1': 'LED', '2': 'GND'})
+    a, c = b.pad('R1', '1'), b.pad('R2', '1')
+    if bad:
+        b.track('LED', b.F, [(a[0] + 1.6, a[1]), (c[0] - 1.6, c[1])])
+        b.track('LED', b.F, [b.pad('R1', '2'), (a[0] + 1.6, a[1])])
+        b.track('LED', b.F, [(c[0] - 1.6, c[1]), c])
+    else:
+        b.track('LED', b.F, [b.pad('R1', '2'), (a[0] + 1.6, 22), (c[0] - 1.6, 22), c])
+
+
+@case('sw-node-area', 4, 60, 40,
+      title='Schaltknoten großflächig auf zwei Lagen geflutet',
+      mistake='Die SW-Fläche des Abwärtswandlers ist zur Kühlung 15 × 20 mm groß und auf der Unterseite gespiegelt. Jede Kupferfläche am Schaltknoten koppelt über das elektrische Feld in die Umgebung.',
+      fix='Schaltknoten nur als kurze, kompakte Verbindung Schalter–Drossel auf einer Lage.',
+      sources=[],
+      expect={'bad': ['sw-node'], 'good_absent': ['sw-node']})
+def sw_node_area(b, bad):
+    b.zone('GND', b.In1)
+    b.zone('+12V', b.In2)
+    b.place('Package_TO_SOT_SMD', 'SOT-23-6', 'U1', 'TPS562201', 25, 20, pins={'1': 'GND', '2': 'SW', '3': 'VIN', '4': 'FB', '5': 'EN', '6': 'VBST'})
+    b.place('Inductor_SMD', 'L_Taiyo-Yuden_NR-40xx', 'L1', '4.7uH', 36, 20, pins={'1': 'SW', '2': 'VOUT'})
+    sw, l1 = b.pad('U1', '2'), b.pad('L1', '1')
+    if bad:
+        for layer in (b.F, b.B):
+            b.zone('SW', layer, [(22, 12), (37, 12), (37, 32), (22, 32)], priority=5)
+        for k in range(6):
+            b.via('SW', 30 + (k % 3) * 2, 14 + (k // 3) * 2)
+    else:
+        b.track('SW', b.F, [sw, (sw[0] - 1, sw[1]), (sw[0] - 1, sw[1] + 2.5), (l1[0], sw[1] + 2.5), l1], width=1.0)
+
+
+@case('no-adjacent-plane', 4, 40, 30,
+      title='Takt auf der Oberseite, Massefläche erst auf der dritten Lage',
+      mistake='Lagenaufbau Signal–Signal–GND–Signal: Die Taktleitung auf F.Cu sieht ihre Massefläche erst auf In2, 1,3 mm tiefer, mit einer Signallage dazwischen. Die Schleife wird sechsmal so hoch wie über In1.',
+      fix='Massefläche auf die Lage direkt unter der Taktleitung (In1).',
+      sources=[clock_source('clk', 'Takt 25 MHz', ['CLK'], 'Y1.3')],
+      expect={'bad': ['no-adjacent-plane'], 'good_absent': ['no-adjacent-plane'], 'far_gain_min': 6})
+def no_adjacent_plane(b, bad):
+    clock_driver(b, 'Y1', 8, 15, 'CLK')
+    receiver(b, 'U1', 34, 15, 'CLK')
+    b.track('CLK', b.F, [b.pad('Y1', '3'), (12, b.pad('Y1', '3')[1]), (12, 15.95), (b.pad('U1', '1')[0] - 2, 15.95), b.pad('U1', '1')])
+    if bad:
+        b.zone('GND', b.In2)
+        b.track('IO_X', b.In1, [(5, 25), (35, 25)])
+    else:
+        b.zone('GND', b.In1)
+        b.zone('GND', b.In2)
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

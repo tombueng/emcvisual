@@ -191,11 +191,16 @@ Sehr breite Leiter (w > 2 Gitterabstände) werden in mehrere parallele Fäden ze
 ## 8. Bezugsflächen, Spiegelung und Abschirmung
 
 ### 8.1 Flächen erkennen
-Eine Kupferlage ist eine **Flächenlage** für Netz N, wenn die gefüllten Zonen von N mehr als
-50 % der Platinenfläche dieser Lage bedecken (Flächeninhalt der `filled_polygon` per
+Eine Kupferlage ist eine **Flächenlage** für Netz N, wenn die gefüllten Zonen von N mindestens
+15 % der Platinenfläche dieser Lage bedecken (Flächeninhalt der `filled_polygon` per
 Gaußscher Trapezformel; KiCad speichert Löcher als Keyhole, die Formel zieht sie korrekt ab).
-Übersteuerbar je Lage. Jede Flächenlage wird auf ein feines Raster (0,1–0,25 mm) gebracht
-(Scanline-Füllung); Bedeckungsabfragen sind dann O(1).
+Flächen anderer Netze ab 5 % auf derselben Lage zählen mit (geteilte Flächen), und jede Zelle
+kennt ihr Netz, damit Trennlinien als Lücke erkannt werden. Die Schwelle ist bewusst niedrig:
+Wo Kupfer unter einer Leitung liegt, ist es ihr Bezug, auch wenn es nur einen Teil der Platine
+bedeckt (etwa eine analoge Masse unter dem Audioteil); das Raster sagt, wo. Übersteuerbar je
+Lage. Jede Flächenlage wird auf ein feines Raster (0,1–0,25 mm) gebracht (Scanline-Füllung);
+Bedeckungsabfragen sind dann O(1). Löcher bis 2,5 mm größter Ausdehnung (Via- und
+Pin-Freistellungen) zählen als Kupfer, Schlitze zählen nach ihrer Länge.
 
 ### 8.2 Spiegelung
 Eine ideal leitende Ebene bei y = y_F wird für den Halbraum der Quelle durch einen

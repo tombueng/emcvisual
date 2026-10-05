@@ -226,6 +226,19 @@ export const de = {
         d.decoupling?.none
           ? `${d.decoupling.pin}: kein Abblockkondensator im Umkreis von 20 mm.`
           : `${d.decoupling?.pin ?? '?'}: nächster Abblockkondensator ${d.decoupling?.cap ?? '?'} ist ${d.value.toFixed(0)} mm entfernt, Anschlussinduktivität grob ${(d.decoupling?.nh ?? 0).toFixed(0)} nH.`,
+      'crystal-placement': (d: { parts?: string[]; crystal?: { edge: number; connector: number } }) => {
+        const c = d.crystal;
+        const where = [c && c.edge < 5 ? `${c.edge.toFixed(1).replace('.', ',')} mm von der Platinenkante` : '', c && c.connector < 10 ? `${c.connector.toFixed(0)} mm von einem Kabelstecker` : ''].filter(Boolean).join(' und ');
+        return `Quarz/Oszillator ${d.parts?.[0] ?? '?'} sitzt ${where}.`;
+      },
+      'crystal-under': (d: { parts?: string[]; nets?: string[] }) => `Unter ${d.parts?.[0] ?? '?'} (Quarz/Oszillator) laufen fremde Leitungen: ${(d.nets ?? []).slice(0, 4).join(', ')}.`,
+      'sw-node': (d: { nets?: string[]; sw?: { area: number; layers: number; edge: number; connector: number } }) => {
+        const s = d.sw;
+        const extra = [s && s.layers > 1 ? `auf ${s.layers} Lagen` : '', s && s.edge < 3 ? `${s.edge.toFixed(1).replace('.', ',')} mm vom Rand` : '', s && s.connector < 10 ? `${s.connector.toFixed(0)} mm von einem Stecker` : ''].filter(Boolean).join(', ');
+        return `Schaltknoten ${d.nets?.[0] ?? '?'}: ${(s?.area ?? 0).toFixed(0)} mm² Kupfer${extra ? ` (${extra})` : ''}; kompakt sind etwa 40 mm².`;
+      },
+      'no-adjacent-plane': (d: { layer: string; plane: string; planeNet: string; value: number }) =>
+        `${d.layer} hat keine angrenzende Fläche: Bezug ist ${d.planeNet} auf ${d.plane}, ${d.value.toFixed(2).replace('.', ',')} mm entfernt, mit einer Kupferlage dazwischen.`,
       'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
@@ -428,6 +441,10 @@ export const de = {
       'shield-open': 'Steckerschirm offen',
       'shield-weak': 'Steckerschirm schlecht angebunden',
       decoupling: 'Entkopplung fehlt oder ist weit weg',
+      'crystal-placement': 'Quarz an Rand oder Stecker',
+      'crystal-under': 'Leitungen unter dem Quarz',
+      'sw-node': 'Schaltknoten zu groß',
+      'no-adjacent-plane': 'Signallage ohne angrenzende Fläche',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -585,6 +602,8 @@ export const de = {
       hubing2003: 'T. Hubing: Printed Circuit Board EMI Source Mechanisms. IEEE EMC Symposium 2003 (spannungs- und stromgetriebene Gleichtaktquellen).',
       hockanson1996: 'D. M. Hockanson, J. L. Drewniak, T. H. Hubing u. a.: Investigation of Fundamental EMI Source Mechanisms Driving Common-Mode Radiation from Printed Circuit Boards with Attached Cables. IEEE Trans. EMC 38(4), 1996.',
       wyatt: 'K. Wyatt: The Top Five Reasons Products Fail EMI Testing. Interference Technology; Top Ten EMC Problems (IEEE EMC Society, Vortrag).',
+      infineon: 'Infineon AP24026: General PCB Design Guidelines for Microcontrollers (Quarz, Platzierung).',
+      st2867: 'STMicroelectronics AN2867: Oscillator design guide for STM8AF/AL/S, STM32 MCUs and MPUs.',
       clemson: 'Clemson University CVEL, EMC Expert System: Grid Point Voltage Algorithm und Current-Driven Common-Mode Radiation Algorithm (cecas.clemson.edu/cvel).',
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
     },
@@ -789,6 +808,42 @@ export const de = {
         avoid: () => ['Den Kondensator nicht nah setzen und dann über lange Leitungen anschließen.', 'Nicht auf „100 nF + 10 nF je Pin“ als Regel verlassen: Die Einbauinduktivität zählt mehr als der Wert, und verschiedene Werte können Parallelresonanzen bilden.'],
         limits: () => 'Eine Abstandsregel mit grober Induktivitätsschätzung, keine Rechnung des Versorgungsnetzes. ICs mit internem Abblockkondensator und langsame Analogbausteine brauchen weniger; ein naher Kondensator auf der anderen Platinenseite mit nur einer Via kann schlechter sein, als der Abstand vermuten lässt.',
         refs: ['clemson', 'archambeault'] as const,
+      },
+      crystalPlacement: {
+        what: () => 'Ein Quarz oder Oszillator sitzt nah an der Platinenkante oder an einem Kabelstecker.',
+        why: () => 'Der Oszillator ist eine starke, schmalbandige Quelle mit allen Oberwellen seiner Frequenz. Nah an Kante oder Stecker koppelt er direkt in die Kabel und den Platinenrand, die als Antennen wirken. Hersteller verlangen deshalb Quarze nah am IC, weg von Rand und I/O.',
+        detected: () => 'Footprints aus Quarz- oder Oszillatorbibliotheken bzw. mit Referenzen wie Y, XTAL, OSC; Abstand der Gehäuseecken und Pads zum Platinenumriss (gemeldet unter 5 mm) und zu den Pins von Kabelsteckern (unter 10 mm). Die Schwellen sind Richtwerte; die Herstellerhinweise nennen keine Zahlen.',
+        fixes: () => ['Quarz direkt neben den IC setzen, Leitungen kurz.', 'Weg von Platinenkante und Steckern; darunter ungestörte Massefläche.'],
+        avoid: () => ['Den Quarz nicht in die Ecke setzen, „weil dort Platz ist“.', 'Keine Taktleitungen zum Stecker hin führen.'],
+        limits: () => 'Eine Abstandsregel ohne Rechnung. Uhrenquarze (32 kHz) sind weit weniger kritisch als MHz-Oszillatoren; die App unterscheidet das nicht.',
+        refs: ['infineon', 'st2867'] as const,
+      },
+      crystalUnder: {
+        what: () => 'Unter einem Quarz oder Oszillator laufen Leitungen anderer Netze, ohne Massefläche dazwischen.',
+        why: () => 'Die Leitungen nehmen das Feld des Oszillators und seiner Oberwellen auf und tragen sie weiter, im schlimmsten Fall auf ein Kabel. Umgekehrt stören sie den Quarz.',
+        detected: () => 'Leitungsstücke anderer Netze (nicht Masse), die unter dem Gehäuse des Quarzes liegen, auf seiner Lage oder auf einer Lage ohne Fläche dazwischen.',
+        fixes: () => ['Fremde Leitungen um den Quarz herum führen; unter dem Quarz nur Masse.'],
+        avoid: () => ['Keine Signalleitungen unter Quarz und Oszillator.'],
+        limits: () => 'Erkennt die Lage, nicht die Kopplung; ob die Leitung eine Kabelleitung ist, zeigt der Befund „Übersprechen auf eine Kabelleitung“, wenn der Takt als Quelle angelegt ist. Ob eine lokale Masseinsel unter dem Quarz hilft, ist umstritten.',
+        refs: ['st2867', 'infineon'] as const,
+      },
+      swNode: {
+        what: () => 'Die Kupferfläche am Schaltknoten eines Schaltreglers ist größer als nötig, liegt auf mehreren Lagen oder nah an Kante oder Stecker.',
+        why: () => 'Der Schaltknoten springt mit Nanosekunden-Flanken um die volle Eingangsspannung. Jede Kupferfläche daran ist eine Kondensatorplatte, die in Nachbarleitungen, Kabel, Gehäuse und Kühlkörper koppelt (spannungsgetriebene Abstrahlung, elektrisches Feld).',
+        detected: () => 'Netze an Pins mit der Funktion SW/LX/PH oder mit solchen Namen; Kupferfläche aus Flächen, Leitungen und Pads je Lage. Gemeldet ab 100 mm², bei Kupfer auf mehr als einer Lage, oder ab 40 mm², wenn der Knoten weniger als 3 mm vom Rand oder 10 mm von einem Stecker liegt.',
+        fixes: () => ['Schaltknoten kompakt halten: nur die Verbindung Schalter–Drossel, eine Lage, darunter durchgehende Masse.', 'Weg von Platinenkante, Steckern und der Rückkopplungsleitung.', 'Kühlung über den GND- oder VIN-Anschluss des Reglers statt über den Schaltknoten.'],
+        avoid: () => ['Den Schaltknoten nicht zur Kühlung großflächig auf mehrere Lagen fluten.', 'Keine empfindlichen Leitungen am Schaltknoten vorbei führen.'],
+        limits: () => 'Die Fläche ist ein Maß für die Kopplungskapazität, kein Pegel. Eine große Fläche vollständig über Masse und weit weg von Kabeln ist weniger kritisch; TI fand für einen doppelt so langen Schaltknoten über Masse im Fernfeld weniger als 1 dB, im Nahfeld aber deutlich mehr.',
+        refs: ['slyt682', 'an1149'] as const,
+      },
+      noAdjacentPlane: {
+        what: (p: P) => `Die Leitung läuft auf ${p.layer}, ihre nächste Bezugsfläche (${p.planeNet} auf ${p.plane}) liegt aber nicht auf der Nachbarlage: Dazwischen ist eine weitere Kupferlage.`,
+        why: () => 'Die Fläche, die Hin- und Rückstrom umschließen, ist Länge mal Abstand zur Bezugsfläche. Liegt die Fläche zwei Dielektrika entfernt, wird die Schleife größer, und das Feld verteilt sich in die Lage dazwischen (Übersprechen). Ott und Hartley nennen „jede Signallage grenzt an eine Fläche“ als erste Regel für den Lagenaufbau.',
+        detected: () => 'Für jede Lage einer schnellen Quelle prüft die App, ob ihre Bezugsfläche die direkt benachbarte Kupferlage ist.',
+        fixes: () => ['Lagenaufbau so wählen, dass jede Signallage an eine Massefläche grenzt (z. B. Signal–GND–Versorgung–Signal mit Masse auch auf der Versorgungslage, oder Signal–GND–GND–Signal).', 'Schnelle Leitungen auf die Lage neben der Fläche legen.', 'Die Lage dazwischen als Fläche ausführen.'],
+        avoid: () => ['Keine zwei Signallagen nebeneinander ohne Fläche für schnelle Signale.'],
+        limits: () => 'Die größere Schleife ist im Fernfeld der Quelle schon enthalten (über den Abstand zur Fläche); der Hinweis benennt die Ursache. Erkennt die App eine Fläche nicht (Ansicht → Lagen), ist der Befund falsch.',
+        refs: ['ott', 'bogatin'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

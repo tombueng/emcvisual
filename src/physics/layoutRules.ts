@@ -30,6 +30,16 @@ export const FILTER_GND_MAX = 3;
 export const DECOUPLE_MAX = 5;
 /** No capacitor at all within this distance: "no local decoupling", mm. */
 export const DECOUPLE_NONE = 20;
+/** Crystal closer than this to the board edge, mm (guide value: Infineon AP24026, ST AN2867 ask for "away from the edge"). */
+export const CRYSTAL_EDGE = 5;
+/** Crystal closer than this to a cable connector, mm. */
+export const CRYSTAL_CONN = 10;
+/** Switch-node copper: larger than this is too much (a compact node is about 40 mm²), mm². */
+export const SW_AREA = 100;
+/** Compact, but at the edge or a connector: still a finding from this size on, mm². */
+export const SW_AREA_COMPACT = 40;
+const SW_EDGE = 3;
+const SW_CONN = 10;
 /** Package and vias of a decoupling capacitor, nH (Clemson power-bus decoupling: about 1 nH). */
 const MOUNT_NH = 1;
 
@@ -186,5 +196,97 @@ export function layoutRules(ctx: PhysicsContext): Diagnostic[] {
         decoupling: { nh: worst.nh ?? 0, cap: worst.cap!.ref, pin: pinName },
       });
   }
+  // --- K-17: crystals and oscillators --------------------------------------------------------------
+  const outline = board.outline[0] ?? [];
+  const toEdge = (p: Vec2) => {
+    let best = Infinity;
+    for (let i = 0, k = outline.length - 1; i < outline.length; k = i++) best = Math.min(best, segDist(p, outline[k]!, outline[i]!));
+    return best;
+  };
+  const connPads = conns.flatMap((c) => c.pads.map((pi) => board.pads[pi]!.at));
+  for (const fp of board.footprints) {
+    if (!(/crystal|oscillator/i.test(fp.lib) || /^(Y|XTAL|OSC)\d/i.test(fp.ref))) continue;
+    const pads = fp.pads.map((pi) => board.pads[pi]!);
+    const corners = boxCorners(fp.body);
+    const dEdge = Math.min(...corners.map(toEdge), ...pads.map((p) => toEdge(p.at)));
+    const dConn = connPads.length ? Math.min(...pads.flatMap((p) => connPads.map((c) => dist(p.at, c)))) : Infinity;
+    if (dEdge < CRYSTAL_EDGE || dConn < CRYSTAL_CONN)
+      out.push({ ...base('crystal-placement', fp.at, Math.min(dEdge, dConn), [fp.ref], []), crystal: { edge: dEdge, connector: dConn } });
+    // foreign lines under the package: on its own side, or on layers without a plane in between
+    const side = fp.side === 'bottom' ? board.layers.length - 1 : 0;
+    const own = new Set(pads.map((p) => p.net));
+    const shielded = (l: number) => planes.some((p) => (side === 0 ? p.layer > 0 && p.layer < l : p.layer < side && p.layer > l)) || planes.some((p) => p.layer === l);
+    const under = board.tracks.filter(
+      (t) => !own.has(t.net) && !isGround(board, t.net) && !shielded(t.layer) && [0.25, 0.5, 0.75].some((k) => inBox(fp.body, { x: t.a.x + (t.b.x - t.a.x) * k, y: t.a.y + (t.b.y - t.a.y) * k })),
+    );
+    if (under.length) {
+      const nets = [...new Set(under.map((t) => board.nets[t.net] ?? ''))];
+      out.push(base('crystal-under', fp.at, nets.length, [fp.ref], nets));
+    }
+  }
+
+  // --- K-31: switch-node copper -----------------------------------------------------------------
+  for (const net of switchNets(board)) {
+    const name = board.nets[net] ?? '';
+    const perLayer = new Map<number, number>();
+    const add = (l: number, a: number) => perLayer.set(l, (perLayer.get(l) ?? 0) + a);
+    for (const z of board.zones) if (z.net === net) add(z.layer, z.area);
+    for (const t of board.tracks) if (t.net === net) add(t.layer, Math.hypot(t.b.x - t.a.x, t.b.y - t.a.y) * t.width);
+    const pads = board.pads.filter((p) => p.net === net);
+    for (const p of pads) add(p.layers[0] ?? 0, p.size.x * p.size.y * (p.shape === 'circle' ? Math.PI / 4 : 1));
+    const area = [...perLayer.values()].reduce((a, b) => a + b, 0);
+    const layers = [...perLayer.values()].filter((a) => a > 10).length;
+    const pts = [...pads.map((p) => p.at), ...board.tracks.filter((t) => t.net === net).flatMap((t) => [t.a, t.b])];
+    const dEdge = pts.length ? Math.min(...pts.map(toEdge)) : Infinity;
+    const dConn = pts.length && connPads.length ? Math.min(...pts.flatMap((p) => connPads.map((c) => dist(p, c)))) : Infinity;
+    const exposed = dEdge < SW_EDGE || dConn < SW_CONN;
+    if (area > SW_AREA || layers > 1 || (area > SW_AREA_COMPACT && exposed)) {
+      const at = pads[0]?.at ?? pts[0] ?? { x: 0, y: 0 };
+      out.push({ ...base('sw-node', at, area, [], [name]), sw: { area, layers, edge: dEdge, connector: dConn } });
+    }
+  }
   return out;
+}
+
+/** Nets of switching nodes: a pin named SW/LX/PH on a regulator, or a net named like one. */
+function switchNets(board: BoardModel): number[] {
+  const out = new Set<number>();
+  for (const p of board.pads) if (p.net > 0 && /^(SW|LX|PH|PHASE)\d*$/i.test(p.pinFunction)) out.add(p.net);
+  board.nets.forEach((n, i) => {
+    if (i > 0 && /(^|[_/\-])(SW|LX|PHASE)\d*([_\-]|$)/i.test(n)) out.add(i);
+  });
+  return [...out];
+}
+
+function segDist(p: Vec2, a: Vec2, b: Vec2): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const l2 = dx * dx + dy * dy;
+  const t = l2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0;
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+
+function boxCorners(b: { center: Vec2; size: Vec2; angle: number }): Vec2[] {
+  const c = Math.cos((b.angle * Math.PI) / 180);
+  const s = Math.sin((b.angle * Math.PI) / 180);
+  return [
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
+  ].map(([u, v]) => {
+    const x = (u! * b.size.x) / 2;
+    const y = (v! * b.size.y) / 2;
+    return { x: b.center.x + x * c - y * s, y: b.center.y + x * s + y * c };
+  });
+}
+
+function inBox(b: { center: Vec2; size: Vec2; angle: number }, p: Vec2): boolean {
+  const c = Math.cos((-b.angle * Math.PI) / 180);
+  const s = Math.sin((-b.angle * Math.PI) / 180);
+  const dx = p.x - b.center.x;
+  const dy = p.y - b.center.y;
+  const x = dx * c - dy * s;
+  const y = dx * s + dy * c;
+  return Math.abs(x) <= b.size.x / 2 && Math.abs(y) <= b.size.y / 2;
 }
