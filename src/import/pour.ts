@@ -10,12 +10,14 @@
  */
 import { rasterize, type CoverageRaster } from '../model/planes';
 import type { Vec2 } from '../model/types';
-import { keyhole } from './builder';
+import { signedArea } from '../model/geometry';
 
 export type Obstacle =
   | { kind: 'seg'; a: Vec2; b: Vec2; r: number }
   | { kind: 'circle'; c: Vec2; r: number }
-  | { kind: 'poly'; ring: Vec2[]; r: number };
+  | { kind: 'poly'; ring: Vec2[]; r: number }
+  /** A void with islands inside (a moat around a pad of the plane's own net): clears ring minus holes. */
+  | { kind: 'moat'; ring: Vec2[]; holes: Vec2[][] };
 
 export interface PourInput {
   outline: Vec2[];
@@ -25,6 +27,8 @@ export interface PourInput {
   edges?: { rings: Vec2[][]; clearance: number };
   /** Points of the pour's own net (pads, vias, track ends); islands without one are removed. Undefined: keep all. */
   anchors?: Vec2[];
+  /** Keep every island when none of them is connected (KiCad does this; Eagle drops the pour). */
+  keepIfNoneConnected?: boolean;
   cell?: number;
 }
 
@@ -63,7 +67,12 @@ export function pourFill(inp: PourInput): Vec2[][] {
   for (const o of inp.obstacles) {
     if (o.kind === 'seg') clearBox(Math.min(o.a.x, o.b.x) - o.r, Math.min(o.a.y, o.b.y) - o.r, Math.max(o.a.x, o.b.x) + o.r, Math.max(o.a.y, o.b.y) + o.r, segHit(o.a, o.b, o.r));
     else if (o.kind === 'circle') clearBox(o.c.x - o.r, o.c.y - o.r, o.c.x + o.r, o.c.y + o.r, (x, y) => Math.hypot(x - o.c.x, y - o.c.y) <= o.r);
-    else if (o.ring.length > 2) {
+    else if (o.kind === 'moat') {
+      if (o.ring.length < 3) continue;
+      const xs = o.ring.map((p) => p.x);
+      const ys = o.ring.map((p) => p.y);
+      clearBox(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys), (x, y) => inRing(x, y, o.ring) && !o.holes.some((h) => h.length > 2 && inRing(x, y, h)));
+    } else if (o.ring.length > 2) {
       const xs = o.ring.map((p) => p.x);
       const ys = o.ring.map((p) => p.y);
       clearBox(Math.min(...xs) - o.r, Math.min(...ys) - o.r, Math.max(...xs) + o.r, Math.max(...ys) + o.r, (x, y) => {
@@ -121,6 +130,7 @@ export function pourFill(inp: PourInput): Vec2[][] {
           if (l) keep[l] = 1;
         }
     }
+  if (inp.keepIfNoneConnected && !keep.some((k, i) => i > 0 && k === 1)) keep.fill(1);
   const out: Vec2[][] = [];
   for (let l = 1; l <= count; l++) {
     if (!keep[l]) continue;
@@ -231,3 +241,130 @@ function segDist(x: number, y: number, a: Vec2, b: Vec2): number {
   const t = l2 > 0 ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / l2)) : 0;
   return Math.hypot(x - (a.x + t * dx), y - (a.y + t * dy));
 }
+
+/**
+ * The net of each island of a plane: the most frequent net among the connections inside it
+ * (vias and pins that reach the copper there). Islands of a split plane get their own nets;
+ * an island without a connection gets `fallback`.
+ */
+export function islandNets(rings: Vec2[][], connections: { at: Vec2; net: string }[], fallback: string): string[] {
+  return rings.map((ring) => {
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    for (const p of ring) {
+      x0 = Math.min(x0, p.x);
+      y0 = Math.min(y0, p.y);
+      x1 = Math.max(x1, p.x);
+      y1 = Math.max(y1, p.y);
+    }
+    const count = new Map<string, number>();
+    for (const c of connections) {
+      if (!c.net || c.at.x < x0 || c.at.x > x1 || c.at.y < y0 || c.at.y > y1) continue;
+      if (inRing(c.at.x, c.at.y, ring)) count.set(c.net, (count.get(c.net) ?? 0) + 1);
+    }
+    return [...count.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? fallback;
+  });
+}
+
+/**
+ * Join holes into an outer ring (keyhole), the way KiCad stores filled zones: each hole is
+ * spliced in at the vertex of the ring built so far that is nearest to the hole's first point,
+ * with a zero-width bridge there and back. Even-odd filling and the area stay correct.
+ * The ring is a linked list and the nearest vertex comes from a grid, so planes with thousands
+ * of clearance holes join in linear time.
+ */
+export function keyhole(outer: Vec2[], holes: Vec2[][]): Vec2[] {
+  const ring = orient(outer, true);
+  const valid = holes.filter((h) => h.length >= 3);
+  if (!valid.length) return ring;
+  const pts: Vec2[] = [];
+  const next: number[] = [];
+  for (let k = 0; k < ring.length; k++) {
+    pts.push(ring[k]!);
+    next.push((k + 1) % ring.length);
+  }
+  // grid over everything that will be in the ring
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  let total = ring.length;
+  for (const r of [ring, ...valid]) {
+    for (const p of r) {
+      x0 = Math.min(x0, p.x);
+      y0 = Math.min(y0, p.y);
+      x1 = Math.max(x1, p.x);
+      y1 = Math.max(y1, p.y);
+    }
+    total += r === ring ? 0 : r.length;
+  }
+  const cell = Math.max((x1 - x0 + y1 - y0) / Math.max(2, Math.sqrt(total)), 1e-6);
+  const nx = Math.max(1, Math.ceil((x1 - x0) / cell) + 1);
+  const ny = Math.max(1, Math.ceil((y1 - y0) / cell) + 1);
+  const grid = new Map<number, number[]>();
+  const keyOf = (i: number, j: number) => j * nx + i;
+  const index = (id: number) => {
+    const p = pts[id]!;
+    const k = keyOf(Math.floor((p.x - x0) / cell), Math.floor((p.y - y0) / cell));
+    const list = grid.get(k);
+    if (list) list.push(id);
+    else grid.set(k, [id]);
+  };
+  for (let k = 0; k < pts.length; k++) index(k);
+  const nearest = (q: Vec2): number => {
+    const ci = Math.floor((q.x - x0) / cell);
+    const cj = Math.floor((q.y - y0) / cell);
+    let best = -1;
+    let bestD = Infinity;
+    for (let r = 0; r <= Math.max(nx, ny); r++) {
+      // once a candidate is closer than this ring of cells can be, stop
+      if (best >= 0 && (r - 1) * cell > bestD) break;
+      for (let j = cj - r; j <= cj + r; j++)
+        for (let i = ci - r; i <= ci + r; i++) {
+          if (Math.max(Math.abs(i - ci), Math.abs(j - cj)) !== r || i < 0 || j < 0 || i >= nx || j >= ny) continue;
+          for (const id of grid.get(keyOf(i, j)) ?? []) {
+            const d = Math.hypot(pts[id]!.x - q.x, pts[id]!.y - q.y);
+            if (d < bestD) {
+              bestD = d;
+              best = id;
+            }
+          }
+        }
+    }
+    return best >= 0 ? best : 0;
+  };
+  for (const h0 of valid) {
+    const h = orient(h0, false);
+    const v = nearest(h[0]!);
+    const after = next[v]!;
+    const first = pts.length;
+    for (let k = 0; k < h.length; k++) {
+      pts.push(h[k]!);
+      next.push(pts.length);
+      index(pts.length - 1);
+    }
+    // back to the hole's first point, then to a copy of v, then on along the ring
+    pts.push({ ...h[0]! });
+    next.push(pts.length);
+    pts.push({ ...pts[v]! });
+    next.push(after);
+    next[v] = first;
+  }
+  const out: Vec2[] = [];
+  let id = 0;
+  for (let guard = 0; guard < pts.length; guard++) {
+    out.push(pts[id]!);
+    id = next[id]!;
+    if (id === 0) break;
+  }
+  return out;
+}
+
+/** Ring with the requested winding (counter-clockwise in a y-down frame for ccw = true). */
+function orient(r: Vec2[], ccw: boolean): Vec2[] {
+  const a = signedArea(r);
+  return (a > 0) === ccw ? r : [...r].reverse();
+}
+

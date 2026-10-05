@@ -18,16 +18,21 @@
  *
  * Coordinates are y-up and become y-down; ODB++ rotates clockwise, KiCad counter-clockwise.
  */
-import { DEG, rotateKicad } from '../model/geometry';
+import { chainRings, DEG, rotateKicad, signedArea } from '../model/geometry';
 import type { StackupEntry } from '../model/stackup';
 import type { BoardModel, Footprint, Pad, PadShape, Vec2 } from '../model/types';
-import { unpack } from './archive';
+import { uncompressZ, unpack } from './archive';
 import { arcYUp, BoardBuilder, guessHeight, ImportError } from './builder';
+import { islandNets, pourFill, type Obstacle } from './pour';
 
 interface Sym {
   shape: PadShape;
   w: number;
   h: number;
+  /** A thermal relief (thr…, ths…): on a negative plane a connection, not a clearance. */
+  thermal?: boolean;
+  /** The null symbol: no copper; on a negative plane it marks a direct connection. */
+  none?: boolean;
 }
 
 interface Feature {
@@ -56,7 +61,22 @@ const dec = new TextDecoder();
 
 /** Read an ODB++ archive (or a map of its files). */
 export async function parseOdbArchive(data: ArrayBuffer, fileName = 'board.tgz'): Promise<BoardModel> {
-  return parseOdb(await unpack(data), fileName);
+  let files = await unpack(data);
+  // deliveries often pack the job archive into another archive (with drawings and reports)
+  for (let depth = 0; depth < 2 && ![...files.keys()].some((p) => /(^|\/)matrix\/matrix$/i.test(p)); depth++) {
+    const inner = [...files.entries()].filter(([p]) => /\.(tgz|tar\.gz|zip|tar)$/i.test(p)).sort((a, b) => b[1].length - a[1].length);
+    if (!inner.length) break;
+    const merged = new Map<string, Uint8Array>();
+    for (const [p, bytes] of inner) {
+      try {
+        for (const [q, v] of await unpack(bytes.slice().buffer)) merged.set(`${p}/${q}`, v);
+      } catch {
+        // not an archive after all: skip it
+      }
+    }
+    files = merged;
+  }
+  return parseOdb(files, fileName);
 }
 
 export function parseOdb(files: Map<string, Uint8Array>, fileName = 'board.tgz'): BoardModel {
@@ -68,7 +88,10 @@ export function parseOdb(files: Map<string, Uint8Array>, fileName = 'board.tgz')
   for (const [p, v] of files) if (p.startsWith(root)) lower.set(p.slice(root.length).toLowerCase(), v);
   const text = (p: string) => {
     const v = lower.get(p.toLowerCase());
-    return v ? dec.decode(v) : undefined;
+    if (v) return dec.decode(v);
+    // Genesis/InCAM and Allegro store large files compressed with Unix compress (features.Z)
+    const z = lower.get(`${p.toLowerCase()}.z`);
+    return z ? dec.decode(uncompressZ(z)) : undefined;
   };
 
   // --- matrix --------------------------------------------------------------------------------
@@ -78,7 +101,7 @@ export function parseOdb(files: Map<string, Uint8Array>, fileName = 'board.tgz')
   if (!stepDir) throw new ImportError('ODB++ archive without a step');
   const layers = blocks
     .filter((b) => b.type === 'LAYER' && (b.kv.CONTEXT ?? 'BOARD').toUpperCase() === 'BOARD')
-    .map((b) => ({ row: Number(b.kv.ROW ?? 0), type: (b.kv.TYPE ?? '').toUpperCase(), name: (b.kv.NAME ?? '').toLowerCase(), start: (b.kv.START_NAME ?? '').toLowerCase(), end: (b.kv.END_NAME ?? '').toLowerCase() }))
+    .map((b) => ({ row: Number(b.kv.ROW ?? 0), type: (b.kv.TYPE ?? '').toUpperCase(), name: (b.kv.NAME ?? '').toLowerCase(), start: (b.kv.START_NAME ?? '').toLowerCase(), end: (b.kv.END_NAME ?? '').toLowerCase(), negative: /^NEGATIVE$/i.test(b.kv.POLARITY ?? '') }))
     .sort((a, b) => a.row - b.row);
   const isCopper = (t: string) => t === 'SIGNAL' || t === 'POWER_GROUND' || t === 'MIXED';
   const copper = layers.filter((l) => isCopper(l.type));
@@ -91,7 +114,10 @@ export function parseOdb(files: Map<string, Uint8Array>, fileName = 'board.tgz')
   const attrlist = (layer: string) => {
     const t = text(`${stepDir}layers/${layer}/attrlist`) ?? '';
     const m = new Map<string, string>();
-    let scale = 1;
+    // no unit line: KiCad writes millimetres here (and says so in the features file), the
+    // format's default is inches
+    const feat = (text(`${stepDir}layers/${layer}/features`) ?? '').slice(0, 2000);
+    let scale = /^\s*(UNITS\s*=\s*MM|U\s+MM)/im.test(feat) ? 1 : 25.4;
     for (const line of t.split(/\r?\n/)) {
       const kv = /^\s*\.?([\w.]+)\s*=\s*(.*)$/.exec(line);
       if (!kv) continue;
@@ -135,7 +161,7 @@ export function parseOdb(files: Map<string, Uint8Array>, fileName = 'board.tgz')
   {
     let lyr: string[] = [];
     let cur = '';
-    let edaScale = 1;
+    let edaScale = /^\s*(UNITS\s*=\s*MM|U\s+MM)/im.test(eda) ? 1 : 25.4;
     for (const line of eda.split(/\r?\n/)) {
       if (/^UNITS\s*=\s*INCH/i.test(line) || /^U\s+INCH/i.test(line)) edaScale = 25.4;
       if (line.startsWith('LYR ')) lyr = line.slice(4).trim().split(/\s+/).map((s) => s.toLowerCase());
@@ -154,15 +180,38 @@ export function parseOdb(files: Map<string, Uint8Array>, fileName = 'board.tgz')
   }
   const netOfName = (n: string | undefined) => (!n || n === '$NONE$' ? 0 : b.net(n));
 
+  const posKey = (p: Vec2) => `${Math.round(p.x * 100)},${Math.round(p.y * 100)}`;
+  // --- drill layers: holes of pins and vias -------------------------------------------------------
+  const holes = new Map<string, { drill: number; kind: 'plated' | 'via' | 'npth'; from: number; to: number; net: string }>();
+  for (const l of layers.filter((x) => x.type === 'DRILL')) {
+    const ff = featureFile(`${stepDir}layers/${l.name}/features`);
+    if (!ff) continue;
+    const from = li.get(l.start) ?? 0;
+    const to = li.get(l.end) ?? copper.length - 1;
+    const drillAttr = ff.attrNames.indexOf('.drill');
+    ff.features.forEach((f, k) => {
+      if (f.kind !== 'P' || !f.a) return;
+      const v = drillAttr >= 0 ? f.attrs.get(drillAttr) : undefined;
+      const kind = v === '2' ? 'via' : v === '1' ? 'npth' : v === '0' ? 'plated' : 'plated';
+      holes.set(posKey(f.a), { drill: f.sym?.w ?? 0.3, kind, from: Math.min(from, to), to: Math.max(from, to), net: featureNet.get(`${l.name}|${k}`) ?? '' });
+    });
+  }
+
   // copper layers
   const padIndex = new Map<number, Map<string, { f: Feature; net: string }>>();
-  const posKey = (p: Vec2) => `${Math.round(p.x * 100)},${Math.round(p.y * 100)}`;
   const layerFeatures = new Map<string, FeatureFile>();
   for (const l of copper) {
     const ff = featureFile(`${stepDir}layers/${l.name}/features`);
     if (!ff) continue;
     layerFeatures.set(l.name, ff);
     const i = li.get(l.name)!;
+    // drawing frame, title block and lettering on the artwork (.nomenclature), and anything
+    // entirely outside the board, are no copper of the board
+    dropArtwork(ff, b.edges);
+    if (l.negative) {
+      negativePlane(b, ff, i, l.name, holes, posKey);
+      continue;
+    }
     const pads = new Map<string, { f: Feature; net: string }>();
     padIndex.set(i, pads);
     ff.features.forEach((f, k) => {
@@ -187,23 +236,7 @@ export function parseOdb(files: Map<string, Uint8Array>, fileName = 'board.tgz')
           }
         }
         flush();
-      } else if (f.kind === 'P' && f.a) pads.set(posKey(f.a), { f, net: netName ?? '' });
-    });
-  }
-
-  // --- drill layers: holes of pins and vias -------------------------------------------------------
-  const holes = new Map<string, { drill: number; kind: 'plated' | 'via' | 'npth'; from: number; to: number; net: string }>();
-  for (const l of layers.filter((x) => x.type === 'DRILL')) {
-    const ff = featureFile(`${stepDir}layers/${l.name}/features`);
-    if (!ff) continue;
-    const from = li.get(l.start) ?? 0;
-    const to = li.get(l.end) ?? copper.length - 1;
-    const drillAttr = ff.attrNames.indexOf('.drill');
-    ff.features.forEach((f, k) => {
-      if (f.kind !== 'P' || !f.a) return;
-      const v = drillAttr >= 0 ? f.attrs.get(drillAttr) : undefined;
-      const kind = v === '2' ? 'via' : v === '1' ? 'npth' : v === '0' ? 'plated' : 'plated';
-      holes.set(posKey(f.a), { drill: f.sym?.w ?? 0.3, kind, from: Math.min(from, to), to: Math.max(from, to), net: featureNet.get(`${l.name}|${k}`) ?? '' });
+      } else if (f.kind === 'P' && f.a && !f.sym?.none) pads.set(posKey(f.a), { f, net: netName ?? '' });
     });
   }
 
@@ -212,7 +245,7 @@ export function parseOdb(files: Map<string, Uint8Array>, fileName = 'board.tgz')
   for (const side of ['top', 'bot'] as const) {
     const t = text(`${stepDir}layers/comp_+_${side}/components`);
     if (!t) continue;
-    let scale = 1;
+    let scale = /^\s*(UNITS\s*=\s*MM|U\s+MM)/im.test(t) ? 1 : 25.4;
     let fp: Footprint | null = null;
     let fpIndex = -1;
     const outer = side === 'top' ? 0 : copper.length - 1;
@@ -319,6 +352,117 @@ export function parseOdb(files: Map<string, Uint8Array>, fileName = 'board.tgz')
 }
 
 const yDown = (p: Vec2): Vec2 => ({ x: p.x, y: -p.y });
+
+/** Removes features marked .nomenclature and features entirely outside the board's extent (in place). */
+function dropArtwork(ff: FeatureFile, edges: Vec2[][]) {
+  const nom = ff.attrNames.indexOf('.nomenclature');
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const e of edges)
+    for (const p of e) {
+      x0 = Math.min(x0, p.x);
+      y0 = Math.min(y0, p.y);
+      x1 = Math.max(x1, p.x);
+      y1 = Math.max(y1, p.y);
+    }
+  const margin = 1;
+  const inside = (p: Vec2 | undefined) => !p || !Number.isFinite(x0) || (p.x >= x0 - margin && p.x <= x1 + margin && -p.y >= y0 - margin && -p.y <= y1 + margin);
+  ff.features = ff.features.map((f) =>
+    (nom >= 0 && f.attrs.has(nom)) || (f.a && !inside(f.a) && (!f.b || !inside(f.b))) ? { kind: 'T', attrs: new Map() } : f,
+  );
+}
+
+/**
+ * A negative layer (matrix POLARITY=NEGATIVE, common for planes from Allegro and PADS): its
+ * features are voids, everything else inside the profile is copper of the plane's net. The net is
+ * the one of the vias that cross the layer without a void at their position, else the layer name
+ * (gnd2 → GND).
+ */
+function negativePlane(
+  b: BoardBuilder,
+  ff: FeatureFile,
+  li: number,
+  name: string,
+  holes: Map<string, { kind: string; from: number; to: number; net: string }>,
+  posKey: (p: Vec2) => string,
+) {
+  const voids: Obstacle[] = [];
+  const voided = new Set<string>();
+  const thermal = new Set<string>();
+  for (const f of ff.features) {
+    if (f.negative) continue; // a negative feature on a negative layer adds copper back: rare, left out
+    if (f.kind === 'P' && f.a && (f.sym?.thermal || f.sym?.none)) {
+      // thermal relief or null pad: the via or pin here connects to the plane
+      thermal.add(posKey(f.a));
+      continue;
+    }
+    if (f.kind === 'P' && f.a && f.sym) {
+      voided.add(posKey(f.a));
+      const c = yDown(f.a);
+      if (f.sym.shape === 'circle') voids.push({ kind: 'circle', c, r: f.sym.w / 2 });
+      else
+        voids.push({
+          kind: 'poly',
+          ring: [
+            { x: -f.sym.w / 2, y: -f.sym.h / 2 },
+            { x: f.sym.w / 2, y: -f.sym.h / 2 },
+            { x: f.sym.w / 2, y: f.sym.h / 2 },
+            { x: -f.sym.w / 2, y: f.sym.h / 2 },
+          ].map((q) => {
+            const r = rotateKicad(q, -(f.rot ?? 0));
+            return { x: c.x + r.x, y: c.y + r.y };
+          }),
+          r: 0,
+        });
+    } else if (f.kind === 'L' && f.a && f.b) voids.push({ kind: 'seg', a: yDown(f.a), b: yDown(f.b), r: (f.sym?.w ?? 0.2) / 2 });
+    else if (f.kind === 'A' && f.a && f.b && f.c) {
+      const pts = arcYUp(f.a, f.b, f.c, !!f.cw).map(yDown);
+      for (let k = 1; k < pts.length; k++) voids.push({ kind: 'seg', a: pts[k - 1]!, b: pts[k]!, r: (f.sym?.w ?? 0.2) / 2 });
+    } else if (f.kind === 'S') {
+      let ring: Vec2[] | null = null;
+      let inner: Vec2[][] = [];
+      const flush = () => {
+        if (ring) voids.push({ kind: 'moat', ring, holes: inner });
+        ring = null;
+        inner = [];
+      };
+      for (const c of f.contours ?? []) {
+        if (c.hole) inner.push(c.pts.map(yDown));
+        else {
+          flush();
+          ring = c.pts.map(yDown);
+        }
+      }
+      flush();
+    }
+  }
+  const count = new Map<string, number>();
+  // holes through the layer with a thermal relief, or without any void, connect to the plane
+  const connections: { at: Vec2; net: string }[] = [];
+  for (const [key, h] of holes) {
+    if (!h.net || h.net === '$NONE$' || h.from > li || h.to < li) continue;
+    if (thermal.has(key) || (h.kind === 'via' && h.from < li && h.to > li && !voided.has(key))) {
+      count.set(h.net, (count.get(h.net) ?? 0) + 1);
+      const [x, y] = key.split(',').map((v) => Number(v) / 100);
+      connections.push({ at: yDown({ x: x!, y: y! }), net: h.net });
+    }
+  }
+  let net = [...count.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] ?? '';
+  if (!net) {
+    const stem = name.replace(/[_\-\s]*\d+$/, '').toUpperCase();
+    net = b.nets.find((n) => n.toUpperCase() === stem) ?? '';
+  }
+  if (!net) b.warnings.push(`odb-plane-net-unknown:${name}`);
+  const rings = chainRings(b.edges, 0.02).rings.sort((x, y) => Math.abs(signedArea(y)) - Math.abs(signedArea(x)));
+  if (!rings[0]) return;
+  for (const r of rings.slice(1)) voids.push({ kind: 'poly', ring: r, r: 0 });
+  // each island gets the net of the connections inside it (split planes)
+  const islands = pourFill({ outline: rings[0], obstacles: voids });
+  islandNets(islands, connections, net).forEach((n, k) => b.zone(n ? b.net(n) : 0, li, islands[k]!));
+  b.kinds.set(b.copper[li]!, 'power');
+}
 const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, k) => a + k);
 
 /** Blocks of the matrix file: NAME { KEY=VALUE … }. */
@@ -345,7 +489,9 @@ function parseBlocks(t: string): { type: string; kv: Record<string, string> }[] 
 
 /** A features file: symbols, attribute names and the feature records in order. */
 export function parseFeatures(t: string): FeatureFile {
-  let inch = false;
+  // ODB++ files without a unit line are in inches (the format's default); KiCad and most newer
+  // exporters write UNITS=MM
+  let inch = true;
   const syms: string[] = [];
   const attrNames: string[] = [];
   const features: Feature[] = [];
@@ -356,6 +502,7 @@ export function parseFeatures(t: string): FeatureFile {
   for (const line of lines) {
     if (/^UNITS\s*=\s*INCH/i.test(line) || /^U\s+INCH/i.test(line)) inch = true;
     if (/^UNITS\s*=\s*MM/i.test(line) || /^U\s+MM/i.test(line)) inch = false;
+    if (line.startsWith('#Layer features') || /^[LPASTB] /.test(line)) break;
   }
   const S = inch ? 25.4 : 1;
   const symScale = inch ? 0.0254 : 0.001; // mils or microns
@@ -462,6 +609,7 @@ export function parseFeatures(t: string): FeatureFile {
 /** Standard ODB++ symbol names (dimensions in microns for metric, mils for imperial files). */
 export function parseSymbol(name: string, k: number): Sym {
   const n = name.toLowerCase();
+  if (n === 'null') return { shape: 'custom', w: 0, h: 0, none: true };
   let m: RegExpExecArray | null;
   if ((m = /^r([\d.]+)$/.exec(n))) return { shape: 'circle', w: Number(m[1]) * k, h: Number(m[1]) * k };
   if ((m = /^s([\d.]+)$/.exec(n))) return { shape: 'rect', w: Number(m[1]) * k, h: Number(m[1]) * k };
@@ -470,7 +618,7 @@ export function parseSymbol(name: string, k: number): Sym {
   if ((m = /^el([\d.]+)x([\d.]+)/.exec(n))) return { shape: 'oval', w: Number(m[1]) * k, h: Number(m[2]) * k };
   if ((m = /^(di|oct|hex_[lsr]|tri)([\d.]+)x([\d.]+)/.exec(n))) return { shape: 'custom', w: Number(m[2]) * k, h: Number(m[3]) * k };
   if ((m = /^donut_[rs]([\d.]+)x([\d.]+)/.exec(n))) return { shape: 'circle', w: Number(m[1]) * k, h: Number(m[1]) * k };
-  if ((m = /^(thr|ths|s_thr|s_tho|s_ths|sr_ths|rc_ths|rc_tho)([\d.]+)x([\d.]+)/.exec(n))) return { shape: 'circle', w: Number(m[2]) * k, h: Number(m[2]) * k };
+  if ((m = /^(thr|ths|s_thr|s_tho|s_ths|sr_ths|rc_ths|rc_tho)([\d.]+)x([\d.]+)/.exec(n))) return { shape: 'circle', w: Number(m[2]) * k, h: Number(m[2]) * k, thermal: true };
   if ((m = /^moire[\d.]*x[\d.]*x[\d.]*x([\d.]+)/.exec(n))) return { shape: 'circle', w: Number(m[1]) * k, h: Number(m[1]) * k };
   // user-defined symbol: size unknown
   return { shape: 'custom', w: 0.5, h: 0.5 };

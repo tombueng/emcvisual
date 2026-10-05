@@ -375,7 +375,7 @@ export function parseEagle(text: string, fileName = 'board.brd'): import('../mod
   for (const p of sorted) {
     const outline = polygonRing(p.poly).map(yDown);
     const others = copperOn.get(p.layer) ?? [];
-    const obstacles: Obstacle[] = others.filter((c) => c.net !== p.net || p.net === 0).map((c) => ({ ...c.o, r: c.o.r + p.isolate }) as Obstacle);
+    const obstacles: Obstacle[] = others.filter((c) => c.net !== p.net || p.net === 0).map((c) => ({ ...c.o, r: ('r' in c.o ? c.o.r : 0) + p.isolate }) as Obstacle);
     for (const c of cutouts) if (c.layer === p.layer) obstacles.push({ kind: 'poly', ring: polygonRing(c.poly).map(yDown), r: 0 });
     obstacles.push(...(restrict.get(p.layer) ?? []));
     for (const q of poured.get(p.layer) ?? []) if (q.net !== p.net) for (const r of q.rings) obstacles.push({ kind: 'poly', ring: r, r: p.isolate });
@@ -393,7 +393,7 @@ export function parseEagle(text: string, fileName = 'board.brd'): import('../mod
     const others = (copperOn.get(n) ?? []).filter((c) => c.net !== net);
     const rings = pourFill({
       outline: edgeRings.reduce((a, c) => (Math.abs(areaOf(c)) > Math.abs(areaOf(a)) ? c : a)),
-      obstacles: others.map((c) => ({ ...c.o, r: c.o.r + isolateMin }) as Obstacle),
+      obstacles: others.map((c) => ({ ...c.o, r: ('r' in c.o ? c.o.r : 0) + isolateMin }) as Obstacle),
       edges: { rings: edgeRings, clearance: edgeClear },
     });
     for (const r of rings) b.zone(net, li.get(n)!, r);

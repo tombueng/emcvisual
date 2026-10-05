@@ -20,7 +20,8 @@
   import { buildFocusScene, type FocusAnchor } from '../render/focusScene';
   import { showMeasurement } from '../state/scanner.svelte';
   import { canWatch, dropHandles, follow, live, pickWithHandle, stopFollowing, type FileHandle } from '../state/liveFile.svelte';
-  import { EXAMPLE_BOARDS } from '../examples';
+  import { EXAMPLE_BOARDS, type ExampleFormat } from '../examples';
+  const EXAMPLE_FORMATS: ExampleFormat[] = ['KiCad', 'Eagle', 'IPC-2581', 'ODB++'];
   import { BOARD_EXTENSIONS, boardBaseName, ImportError, isBoardFileName } from '../import';
   import { ArchiveError } from '../import/archive';
 
@@ -479,7 +480,11 @@
           }}
         >
           <option value="" disabled>{t.top.examples}</option>
-          {#each EXAMPLE_BOARDS as ex (ex.id)}<option value={ex.id}>{ex.name}</option>{/each}
+          {#each EXAMPLE_FORMATS as fmt (fmt)}
+            <optgroup label={fmt}>
+              {#each EXAMPLE_BOARDS.filter((e) => e.format === fmt) as ex (ex.id)}<option value={ex.id}>{ex.name}</option>{/each}
+            </optgroup>
+          {/each}
         </select>
       </label>
       <button class="btn" onclick={saveScenario} disabled={!app.board}>{t.top.saveScenario}</button>
@@ -539,14 +544,17 @@
         <p class="hint">{t.empty.checks} <a href={`https://github.com/${branding.repo}/blob/main/docs/RULES.md`} target="_blank" rel="noopener">{t.empty.checksLink}</a></p>
         <p class="hint">{t.empty.demoHint}</p>
         <p class="hint">{t.empty.examples}</p>
-        <ul class="examples-list">
-          {#each EXAMPLE_BOARDS as ex (ex.id)}
-            <li>
-              <button class="link" onclick={() => openExample(ex.id)}>{ex.name}</button>
-              <span>{i18n.lang === 'de' ? ex.de : ex.en} · <a href={ex.project} target="_blank" rel="noopener">{ex.license}</a></span>
-            </li>
-          {/each}
-        </ul>
+        {#each EXAMPLE_FORMATS as fmt (fmt)}
+          <h3 class="examples-format">{fmt}</h3>
+          <ul class="examples-list">
+            {#each EXAMPLE_BOARDS.filter((e) => e.format === fmt) as ex (ex.id)}
+              <li>
+                <button class="link" onclick={() => openExample(ex.id)}>{ex.name}</button>
+                <span>{i18n.lang === 'de' ? ex.de : ex.en} · <a href={ex.project} target="_blank" rel="noopener">{ex.license}</a></span>
+              </li>
+            {/each}
+          </ul>
+        {/each}
       </div>
     {/if}
     {#if dragging}<div class="dropzone">{t.empty.drop}</div>{/if}
@@ -680,6 +688,13 @@
   }
   .quality select.examples {
     width: 120px;
+  }
+  .examples-format {
+    text-align: left;
+    margin: 10px 0 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
   }
   .examples-list {
     list-style: none;

@@ -103,6 +103,15 @@ the padstack's pad. Plated holes and plated slots (`SlotCavity` on route layers)
 through-hole pads. Part values come from the BOM (`Characteristics/Textual` named Value). Nets of
 pads without a net in their set come from `LogicalNet`.
 
+Negative plane layers (polarity NEGATIVE, common for planes from Allegro) hold the voids, not the
+copper: clearances around foreign vias and pins, split lines, moats. The importer fills the board
+outline minus these voids and gives each copper island the net of the connections inside it:
+pads drawn with a thermal-relief or full-contact primitive, and vias that cross the layer without
+a void. A split power plane thus gets one net per region. An island without any connection keeps
+the layer's most frequent plane net, else the net named like the layer (GND2 → GND), else none
+(then it shows as copper without a connection, and the Diagnostics tab says so). Lettering and
+frames of the artwork that lie on the copper layers outside the board are left out.
+
 ### ODB++
 
 The job folder is found by its `matrix/matrix`. Layers with context BOARD and type SIGNAL,
@@ -117,7 +126,19 @@ Components and their pins (toeprints, with position, rotation, side and net) com
 `layers/comp_+_top|comp_+_bot/components`, values from their `PRP Value`, body extents from the
 packages in `eda/data`. Drill layers give the holes: the `.drill` attribute separates plated pin
 holes, vias and non-plated holes, `START_NAME`/`END_NAME` the span. User-defined symbols (custom
-pad shapes) have no standard size; they are taken as 0.5 mm.
+pad shapes) have no standard size; they are taken as 0.5 mm; the `null` symbol is no copper.
+
+Details that real exports need and that the importer handles:
+
+- files compressed with Unix `compress` (`features.Z`, `data.Z`, as Genesis/InCAM and Allegro
+  write them) are decompressed (LZW, `src/import/archive.ts`);
+- a job archive packed inside another archive (with drawings and reports next to it) is found;
+- files without a unit line are in inches (the format's default), symbol sizes then in mils;
+- features marked `.nomenclature` (drawing frame, title block, lettering on the artwork) and
+  features entirely outside the board are left out;
+- negative layers (matrix POLARITY=NEGATIVE) are filled like negative IPC-2581 planes: board
+  outline minus voids, each island with the net of the vias and pins that connect there (thermal
+  relief symbols `thr…`/`ths…`, `null` pads, or no void at all).
 
 ### Eagle and Fusion 360
 
@@ -147,6 +168,20 @@ margin and the anti-pads of other nets. Not modelled: thermal spokes, the polygo
 width, hatched pours (treated as solid). The stack-up is not read from Eagle (its thickness
 parameters are rarely set on purpose); the default is used and flagged.
 
+## KiCad files: unfilled zones and custom pads
+
+Two things the KiCad parser now handles that public repositories often contain:
+
+- **Zones saved without their fill** (the board was saved before filling, or the fill was left
+  out to keep the file small). The app fills them itself with the same method as the Eagle pours:
+  the zone outline minus copper of other nets with the zone's clearance, keep-out areas, 0.5 mm to
+  the board edge, higher priority first, islands without a connection removed (unless the zone
+  keeps islands, or no island is connected at all, as KiCad does). On the test boards the result
+  is within 5 % of KiCad's own fill. The Diagnostics tab notes it; filling all zones in KiCad and
+  saving makes it exact.
+- **Custom pad shapes** (`custom` with primitives): the pad's extent is taken from its primitives
+  instead of the anchor, which is often only 0.1 mm.
+
 ## How the importers were checked
 
 - **IPC-2581 and ODB++:** boards were exported from KiCad 10 and compared with KiCad's own file
@@ -161,6 +196,13 @@ parameters are rarely set on purpose); the default is used and flagged.
   fiducials and paste openings, which KiCad does not export as pins, and copper drawings on
   copper layers. KiCad's own parser ignores the latter so far, while the importers count them as
   copper.
+- **Exports of professional tools:** the BeagleBone Black (IPC-2581 from Cadence Allegro, 6 layers,
+  86.4 × 54.6 mm as the real board), the IPC-2581 consortium's test case 10 (18 layers, seven
+  negative planes) and three server boards of the Open Compute Project (ODB++ from Genesis, 4 to
+  10 layers with negative and split power planes, compressed feature files). They load in 2 to 8
+  seconds in the browser; the planes, nets and part counts are plausible and the split power
+  planes come out with one net per region. These have no KiCad original to compare with; what
+  could be checked by hand was.
 - **Eagle:** three public boards (Eagle 6.3, 7.2 and 9.5) were compared with KiCad's Eagle
   importer. Pads (position, net, size), tracks, vias and outline are identical; parts KiCad
   renames because of name clashes (BTN → BTN0) aside. The computed pours match KiCad's zone fill

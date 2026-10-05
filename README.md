@@ -134,15 +134,27 @@ libraries. Boards from other CAD tools carry no model references; their parts ar
 
 ### Example boards to try
 
-Public KiCad projects, loaded straight from GitHub (also under "Examples …" in the app):
+Public boards in every format the app reads, loaded straight from GitHub (also under "Examples …"
+in the app, grouped by format):
 
-| Board | What is on it | Licence |
-|---|---|---|
-| [Glasgow revC3](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2FGlasgowEmbedded%2Fglasgow%2FHEAD%2Fhardware%2Fboards%2Fglasgow%2FrevC3%2Fglasgow.kicad_pcb) | USB interface with FPGA, level shifters, 4 layers | 0BSD |
-| [HackRF One](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2Fgreatscottgadgets%2Fhackrf%2FHEAD%2Fhardware%2Fhackrf-one%2Fhackrf-one.kicad_pcb) | SDR 1 MHz to 6 GHz, USB, clocks, RF section | GPL-2.0 |
-| [Cynthion](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2Fgreatscottgadgets%2Fcynthion-hardware%2FHEAD%2Fcynthion.kicad_pcb) | USB analyser, 6 layers, several USB PHYs | CERN-OHL-P-2.0 |
-| [Olimex ESP32-POE Rev M2](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2FOLIMEX%2FESP32-POE%2FHEAD%2FHARDWARE%2FESP32-PoE-hardware-revision-M2%2FESP32-PoE_Rev_M2.kicad_pcb) | ESP32 with Ethernet (50 MHz clock) and PoE converter, split planes | Apache-2.0 |
-| [OtterCastAudio V2](https://tombueng.github.io/emcvisual/?board=https%3A%2F%2Fraw.githubusercontent.com%2FOttercast%2FOtterCastAudioV2%2FHEAD%2FOtterCastAudioV2.kicad_pcb) | Audio streamer with SoC, Ethernet and USB | MIT |
+| Board | Format | What is on it | Licence |
+|---|---|---|---|
+| Glasgow revC3 | KiCad | USB interface with FPGA, level shifters, 4 layers | 0BSD |
+| HackRF One | KiCad | SDR 1 MHz to 6 GHz, USB, clocks, RF section | GPL-2.0 |
+| Cynthion | KiCad | USB analyser, 6 layers, several USB PHYs | CERN-OHL-P-2.0 |
+| Olimex ESP32-POE Rev M2 | KiCad | ESP32 with Ethernet (50 MHz clock) and PoE converter, split planes | Apache-2.0 |
+| OtterCastAudio V2 | KiCad | audio streamer with SoC, Ethernet and USB | MIT |
+| nRFMicro | KiCad | nRF52840 module for keyboards, 2 layers without a ground plane, own 3D models | Unlicense |
+| I²C soil moisture sensor | KiCad | capacitive sensor with I²C, 4 layers, own 3D models | Apache-2.0 |
+| Arduino Uno Rev3 | Eagle | the classic, 2 layers with ground pours | CC-BY-SA-2.5 |
+| SparkFun ESP32 Thing | Eagle | ESP32 with LiPo charger, 2 layers | CC-BY-SA-4.0 |
+| Adafruit ESP32-S3 TFT Feather | Eagle | ESP32-S3 with TFT and USB-C, 2 layers | CC-BY-SA-3.0 |
+| Particle (Spark) Core | Eagle | STM32 with Wi-Fi, 4 layers with supply layers | CC-BY-SA-4.0 |
+| BeagleBone Black | IPC-2581 | single-board computer with DDR3, 6 layers, from Cadence Allegro | CC-BY-SA-3.0 |
+| IPC-2581 test case 10 | IPC-2581 | 18 layers, 576-ball BGA, negative planes | test data |
+| Barreleye G2 Expander | ODB++ | PCIe expander of a POWER9 server, 10 layers, split power planes | OCPHL-P-1.0 |
+| Barreleye G2 power distribution | ODB++ | 12 V and 48 V distribution, 6 layers | OCPHL-P-1.0 |
+| Zaius LOM/VGA card | ODB++ | network and VGA card, 4 layers, negative ground planes | OCPHL-P-1.0 |
 
 The boards belong to their projects and are under their licences; they are not in this
 repository.

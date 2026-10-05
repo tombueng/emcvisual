@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { parseBoard } from '../src/kicad/parseBoard';
 import { boardBaseName, detectFormat, importBoard, isBoardFileName } from '../src/import';
 import { parseXml } from '../src/import/xml';
-import { parseSymbol } from '../src/import/odb';
+import { parseOdb, parseSymbol } from '../src/import/odb';
 import { keyhole } from '../src/import/builder';
 import { signedArea } from '../src/model/geometry';
 import { runCheck } from '../src/cli/fieldCheck';
@@ -77,6 +77,29 @@ describe('ODB++', () => {
     for (const f of ['slot-clock.bad.odb.zip', 'slot-clock.bad.odb.tgz']) sameBoard(await importBoard(f, bytes(`${DIR}/${f}`)));
   });
 
+  it('fills a negative plane layer and finds its net from the vias without a clearance', () => {
+    const enc = (t: string) => new TextEncoder().encode(t);
+    const layer = (row: number, type: string, name: string, extra = '') => `LAYER {\n ROW=${row}\n CONTEXT=BOARD\n TYPE=${type}\n NAME=${name}\n POLARITY=${extra || 'POSITIVE'}\n}\n`;
+    const files = new Map<string, Uint8Array>([
+      ['job/matrix/matrix', enc(`STEP {\n COL=1\n NAME=PCB\n}\n${layer(1, 'SIGNAL', 'TOP')}${layer(2, 'POWER_GROUND', 'GND2', 'NEGATIVE')}${layer(3, 'SIGNAL', 'BOT')}LAYER {\n ROW=4\n CONTEXT=BOARD\n TYPE=DRILL\n NAME=DRILL\n START_NAME=TOP\n END_NAME=BOT\n}\n`)],
+      ['job/steps/pcb/profile', enc('UNITS=MM\nS P 0\nOB 0 0 I\nOS 20 0\nOS 20 -10\nOS 0 -10\nOS 0 0\nOE\nSE\n')],
+      // the clearance around the signal via only (r 1 mm)
+      ['job/steps/pcb/layers/gnd2/features', enc('UNITS=MM\n$0 r2000\nP 15 -5 0 P 0 0\n')],
+      ['job/steps/pcb/layers/top/features', enc('UNITS=MM\n$0 r600\nP 5 -5 0 P 0 0\nP 15 -5 0 P 0 0\n')],
+      ['job/steps/pcb/layers/bot/features', enc('UNITS=MM\n$0 r600\nP 5 -5 0 P 0 0\nP 15 -5 0 P 0 0\n')],
+      ['job/steps/pcb/layers/drill/features', enc('UNITS=MM\n$0 r300\n@0 .drill\nP 5 -5 0 P 0 0;0=2\nP 15 -5 0 P 0 0;0=2\n')],
+      ['job/steps/pcb/eda/data', enc('UNITS=MM\nLYR top gnd2 bot drill\nNET GND\nSNT VIA\nFID H 3 0\nFID C 0 0\nNET SIG\nSNT VIA\nFID H 3 1\nFID C 0 1\n')],
+    ]);
+    const m = parseOdb(files, 'neg.zip');
+    expect(m.layers.map((l) => l.name)).toEqual(['F.Cu', 'In1.Cu', 'B.Cu']);
+    const plane = m.zones.find((z) => z.layer === 1)!;
+    expect(m.nets[plane.net]).toBe('GND');
+    // 20 × 10 mm minus the 2 mm clearance (π mm²), within the raster
+    expect(plane.area).toBeGreaterThan(200 - Math.PI - 1.5);
+    expect(plane.area).toBeLessThan(200 - Math.PI + 1.5);
+    expect(m.vias.map((v) => m.nets[v.net])).toEqual(['GND', 'SIG']);
+  });
+
   it('reads the standard symbols in microns and mils', () => {
     expect(parseSymbol('r600', 0.001)).toEqual({ shape: 'circle', w: 0.6, h: 0.6 });
     expect(parseSymbol('rect1200x900xr100', 0.001)).toEqual({ shape: 'roundrect', w: 1.2, h: 0.9 });
@@ -133,6 +156,35 @@ describe('Eagle', () => {
     // the GND polygon on top touches no GND copper: removed (orphans="no")
     expect(zoneArea(m, 'GND', 'F.Cu')).toBe(0);
     expect(m.warnings).toContain('eagle-pour-computed');
+  });
+});
+
+describe('KiCad zones saved without their fill', () => {
+  it('are filled like KiCad does: same area within a few percent, file note set', () => {
+    for (const f of ['slot-clock.bad', 'split-plane.bad']) {
+      const text = readFileSync(`tests/fixtures/emc-cases/${f}.kicad_pcb`, 'utf8');
+      const filled = parseBoard(text);
+      // drop every (filled_polygon …) block
+      let stripped = text;
+      for (;;) {
+        const i = stripped.indexOf('(filled_polygon');
+        if (i < 0) break;
+        let depth = 0;
+        let j = i;
+        for (; j < stripped.length; j++) {
+          if (stripped[j] === '(') depth++;
+          else if (stripped[j] === ')' && --depth === 0) break;
+        }
+        stripped = stripped.slice(0, i) + stripped.slice(j + 1);
+      }
+      const ours = parseBoard(stripped);
+      expect(ours.warnings).toContain('kicad-zones-filled');
+      for (const z of filled.zones) {
+        const mine = ours.zones.filter((x) => x.net === z.net && x.layer === z.layer).reduce((s, x) => s + x.area, 0);
+        expect(mine / z.area, `${f} ${filled.nets[z.net]}`).toBeGreaterThan(0.95);
+        expect(mine / z.area, `${f} ${filled.nets[z.net]}`).toBeLessThan(1.05);
+      }
+    }
   });
 });
 

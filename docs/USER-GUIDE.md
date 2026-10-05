@@ -153,13 +153,15 @@ There are five ways to open a board:
 4. **Examples …** in the top bar, or the list on the start page: public boards loaded straight
    from GitHub. The address bar then holds a `?board=` link you can share.
 
-   | Board | What is on it | Licence |
+   | Board | Format | What is on it |
    |---|---|---|
-   | Glasgow revC3 | USB interface with FPGA and level shifters, 4 layers | 0BSD |
-   | HackRF One | SDR 1 MHz to 6 GHz, 4 layers, USB, clocks, RF section | GPL-2.0 |
-   | Cynthion | USB analyser, 6 layers, several USB PHYs | CERN-OHL-P-2.0 |
-   | Olimex ESP32-POE Rev M2 | ESP32 with Ethernet (RMII, 50 MHz clock) and PoE converter, split planes | Apache-2.0 |
-   | OtterCastAudio V2 | Audio streamer with SoC, Ethernet and USB | MIT |
+   | Glasgow revC3, HackRF One, Cynthion, Olimex ESP32-POE, OtterCastAudio V2 | KiCad | USB, FPGA, SDR, Ethernet and audio boards, 4 to 6 layers |
+   | nRFMicro, I²C soil moisture sensor | KiCad | small boards with their own 3D models in the repository |
+   | Arduino Uno Rev3, SparkFun ESP32 Thing, Adafruit ESP32-S3 TFT Feather, Particle Core | Eagle | well-known hobby boards; their copper pours are computed by the app |
+   | BeagleBone Black, IPC-2581 test case 10 | IPC-2581 | exports of professional tools (Cadence Allegro), 6 and 18 layers, negative planes |
+   | Three Open Compute server cards | ODB++ | 4 to 10 layers, split power planes, compressed feature files |
+
+   The list in the app names each board's licence (linked to the project).
 
 5. **A link:** append `?board=<address of the board file>` to the app's address. The server must
    allow cross-origin reads (`raw.githubusercontent.com` does). Optionally add

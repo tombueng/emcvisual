@@ -41,7 +41,7 @@ export const en: Strings = {
     ],
     checks: 'About 30 known EMC layout mistakes are checked, each with its reason, the fix and the limits of the statement:',
     checksLink: 'all rules',
-    examples: 'Or open a public board from GitHub (loaded straight from there):',
+    examples: 'Or open a public board, in every format the app reads (loaded straight from GitHub):',
   },
   sources: {
     title: 'Sources',
@@ -1146,6 +1146,9 @@ export const en: Strings = {
     'outline-open': (n: string) => `The board outline is not closed (${n} open pieces); edge rules are uncertain there.`,
     'eagle-pour-computed': 'Eagle stores only the outline of copper pours. The fill is computed here (clearances to other copper, board edge, restrict areas, islands without a connection removed) to 0.1 mm; thermal spokes are missing.',
     'eagle-package-missing': (refs: string) => `The package of ${refs} is missing from the file's library; these parts are left out.`,
+    'ipc2581-plane-net-unknown': (layer: string) => `The negative plane ${layer} belongs to no net (no thermal relief, no via without a clearance); it counts as copper without a connection.`,
+    'odb-plane-net-unknown': (layer: string) => `The negative plane ${layer} belongs to no net (no via without a clearance); it counts as copper without a connection.`,
+    'kicad-zones-filled': 'The file holds zones without a saved fill (saved before filling). The app filled them itself, with the zone clearances, 0.5 mm to the edge and without thermal spokes; filling all zones in KiCad (B) and saving makes it exact.',
     'ipc2581-no-copper': 'The IPC-2581 file holds no copper data (only assembly or BOM content); export it with copper and layer data.',
   },
   severity: {

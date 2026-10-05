@@ -57,10 +57,17 @@ function compare(board: BoardModel, rawRef: Reference) {
       undefined,
     );
     expect(p, `pad ${rp.ref}.${rp.number}`).toBeDefined();
-    expect(dist(p!.at, rp), `position of ${rp.ref}.${rp.number}`).toBeLessThan(1e-3);
     expect(norm(p!.angle), `angle of ${rp.ref}.${rp.number}`).toBeCloseTo(norm(rp.angle), 3);
-    expect(p!.size.x).toBeCloseTo(rp.sizeX, 4);
-    expect(p!.size.y).toBeCloseTo(rp.sizeY, 4);
+    if (p!.shape === 'custom') {
+      // custom pads: the parser takes the extent of the primitives, pcbnew reports the anchor;
+      // the extent must contain the anchor and be at least as large
+      expect(dist(p!.at, rp), `anchor of ${rp.ref}.${rp.number} inside the pad`).toBeLessThanOrEqual(Math.hypot(p!.size.x, p!.size.y) / 2 + 1e-3);
+      expect(Math.max(p!.size.x, p!.size.y)).toBeGreaterThanOrEqual(Math.min(rp.sizeX, rp.sizeY) - 1e-4);
+    } else {
+      expect(dist(p!.at, rp), `position of ${rp.ref}.${rp.number}`).toBeLessThan(1e-3);
+      expect(p!.size.x).toBeCloseTo(rp.sizeX, 4);
+      expect(p!.size.y).toBeCloseTo(rp.sizeY, 4);
+    }
     expect(board.nets[p!.net]).toBe(rp.net);
     expect(p!.layers.map((i) => board.layers[i]!.name)).toEqual(rp.copperLayers);
     expect(p!.pinType).toBe(rp.pinType);

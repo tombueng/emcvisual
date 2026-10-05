@@ -5,6 +5,7 @@ import {
   bboxValid,
   bezierPoints,
   chainRings,
+  padOutline,
   DEG,
   emptyBBox,
   growBBox,
@@ -12,6 +13,7 @@ import {
   signedArea,
 } from '../model/geometry';
 import { buildStackup, sortCopperNames, type StackupEntry } from '../model/stackup';
+import { pourFill, type Obstacle } from '../import/pour';
 import type { FootprintModel,
   BoardModel,
   Footprint,
@@ -182,15 +184,36 @@ export function parseBoard(text: string, fileName = 'board.kicad_pcb'): BoardMod
         drill = d.length ? Math.min(...d.filter(Number.isFinite)) : 0;
       }
       const kind = (str(p, 2) || 'smd') as PadKind;
-      growBBox(localPadBox, local, Math.max(size.x, size.y) / 2);
+      const shapeName = (str(p, 3) || 'rect') as PadShape;
+      // custom pads: the anchor is often tiny, the copper is in the primitives; take their extent
+      let at0 = local;
+      const prims = child(p, 'primitives');
+      if (shapeName === 'custom' && prims) {
+        const ext = emptyBBox();
+        growBBox(ext, { x: 0, y: 0 }, Math.max(size.x, size.y) / 2);
+        for (const g of prims.slice(1)) {
+          if (!isList(g)) continue;
+          const w = num(child(g, 'width'), 1, 0) / 2;
+          const poly = graphicPolyline(g[0].replace(/^gr_/, ''), g);
+          if (poly) for (const q of poly) growBBox(ext, q, w);
+        }
+        if (bboxValid(ext)) {
+          size.x = ext.x1 - ext.x0;
+          size.y = ext.y1 - ext.y0;
+          // primitives are in the pad's own frame (rotated with the pad): move the centre with it
+          const c = rotateKicad({ x: (ext.x0 + ext.x1) / 2, y: (ext.y0 + ext.y1) / 2 }, num(pat, 3, 0) - fpAngle);
+          at0 = { x: local.x + c.x, y: local.y + c.y };
+        }
+      }
+      growBBox(localPadBox, at0, Math.max(size.x, size.y) / 2);
       const pad: Pad = {
         footprint: fpIndex,
         ref,
         number: str(p, 1),
         net: netOf(p),
-        at: toBoard(local),
+        at: toBoard(at0),
         angle: num(pat, 3, 0),
-        shape: (str(p, 3) || 'rect') as PadShape,
+        shape: shapeName,
         kind,
         size,
         layers: layersOfList(atoms(child(p, 'layers') ?? ['layers'])),
@@ -291,9 +314,34 @@ export function parseBoard(text: string, fileName = 'board.kicad_pcb'): BoardMod
 
   // --- zones ----------------------------------------------------------------------------------
   const zones: Zone[] = [];
+  // zones saved without their fill, and keep-out areas that forbid copper pours
+  const unfilled: { net: number; layers: number[]; outline: Vec2[]; clearance: number; priority: number; keepIslands: boolean }[] = [];
+  const keepouts: { layers: number[]; outline: Vec2[] }[] = [];
+  const zoneLayers = (z: SList): number[] => {
+    const one = str(child(z, 'layer'));
+    return one ? layersOfList([one]) : layersOfList(atoms(child(z, 'layers') ?? ['layers']));
+  };
   for (const z of children(root, 'zone')) {
-    if (child(z, 'keepout')) continue;
+    const ko = child(z, 'keepout');
+    if (ko) {
+      if (str(child(ko, 'copperpour')) === 'not_allowed') keepouts.push({ layers: zoneLayers(z), outline: ptsList(child(child(z, 'polygon') ?? ['polygon'], 'pts')) });
+      continue;
+    }
     const net = netOf(z);
+    if (!children(z, 'filled_polygon').length) {
+      const outline = ptsList(child(child(z, 'polygon') ?? ['polygon'], 'pts'));
+      const fill = child(z, 'fill');
+      if (outline.length > 2)
+        unfilled.push({
+          net,
+          layers: zoneLayers(z),
+          outline,
+          clearance: num(child(child(z, 'connect_pads') ?? ['connect_pads'], 'clearance'), 1, 0.25),
+          priority: num(child(z, 'priority'), 1, 0),
+          keepIslands: num(child(fill ?? ['fill'], 'island_removal_mode'), 1, 0) === 1,
+        });
+      continue;
+    }
     const byLayer = new Map<number, Vec2[][]>();
     for (const fpoly of children(z, 'filled_polygon')) {
       const layer = copperLayerOf(str(child(fpoly, 'layer')) || str(child(z, 'layer')));
@@ -336,6 +384,13 @@ export function parseBoard(text: string, fileName = 'board.kicad_pcb'): BoardMod
   }
   const bbox = emptyBBox();
   for (const p of outline[0]!) growBBox(bbox, p);
+
+  // zones without a saved fill (the file was saved before filling, or fills were left out):
+  // fill them here the way KiCad would, approximately, so the planes are there
+  if (unfilled.length) {
+    warnings.push('kicad-zones-filled');
+    fillZones(unfilled, keepouts, zones, tracks, pads, vias, outline);
+  }
 
   return {
     source: { fileName, kicadVersion: num(child(root, 'version'), 1, 0), generator: str(child(root, 'generator')) },
@@ -435,4 +490,49 @@ function estimateHeight(ref: string, lib: string): number {
     D: 0.9, LED: 0.9, Q: 1.1, SW: 2.0, BT: 3.0, F: 1.0, TP: 0.3, MH: 0, H: 0,
   };
   return table[prefix] ?? 1.0;
+}
+
+/** Copper to board edge, mm (KiCad's default constraint). */
+const EDGE_CLEARANCE = 0.5;
+
+/** Fills zones that were saved unfilled (see parseBoard), highest priority first. */
+function fillZones(
+  unfilled: { net: number; layers: number[]; outline: Vec2[]; clearance: number; priority: number; keepIslands: boolean }[],
+  keepouts: { layers: number[]; outline: Vec2[] }[],
+  zones: Zone[],
+  tracks: Track[],
+  pads: Pad[],
+  vias: Via[],
+  outline: Vec2[][],
+) {
+  for (const z of [...unfilled].sort((a, b) => b.priority - a.priority)) {
+    for (const layer of z.layers) {
+      const c = z.clearance;
+      const obstacles: Obstacle[] = [];
+      for (const t of tracks) if (t.layer === layer && t.net !== z.net) obstacles.push({ kind: 'seg', a: t.a, b: t.b, r: t.width / 2 + c });
+      for (const p of pads)
+        if (p.layers.includes(layer) && (p.net !== z.net || p.net === 0)) {
+          if (p.shape === 'circle') obstacles.push({ kind: 'circle', c: p.at, r: p.size.x / 2 + c });
+          else obstacles.push({ kind: 'poly', ring: padOutline(p), r: c });
+        }
+      for (const v of vias) if (v.fromLayer <= layer && v.toLayer >= layer && v.net !== z.net) obstacles.push({ kind: 'circle', c: v.at, r: v.diameter / 2 + c });
+      for (const k of keepouts) if (k.layers.includes(layer) && k.outline.length > 2) obstacles.push({ kind: 'poly', ring: k.outline, r: 0 });
+      for (const other of zones) if (other.layer === layer && other.net !== z.net) for (const ring of other.polygons) obstacles.push({ kind: 'poly', ring, r: c });
+      const anchors = z.keepIslands
+        ? undefined
+        : [
+            ...pads.filter((p) => p.net === z.net && p.layers.includes(layer)).map((p) => p.at),
+            ...vias.filter((v) => v.net === z.net && v.fromLayer <= layer && v.toLayer >= layer).map((v) => v.at),
+            ...tracks.filter((t) => t.net === z.net && t.layer === layer).flatMap((t) => [t.a, t.b]),
+          ];
+      const rings = pourFill({ outline: z.outline, obstacles, edges: { rings: outline, clearance: Math.max(EDGE_CLEARANCE, c) }, anchors, keepIfNoneConnected: true });
+      if (!rings.length) continue;
+      const area = rings.reduce((s, r) => s + Math.abs(signedArea(r)), 0);
+      const existing = zones.find((x) => x.net === z.net && x.layer === layer);
+      if (existing) {
+        existing.polygons.push(...rings);
+        existing.area += area;
+      } else zones.push({ net: z.net, layer, polygons: rings, area });
+    }
+  }
 }

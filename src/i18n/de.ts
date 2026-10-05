@@ -32,7 +32,7 @@ export const de = {
     demoHint: 'Die Demo zeigt einen guten und einen schlechten Schaltregler, zwei Takte (einer über einem Schlitz in der GND-Fläche) und ein USB-Paar.',
     loading: 'Platine wird gelesen …',
     drop: 'Loslassen zum Öffnen',
-    examples: 'Oder eine öffentliche Platine von GitHub öffnen (wird direkt von dort geladen):',
+    examples: 'Oder eine öffentliche Platine öffnen, in jedem lesbaren Format (wird direkt von GitHub geladen):',
     steps: [
       'Platine laden (oder die Demo).',
       'Links die erkannten Takte, Datenleitungen und Schaltregler übernehmen und ihre Werte prüfen (Frequenz, Anstiegszeit).',
@@ -1156,6 +1156,9 @@ export const de = {
     'outline-open': (n: string) => `Der Platinenumriss ist nicht geschlossen (${n} offene Stücke); Rand- und Kantenregeln sind dort unsicher.`,
     'eagle-pour-computed': 'Eagle speichert nur den Umriss von Kupferflächen. Die Füllung ist hier nachgerechnet (Abstände zu fremdem Kupfer, Rand, Sperrflächen, Inseln ohne Anschluss entfernt), auf 0,1 mm genau; Wärmefallen fehlen.',
     'eagle-package-missing': (refs: string) => `Für ${refs} fehlt das Gehäuse in der Bibliothek der Datei; diese Bauteile fehlen.`,
+    'ipc2581-plane-net-unknown': (layer: string) => `Die negative Fläche ${layer} hängt an keinem Netz (keine Wärmefalle, keine Via ohne Freistellung); sie zählt als Kupfer ohne Anschluss.`,
+    'odb-plane-net-unknown': (layer: string) => `Die negative Fläche ${layer} hängt an keinem Netz (keine Via ohne Freistellung); sie zählt als Kupfer ohne Anschluss.`,
+    'kicad-zones-filled': 'Die Datei enthält Zonen ohne gespeicherte Füllung (vor dem Füllen gespeichert). Die App hat sie selbst gefüllt, mit den Abständen der Zone, 0,5 mm zum Rand und ohne Wärmefallen; in KiCad mit „Alle Zonen füllen“ (B) und Speichern wird es genau.',
     'ipc2581-no-copper': 'Die IPC-2581-Datei enthält keine Kupferdaten (nur Montage- oder Stücklisteninhalt); exportiere sie mit Kupfer- und Lagendaten.',
   },
   severity: {

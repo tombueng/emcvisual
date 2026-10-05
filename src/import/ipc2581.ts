@@ -15,11 +15,12 @@
  *
  * Coordinates are y-up in the file and become y-down; angles stay counter-clockwise.
  */
-import { rotateKicad } from '../model/geometry';
+import { chainRings, rotateKicad, signedArea } from '../model/geometry';
 import type { StackupEntry } from '../model/stackup';
 import type { Footprint, Pad, PadShape, Vec2 } from '../model/types';
 import { arcYUp, BoardBuilder, guessHeight, ImportError } from './builder';
 import { parseXml, xchild, xchildren, xfind, xnum, type XNode } from './xml';
+import { islandNets, pourFill, type Obstacle } from './pour';
 
 const UNIT: Record<string, number> = { MILLIMETER: 1, MM: 1, INCH: 25.4, MICRON: 0.001, MILS: 0.0254, MIL: 0.0254 };
 const unitOf = (n: XNode | undefined, def = 1) => UNIT[(n?.attrs.units ?? '').toUpperCase()] ?? def;
@@ -186,11 +187,34 @@ export function parseIpc2581(text: string, fileName = 'board.xml'): import('../m
 
   // --- copper features per layer -----------------------------------------------------------------
   const padByKey = new Map<string, Pad>();
+  // lettering and frames of the artwork lie on the copper layers outside the board: not copper
+  const ext = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+  for (const e of b.edges)
+    for (const q of e) {
+      ext.x0 = Math.min(ext.x0, q.x);
+      ext.y0 = Math.min(ext.y0, q.y);
+      ext.x1 = Math.max(ext.x1, q.x);
+      ext.y1 = Math.max(ext.y1, q.y);
+    }
+  const inBoard = (q: Vec2) => !Number.isFinite(ext.x0) || (q.x >= ext.x0 - 1 && q.x <= ext.x1 + 1 && q.y >= ext.y0 - 1 && q.y <= ext.y1 + 1);
   const drillLayers = layerDefs.filter((l) => /^DRILL$/i.test(l.attrs.layerFunction ?? ''));
+  // vias with their span, for the plane net of negative layers
+  const viaSpans: { at: Vec2; net: string; from: number; to: number }[] = [];
+  for (const dl of drillLayers) {
+    const span = xchild(dl, 'Span');
+    const from = layerIdx.get(span?.attrs.fromLayer ?? '') ?? 0;
+    const to = layerIdx.get(span?.attrs.toLayer ?? '') ?? copperOrig.length - 1;
+    const lf = xchildren(step, 'LayerFeature').find((x) => x.attrs.layerRef === dl.attrs.name);
+    for (const set of xchildren(lf, 'Set')) for (const h of xfind(set, 'Hole')) viaSpans.push({ at: P(h), net: set.attrs.net ?? '', from: Math.min(from, to), to: Math.max(from, to) });
+  }
   for (const lf of xchildren(step, 'LayerFeature')) {
     const layerName = lf.attrs.layerRef ?? '';
     const li = layerIdx.get(layerName);
     if (li === undefined) continue;
+    if (/^NEGATIVE$/i.test(byName.get(layerName)?.attrs.polarity ?? '')) {
+      negativePlane(b, lf, li, layerName, viaSpans, P, u, primOf, widthOf);
+      continue;
+    }
     for (const set of xchildren(lf, 'Set')) {
       const setNet = set.attrs.net;
       const via = /VIA/i.test(set.attrs.padUsage ?? '');
@@ -236,7 +260,7 @@ export function parseIpc2581(text: string, fileName = 'board.xml'): import('../m
       for (const f of xchildren(set, 'Features')) {
         const loc = xchild(f, 'Location');
         const off = loc ? P(loc) : { x: 0, y: 0 };
-        for (const shape of featureShapes(f)) addFeature(b, shape, setNet, li, off, u, widthOf);
+        for (const shape of featureShapes(f)) addFeature(b, shape, setNet, li, off, u, widthOf, inBoard);
       }
     }
   }
@@ -298,6 +322,100 @@ export function parseIpc2581(text: string, fileName = 'board.xml'): import('../m
   if (!xfind(step, 'LayerFeature').length) b.warnings.push('ipc2581-no-copper');
   const generator = xchild(xchild(root, 'LogisticHeader'), 'Person')?.attrs.enterpriseRef ?? 'IPC-2581';
   return b.finish(fileName, `IPC-2581 ${root.attrs.revision ?? ''}`.trim() || generator, { thickness: total, entries });
+}
+
+// --- negative planes ---------------------------------------------------------------------------
+
+/**
+ * A negative plane layer (polarity NEGATIVE, common for planes from Allegro): its features are
+ * the voids (clearances around foreign vias and pins, split lines, moats), everything else inside
+ * the board is copper of the plane's net. That net is not written down; it is taken from the
+ * thermal-relief or full-contact connections on the layer, else from the vias that pass through
+ * the layer without a clearance, else from the layer name (GND2 → GND).
+ */
+function negativePlane(
+  b: BoardBuilder,
+  lf: XNode,
+  li: number,
+  layerName: string,
+  vias: { at: Vec2; net: string; from: number; to: number }[],
+  P: (n: XNode | undefined) => Vec2,
+  u: number,
+  primOf: (n: XNode) => Prim | undefined,
+  widthOf: (n: XNode) => number,
+) {
+  const sets = xchildren(lf, 'Set');
+  const count = new Map<string, number>();
+  const bump = (n: string) => n && count.set(n, (count.get(n) ?? 0) + 1);
+  const connections: { at: Vec2; net: string }[] = [];
+  for (const set of sets)
+    for (const pad of xchildren(set, 'Pad')) {
+      const id = xchild(pad, 'UserPrimitiveRef')?.attrs.id ?? '';
+      if (/therm|relief|spoke|contact|^tr\d/i.test(id)) {
+        bump(set.attrs.net ?? '');
+        if (set.attrs.net) connections.push({ at: P(xchild(pad, 'Location')), net: set.attrs.net });
+      }
+    }
+  let net = [...count.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] ?? '';
+  if (!net) {
+    // vias through the layer without a clearance there belong to the plane
+    const voided = new Set<string>();
+    for (const set of sets) for (const pad of xchildren(set, 'Pad')) {
+      const at = P(xchild(pad, 'Location'));
+      voided.add(`${at.x.toFixed(2)},${at.y.toFixed(2)}`);
+    }
+    for (const v of vias)
+      if (v.from < li && v.to > li && !voided.has(`${v.at.x.toFixed(2)},${v.at.y.toFixed(2)}`)) {
+        bump(v.net);
+        if (v.net) connections.push({ at: v.at, net: v.net });
+      }
+    net = [...count.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] ?? '';
+  }
+  if (!net) {
+    const stem = layerName.replace(/[_\-\s]*\d+$/, '').toUpperCase();
+    net = b.nets.find((n) => n.toUpperCase() === stem) ?? '';
+  }
+  if (!net) b.warnings.push(`ipc2581-plane-net-unknown:${layerName}`);
+  const voids: Obstacle[] = [];
+  for (const set of sets) {
+    const own = !!net && set.attrs.net === net;
+    for (const pad of xchildren(set, 'Pad')) {
+      if (own) continue; // a connection of the plane's own net, not a void
+      const prim = primOf(pad);
+      if (!prim) continue;
+      const at = P(xchild(pad, 'Location'));
+      const angle = xnum(xchild(pad, 'Xform'), 'rotation');
+      voids.push(prim.shape === 'circle' ? { kind: 'circle', c: at, r: prim.w / 2 } : { kind: 'poly', ring: primOutline(prim, at, angle), r: 0 });
+    }
+    for (const f of xchildren(set, 'Features')) {
+      const loc = xchild(f, 'Location');
+      const off = loc ? P(loc) : { x: 0, y: 0 };
+      const shift = (q: Vec2): Vec2 => ({ x: q.x + off.x, y: q.y + off.y });
+      for (const s of featureShapes(f)) {
+        if (s.name === 'Contour') {
+          const ring = polygonPoints(xchild(s, 'Polygon'), u).map(shift);
+          const holes = xchildren(s, 'Cutout').map((h) => polygonPoints(h, u).map(shift));
+          if (ring.length > 2) voids.push({ kind: 'moat', ring, holes });
+        } else if (s.name === 'Line') {
+          voids.push({ kind: 'seg', a: shift({ x: xnum(s, 'startX') * u, y: -xnum(s, 'startY') * u }), b: shift({ x: xnum(s, 'endX') * u, y: -xnum(s, 'endY') * u }), r: widthOf(s) / 2 });
+        } else if (s.name === 'Polyline') {
+          const pts = polygonPoints(s, u).map(shift);
+          for (let k = 1; k < pts.length; k++) voids.push({ kind: 'seg', a: pts[k - 1]!, b: pts[k]!, r: widthOf(s) / 2 });
+        } else if (s.name === 'Circle') {
+          voids.push({ kind: 'circle', c: off, r: (xnum(s, 'diameter') * u) / 2 });
+        }
+      }
+    }
+  }
+  const rings = chainRings(b.edges, 0.02).rings.sort((x, y) => Math.abs(signedArea(y)) - Math.abs(signedArea(x)));
+  const outline = rings[0];
+  if (!outline) return;
+  // board cut-outs (inner profile rings) are voids too
+  for (const r of rings.slice(1)) voids.push({ kind: 'poly', ring: r, r: 0 });
+  // each island gets the net of the connections inside it (split planes)
+  const islands = pourFill({ outline, obstacles: voids });
+  islandNets(islands, connections, net).forEach((n, k) => b.zone(b.net(n), li, islands[k]!));
+  b.kinds.set(b.copper[li]!, 'power');
 }
 
 // --- primitives ----------------------------------------------------------------------------------
@@ -426,19 +544,22 @@ function featureShapes(f: XNode): XNode[] {
   return out;
 }
 
-function addFeature(b: BoardBuilder, s: XNode, netName: string | undefined, li: number, off: Vec2, u: number, widthOf: (n: XNode) => number) {
+function addFeature(b: BoardBuilder, s: XNode, netName: string | undefined, li: number, off: Vec2, u: number, widthOf: (n: XNode) => number, inBoard: (q: Vec2) => boolean) {
   const net = b.net(netName);
+  const track = (pts: Vec2[], w: number, arc = false) => {
+    if (pts.some(inBoard)) b.track(net, li, pts, w, arc);
+  };
   const shift = (p: Vec2): Vec2 => ({ x: p.x + off.x, y: p.y + off.y });
   switch (s.name) {
     case 'Line': {
       const a = shift({ x: xnum(s, 'startX') * u, y: -xnum(s, 'startY') * u });
       const e = shift({ x: xnum(s, 'endX') * u, y: -xnum(s, 'endY') * u });
-      b.track(net, li, [a, e], widthOf(s));
+      track([a, e], widthOf(s));
       return;
     }
     case 'Polyline': {
       const pts = polygonPoints(s, u).map(shift);
-      b.track(net, li, pts, widthOf(s), s.children.some((c) => c.name === 'PolyStepCurve'));
+      track(pts, widthOf(s), s.children.some((c) => c.name === 'PolyStepCurve'));
       return;
     }
     case 'Arc': {
@@ -446,13 +567,13 @@ function addFeature(b: BoardBuilder, s: XNode, netName: string | undefined, li: 
       const en = { x: xnum(s, 'endX') * u, y: xnum(s, 'endY') * u };
       const c = { x: xnum(s, 'centerX') * u, y: xnum(s, 'centerY') * u };
       const pts = arcYUp(st, en, c, s.attrs.clockwise === 'true').map((q) => shift({ x: q.x, y: -q.y }));
-      b.track(net, li, pts, widthOf(s), true);
+      track(pts, widthOf(s), true);
       return;
     }
     case 'Contour': {
       const outer = polygonPoints(xchild(s, 'Polygon'), u).map(shift);
       const holes = xchildren(s, 'Cutout').map((h) => polygonPoints(h, u).map(shift));
-      b.zone(net, li, outer, holes);
+      if (outer.some(inBoard)) b.zone(net, li, outer, holes);
       return;
     }
     case 'Circle': {

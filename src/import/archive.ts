@@ -84,3 +84,91 @@ function untar(b: Uint8Array): Map<string, Uint8Array> {
   if (!out.size) throw new ArchiveError('empty or unknown archive');
   return out;
 }
+
+/**
+ * Unix "compress" (.Z, LZW) as ODB++ jobs from Genesis/InCAM and Allegro use it for their
+ * feature files: magic 1F 9D, a flags byte (maximum code width, block mode), then variable-width
+ * codes (9 bits upwards, read in groups of eight codes as compress writes them).
+ */
+export function uncompressZ(src: Uint8Array): Uint8Array {
+  if (src.length < 3 || src[0] !== 0x1f || src[1] !== 0x9d) throw new ArchiveError('not a .Z file');
+  const maxBits = src[2]! & 0x1f;
+  const blockMode = (src[2]! & 0x80) !== 0;
+  const maxCodes = 1 << maxBits;
+  const prefix = new Int32Array(maxCodes);
+  const suffix = new Uint8Array(maxCodes);
+  for (let i = 0; i < 256; i++) suffix[i] = i;
+  const stack = new Uint8Array(maxCodes);
+  let out = new Uint8Array(Math.max(1024, src.length * 4));
+  let outLen = 0;
+  const push = (b: number) => {
+    if (outLen === out.length) {
+      const grown = new Uint8Array(out.length * 2);
+      grown.set(out);
+      out = grown;
+    }
+    out[outLen++] = b;
+  };
+  let nBits = 9;
+  let maxCode = (1 << nBits) - 1;
+  let freeEnt = blockMode ? 257 : 256;
+  let bitPos = 3 * 8;
+  const totalBits = src.length * 8;
+  let oldCode = -1;
+  let finChar = 0;
+  // codes come in groups of eight of the same width; a width change skips to the group's end
+  let groupStart = bitPos;
+  while (bitPos + nBits <= totalBits) {
+    let code = 0;
+    for (let k = 0; k < nBits; k++) {
+      const bit = bitPos + k;
+      if (src[bit >> 3]! & (1 << (bit & 7))) code |= 1 << k;
+    }
+    bitPos += nBits;
+    if (oldCode === -1) {
+      finChar = code;
+      oldCode = code;
+      push(code);
+      continue;
+    }
+    if (code === 256 && blockMode) {
+      // clear: restart the table, skip to the end of the current group of codes
+      const groupBits = nBits * 8;
+      bitPos = groupStart + Math.ceil((bitPos - groupStart) / groupBits) * groupBits;
+      groupStart = bitPos;
+      nBits = 9;
+      maxCode = (1 << nBits) - 1;
+      // the encoder starts again at 257; the next code is a literal and adds no entry here
+      freeEnt = 257;
+      oldCode = -1;
+      continue;
+    }
+    const inCode = code;
+    let sp = 0;
+    if (code >= freeEnt) {
+      stack[sp++] = finChar;
+      code = oldCode;
+    }
+    while (code >= 256) {
+      stack[sp++] = suffix[code]!;
+      code = prefix[code]!;
+    }
+    finChar = suffix[code]!;
+    stack[sp++] = finChar;
+    while (sp > 0) push(stack[--sp]!);
+    if (freeEnt < maxCodes) {
+      prefix[freeEnt] = oldCode;
+      suffix[freeEnt] = finChar;
+      freeEnt++;
+      if (freeEnt > maxCode && nBits < maxBits) {
+        const groupBits = nBits * 8;
+        bitPos = groupStart + Math.ceil((bitPos - groupStart) / groupBits) * groupBits;
+        groupStart = bitPos;
+        nBits++;
+        maxCode = nBits === maxBits ? maxCodes : (1 << nBits) - 1;
+      }
+    }
+    oldCode = inCode;
+  }
+  return out.subarray(0, outLen);
+}

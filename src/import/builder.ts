@@ -13,6 +13,7 @@
  */
 import { buildStackup, type StackupEntry } from '../model/stackup';
 import { bboxValid, chainRings, DEG, emptyBBox, growBBox, signedArea } from '../model/geometry';
+import { keyhole } from './pour';
 import type { BoardModel, Footprint, LayerKind, Pad, Track, Vec2, Via, Zone } from '../model/types';
 import { unescapeKicad } from '../kicad/parseBoard';
 
@@ -24,36 +25,7 @@ export function copperLayerNames(n: number): string[] {
   return ['F.Cu', ...Array.from({ length: n - 2 }, (_, i) => `In${i + 1}.Cu`), 'B.Cu'];
 }
 
-/**
- * Join holes into an outer ring (keyhole), the way KiCad stores filled zones: each hole is
- * spliced in at the vertex of the ring built so far that is nearest to the hole's first point,
- * with a zero-width bridge there and back. Even-odd filling and the area stay correct.
- */
-export function keyhole(outer: Vec2[], holes: Vec2[][]): Vec2[] {
-  let ring = orient(outer, true);
-  for (const h0 of holes) {
-    if (h0.length < 3) continue;
-    const h = orient(h0, false);
-    let best = 0;
-    let bestD = Infinity;
-    for (let k = 0; k < ring.length; k++) {
-      const d = Math.hypot(ring[k]!.x - h[0]!.x, ring[k]!.y - h[0]!.y);
-      if (d < bestD) {
-        bestD = d;
-        best = k;
-      }
-    }
-    const v = ring[best]!;
-    ring = [...ring.slice(0, best + 1), ...h, h[0]!, { ...v }, ...ring.slice(best + 1)];
-  }
-  return ring;
-}
-
-/** Ring with the requested winding (counter-clockwise in a y-down frame for ccw = true). */
-function orient(r: Vec2[], ccw: boolean): Vec2[] {
-  const a = signedArea(r);
-  return (a > 0) === ccw ? r : [...r].reverse();
-}
+export { keyhole } from './pour';
 
 export interface StackupInput {
   /** Total board thickness, mm (used when the dielectrics are unknown). */
