@@ -121,6 +121,44 @@
    ]
   }
  },
+ "between-connectors": {
+  "layers": 4,
+  "w": 80,
+  "h": 60,
+  "title": "Takt zwischen Steckern an gegenüberliegenden Kanten",
+  "mistake": "Ein sauber verlegter 25-MHz-Takt (50 mm) über durchgehender Massefläche, aber die Platine hat links und rechts je einen Kabelstecker. Der Rückstrom erzeugt über der Fläche eine kleine Spannung zwischen den beiden Hälften, die die Kabel gegeneinander treibt (stromgetriebener Gleichtakt).",
+  "fix": "Alle Kabelanschlüsse an eine Kante legen, schnelle Schaltungen nicht zwischen Stecker setzen.",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "cable-cm"
+   ],
+   "cm_gain_min": 6
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

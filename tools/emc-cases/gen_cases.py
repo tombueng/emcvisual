@@ -277,6 +277,27 @@ def narrow_slot(b, bad):
         b.track('SIG', b.F, [p, (p[0] + 3, p[1] + 3), (q[0] + 3, q[1] - 3), q])
 
 
+@case('between-connectors', 4, 80, 60,
+      title='Takt zwischen Steckern an gegenüberliegenden Kanten',
+      mistake='Ein sauber verlegter 25-MHz-Takt (50 mm) über durchgehender Massefläche, aber die Platine hat links und rechts je einen Kabelstecker. Der Rückstrom erzeugt über der Fläche eine kleine Spannung zwischen den beiden Hälften, die die Kabel gegeneinander treibt (stromgetriebener Gleichtakt).',
+      fix='Alle Kabelanschlüsse an eine Kante legen, schnelle Schaltungen nicht zwischen Stecker setzen.',
+      sources=[clock_source('clk', 'Takt 25 MHz', ['CLK'], 'Y1.3')],
+      expect={'bad': ['cable-cm'], 'cm_gain_min': 6})
+def between_connectors(b, bad):
+    clock_driver(b, 'Y1', 14, 30, 'CLK')
+    receiver(b, 'U1', 66, 30, 'CLK')
+    y = b.pad('Y1', '3')[1]
+    b.track('CLK', b.F, [b.pad('Y1', '3'), (19, y), (19, 30.95), (b.pad('U1', '1')[0] - 2, 30.95), b.pad('U1', '1')])
+    b.zone('GND', b.In1)
+    b.zone('+3V3', b.In2)
+    pins = {'1': '+5V', '2': 'GND', '3': 'D1', '4': 'GND'}
+    b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x04_P2.54mm_Vertical', 'J1', 'Kabel', 4, 26, pins=pins)
+    if bad:
+        b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x04_P2.54mm_Vertical', 'J2', 'Kabel', 76, 26, pins=pins)
+    else:
+        b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x04_P2.54mm_Vertical', 'J2', 'Kabel', 4, 46, pins=pins)
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

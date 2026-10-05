@@ -189,9 +189,23 @@ export const en: Strings = {
       'long-line': (d, f) => `Line without a series resistor at the driver: quarter-wave resonance at ${f(d.value)}, inside the measured range.`,
       'hot-loop': (d) => `Hot loop of about ${d.value.toFixed(0)} mm²: larger than the parts need (compact: 10–20 mm²).`,
       'no-reference': (d) => `No reference plane: the return current runs through the ground connections, the loop encloses about ${d.value.toFixed(0)} mm².`,
+      'cable-cm': (d) => {
+        const c = d.cm;
+        if (!c?.worst) return 'Common mode on cables possible.';
+        const db = c.worst.db.toFixed(0);
+        const m = c.worst.margin >= 0 ? `${c.worst.margin.toFixed(0)} dB over the limit` : `${(-c.worst.margin).toFixed(0)} dB below`;
+        const where =
+          c.mechanism === 'cable-cable'
+            ? `between the connectors ${c.sideA.join(', ')} and ${c.sideB.join(', ')}`
+            : c.mechanism === 'cable-board'
+              ? `between ${[...c.sideA, ...c.sideB].join(', ')} and the rest of the board`
+              : 'against an assumed supply cable (no connector found)';
+        return `Voltage across the plane ${where}: with cables estimated up to ${db} dBµV/m at 3 m (${m}, worst case).`;
+      },
       'edge-trace': (d) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
+    cmLine: (m: string, f: string, mech: string) => `with cables, worst case: ${m} (${f}; ${mech})`,
     farCompensated: 'Far field not quantifiable here: the solid plane under the flat loop cancels its dipole moment in the model. The measure is the loop area (see the hint).',
     detour: (d: { length: number; extraArea: number; via?: string }) =>
       d.via && d.via !== 'via'
@@ -379,6 +393,7 @@ export const en: Strings = {
       'hot-loop': 'Hot loop too large',
       'no-reference': 'Line without a reference plane',
       'edge-trace': 'Line at the edge of its plane',
+      'cable-cm': 'Cables driven against each other',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -478,6 +493,9 @@ export const en: Strings = {
       radius: (mm: string, net: string) => `No ${net} via within ${mm} mm of the signal via.`,
       longLine: (mm: string, eeff: string, f: string) => `Longest path ${mm} mm, effective permittivity ${eeff}: quarter-wave resonance (open end) at ${f}.`,
       edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm of the line run ${d} mm beside the edge of the reference plane; height above the plane ${h} mm, guide value ${min} mm (5 × height, at least 1 mm).`,
+      cm: (lp: string, f: string, v: string, mech: string) =>
+        `Partial inductance of the plane for this line: L_p ≈ ${lp} nH. At ${f} the return current produces about ${v} across it between the two plane halves (${mech}).`,
+      cmMech: { 'cable-cable': 'connectors on both sides: cable against cable', 'cable-board': 'connectors on one side only: cable against the board', 'assumed-cable': 'no connector found: one supply cable assumed' },
       noReference: (mm2: string) => `Signal and return (through the ground copper) enclose about ${mm2} mm².`,
       hotLoop: (mm2: string) => `Area of the loop along the copper: about ${mm2} mm² (compact with SOT-23/0603: 10–20 mm²).`,
       series: (list: string, tr: string, trEff: string) => `Series resistor ${list}: the edge at the load slows from ${tr} to about ${trEff} (RC of the resistor with line plus load capacitance, added in quadrature).`,
@@ -507,6 +525,7 @@ export const en: Strings = {
           : 'Cables are not in the calculation. Once cables are attached, their common-mode currents often dominate.',
       cavity: (a: string, b: string, f: string) => `The cavity between ${a} and ${b} has its first resonance at about ${f}. There the layer change can radiate far more than computed.`,
       slotCm: 'The "fixed … quieter" figure only counts the larger differential-mode loop. The return current also builds a voltage across the gap that drives both plane halves and attached cables against each other. In measurements this common-mode effect is often much larger (10 dB and more) and it is not computed here. That is why the finding is rated higher than the figure alone would give.',
+      cmWorstCase: 'The common-mode estimate assumes a resonant cable at every frequency (radiation resistance 100 Ω) and a test site with ground reflection. The method\'s source says itself: rather too high. Real cables are resonant at single frequencies only; ferrites, shielded cables with a good shield connection or a metal enclosure lower it a lot. On the other hand, gaps in the plane, which raise the voltage, and several sources at once are missing.',
       shortestPath: 'The return detour follows the shortest way through the copper. Real current spreads wider, so the extra area is rather overstated and the gain of the fix a bit smaller.',
       idealMirror: 'Over an ideal, infinite plane current and image almost cancel, so the gain of a continuous plane looks very large. Real gains are more like 10–20 dB.',
       trapezoid: 'The spectrum comes from an ideal trapezoid. Overshoot and ringing of real edges raise single harmonics; a spread-spectrum clock lowers them by several dB (neither is computed).',
@@ -518,6 +537,9 @@ export const en: Strings = {
       archambeault: 'B. Archambeault: PCB Design for Real-World EMI Control. Kluwer, 2002 (return current at reference changes, stitching capacitors).',
       bogatin: 'E. Bogatin: Signal and Power Integrity – Simplified. 3rd ed., Prentice Hall, 2018 (return paths, reference planes).',
       johnson: 'H. Johnson, M. Graham: High-Speed Digital Design. Prentice Hall, 1993 (electrically long lines, termination).',
+      hubing2003: 'T. Hubing: Printed Circuit Board EMI Source Mechanisms. IEEE EMC Symposium 2003 (voltage- and current-driven common-mode sources).',
+      hockanson1996: 'D. M. Hockanson, J. L. Drewniak, T. H. Hubing et al.: Investigation of Fundamental EMI Source Mechanisms Driving Common-Mode Radiation from Printed Circuit Boards with Attached Cables. IEEE Trans. EMC 38(4), 1996.',
+      clemson: 'Clemson University CVEL, EMC Expert System: Grid Point Voltage Algorithm and Current-Driven Common-Mode Radiation Algorithm (cecas.clemson.edu/cvel).',
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (hot loop, input capacitor).',
     },
@@ -631,6 +653,29 @@ export const en: Strings = {
         limits: () =>
           'How much the line rings depends on the driver output resistance and the receivers\' input capacitance; the app only knows them when they are entered. The fast calculation treats the line as lumped: the resonance peak is not in the numbers, the hint is a warning, not a calculation. A few ohms of series resistance can be enough when the driver itself is weak.',
         refs: ['johnson', 'bogatin'] as const,
+      },
+      cableCm: {
+        what: () =>
+          'The line sits over the plane between attached cables (or between a cable and the rest of the board) so that its return current makes the plane act like a voltage source between the two sides. Cables on both sides are driven against each other, like the two halves of a dipole antenna.',
+        why: () =>
+          'The return current under the line sets up magnetic flux, part of which also wraps the plane. That produces a small voltage along the plane, often only millivolts. Cables are good antennas, though: a few microamperes of common-mode current on 1 m of cable reach the class B limit, about a thousand times less than the current on the line. So a cleanly routed line over a solid plane can still fail the test once it sits between two cable connections.',
+        detected: () =>
+          'Method of the Clemson EMC expert system: partial inductance of the plane L_p = (4/π²)·µ0·l·h/(d1+d2) from the distance between the line\'s ends l, the height above the plane h and the board width across the line d1+d2; voltage V = ω·L_p·I per spectral line. Footprints from connector libraries or with references like J, CN, USB, X count as cables. With connectors on both sides of the line\'s midpoint: E ≈ 0.365·V at 3 m (resonant cable pair, 100 Ω); otherwise cable against the board, limited by its self-capacitance. Reported from 6 dB below the limit.',
+        fixes: () => [
+          'Put all cable connections on one edge or corner of the board: then no fast circuit sits between them (Hubing: the most important placement rule).',
+          'Do not place fast circuits (clocks, memory, switching regulators) between connectors, but away from the line between them.',
+          'Route the line shorter and closer to the plane (thinner dielectric): L_p is proportional to length and height.',
+          'Slow the edges or add a series resistor at the driver: less current in the high harmonics.',
+          'Common-mode filtering at the connectors (ferrite, common-mode choke) or shielded cables with a shield bonded all round; in a metal enclosure bond the shield to the enclosure.',
+        ],
+        avoid: () => [
+          'Do not spread connectors over opposite edges when fast circuits sit in between.',
+          'Do not split the ground plane between the connectors: every gap raises the voltage between the halves.',
+          'Do not rely on "differential mode far below the limit": common mode on cables is a separate, usually stronger path.',
+        ],
+        limits: () =>
+          'A worst-case estimate, not a measured value: cable resonance assumed at every frequency, 100 Ω radiation resistance, isotropic radiation, ground reflection. The source calls the result "rather too high" itself. Not included: gaps in the plane (they raise the voltage a lot), voltage-driven coupling to heat sinks and enclosure, differential pairs, switching-regulator loops and the sum of several sources. Which parts really carry cables, the app guesses from library and reference.',
+        refs: ['clemson', 'hockanson1996', 'hubing2003'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

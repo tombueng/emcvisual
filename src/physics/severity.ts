@@ -29,6 +29,22 @@ export function marginScore(margin: number | null): number {
  * quantifiable (a flat loop over a solid plane cancels its own dipole in the model), so the
  * area counts on its own; a known far-field margin can only raise the rating.
  */
+/**
+ * Severity of a diagnostic: the cable common-mode finding is rated by its own estimate, all
+ * others by the source's differential-mode margin.
+ */
+export function severityOf(
+  d: { kind: DiagnosticKind; value: number; gain?: { db: number }; cm?: { worst: { margin: number } | null } },
+  sourceMargin: number | null,
+): Severity {
+  return findingSeverity(marginOf(d, sourceMargin), d.gain?.db ?? null, d.kind, d.value);
+}
+
+/** The margin that counts for a diagnostic (see severityOf). */
+export function marginOf(d: { kind: DiagnosticKind; cm?: { worst: { margin: number } | null } }, sourceMargin: number | null): number | null {
+  return d.kind === 'cable-cm' ? (d.cm?.worst?.margin ?? null) : sourceMargin;
+}
+
 /** Below this far-field margin (dB) a gap under the source is left to the normal rating. */
 export const GAP_RELEVANT = -30;
 

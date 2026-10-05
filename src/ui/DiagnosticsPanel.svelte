@@ -189,6 +189,10 @@
         <div class="static">
           <span class="row"><span class="src">{s.name}</span><span class="value" class:over={s.worst >= 0}>{t.diag.margin(s.worst)}</span></span>
           <span class="hint value">{formatEng(s.at, 'Hz', 3)}{shares(s.id)}</span>
+          {#if app.commonMode[s.id]?.worst}
+            {@const cm = app.commonMode[s.id]!}
+            <span class="hint value cm" class:over={cm.worst!.margin >= 0}>{t.diag.cmLine(t.diag.margin(cm.worst!.margin), formatEng(cm.worst!.f, 'Hz', 3), t.explain.fig.cmMech[cm.mechanism])}</span>
+          {/if}
         </div>
       </li>
     {/each}

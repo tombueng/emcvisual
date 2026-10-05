@@ -14,7 +14,8 @@ import { packWithImages } from '../physics/images';
 import { fieldAt, slotMaskTable } from '../physics/biotsavart';
 import { dipoleCompensated, farField, farMoment, limitAt } from '../physics/farfield';
 import { limitsFor } from '../physics/standards';
-import { diagnoseSource } from '../physics/diagnostics';
+import { diagnoseSource, referencePlane } from '../physics/diagnostics';
+import { commonModeEstimate } from '../physics/commonMode';
 import { attributeSource } from '../physics/attribution';
 import { selectionWeight } from '../compute/composer';
 import { migrateScenario, type Scenario } from '../state/scenario';
@@ -56,6 +57,8 @@ export interface SourceCheck {
   farNote?: 'compensated';
   /** Strongest near field over all bands, dBµA/m (also for sources whose far field is not quantifiable). */
   nearMax?: number;
+  /** Common-mode estimate with cables (worst case, commonMode.ts): mechanism and worst line. */
+  cm?: { mechanism: string; margin: number; f: number; db: number; sides: [string[], string[]] };
   /** Far-field gain when fixed, dB (scope 'source': all plane gaps under the source together). */
   /** gainDb: share against ideal returns (orders the hints); aloneDb: effect of fixing only this spot. */
   hints: { kind: string; x: number; y: number; layer: string; value?: number; split?: boolean; otherNet?: string; gainDb?: number; gainScope?: 'finding' | 'source'; aloneDb?: number }[];
@@ -147,7 +150,9 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
         }
       }
       res.far = Number.isFinite(worst) ? { margin: round(worst), f: fw } : null;
-      res.hints = diagnoseSource(board, planes, frame, src, model, ctx.fMax, detours, attr.planeGapsDb)
+      const cm = commonModeEstimate(board, planes, frame, src, model, limits, (l) => referencePlane(board, planes, l));
+      if (cm?.worst) res.cm = { mechanism: cm.mechanism, margin: round(cm.worst.margin), f: cm.worst.f, db: round(cm.worst.db), sides: [cm.sideA, cm.sideB] };
+      res.hints = diagnoseSource(board, planes, frame, src, model, ctx.fMax, detours, attr.planeGapsDb, cm)
         .map((d) => ({
           kind: d.kind,
           x: round(d.at.x),

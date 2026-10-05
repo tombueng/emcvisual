@@ -9,7 +9,7 @@ import { formatEng } from '../physics/units';
 import { limitAt } from '../physics/farfield';
 import type { Diagnostic } from '../physics/diagnostics';
 import { MAX_GAIN_DB, rankFindings } from '../physics/attribution';
-import { findingSeverity, sourceSeverity, type Severity } from '../physics/severity';
+import { findingSeverity, marginOf, sourceSeverity, type Severity } from '../physics/severity';
 import type { Source } from '../physics/sources';
 
 export function diagnosticText(d: Diagnostic): string {
@@ -74,7 +74,7 @@ export const sourceColor = (id: string) => app.sources.find((s) => s.id === id)?
 export function rankedDiagnostics(): { d: Diagnostic; margin: number | null; severity: Severity }[] {
   const margins = new Map(farMargins().map((f) => [f.id, f.worst]));
   return rankFindings(
-    app.diagnostics.map((d) => ({ item: d, sourceMargin: margins.get(d.sourceId) ?? null, gainDb: d.gain?.db ?? null })),
+    app.diagnostics.map((d) => ({ item: d, sourceMargin: marginOf(d, margins.get(d.sourceId) ?? null), gainDb: d.gain?.db ?? null })),
   ).map((r) => ({ d: r.item, margin: r.sourceMargin, severity: findingSeverity(r.sourceMargin, r.item.gain?.db ?? null, r.item.kind, r.item.value) }));
 }
 

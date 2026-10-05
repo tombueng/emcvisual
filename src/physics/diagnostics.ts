@@ -11,8 +11,12 @@ import { buildSource, groundNet, type CurrentElement, type SourceModel } from '.
 import { farMoment } from './farfield';
 import type { Source } from './sources';
 import type { Detour } from './returnPaths';
+import type { CmEstimate } from './commonMode';
 
-export type DiagnosticKind = 'return-gap' | 'ref-change' | 'no-stitching' | 'long-line' | 'hot-loop' | 'no-reference' | 'edge-trace';
+/** A common-mode estimate this close to the limit (dB) or above becomes a finding. */
+export const CM_REPORT = -6;
+
+export type DiagnosticKind = 'return-gap' | 'ref-change' | 'no-stitching' | 'long-line' | 'hot-loop' | 'no-reference' | 'edge-trace' | 'cable-cm';
 
 export interface Diagnostic {
   kind: DiagnosticKind;
@@ -33,6 +37,8 @@ export interface Diagnostic {
   run?: { length: number; min: number };
   /** return-gap: the line crosses from one net's copper to another's on a split plane layer. */
   split?: boolean;
+  /** cable-cm: the common-mode estimate with cables (commonMode.ts). */
+  cm?: CmEstimate;
   otherNet?: string;
   /** Stage 2: how the return current actually goes (detour length, extra loop area, link). */
   detour?: { length: number; extraArea: number; via?: string };
@@ -95,6 +101,8 @@ export function diagnoseSource(
   detours: Detour[] = [],
   /** All plane gaps under this source together, dB (attribution.ts), for gaps without a detour. */
   planeGapsDb?: number,
+  /** Common-mode estimate with cables (commonMode.ts), when the caller has one. */
+  cm?: CmEstimate | null,
 ): Diagnostic[] {
   const out: Diagnostic[] = [];
   const layerByY = (y: number) => board.layers.find((l) => Math.abs(l.y - y) < 1e-6);
@@ -238,6 +246,11 @@ export function diagnoseSource(
         });
       }
     }
+  }
+
+  // the line drives the plane halves, and the cables on them, against each other
+  if (cm?.worst && cm.worst.margin > CM_REPORT) {
+    out.push({ kind: 'cable-cm', sourceId: src.id, at: cm.at, layer: '', plane: '', planeNet: '', value: cm.worst.db, cm });
   }
 
   // hot loop of a switching stage: larger than the parts need

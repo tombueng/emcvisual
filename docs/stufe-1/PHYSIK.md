@@ -288,6 +288,32 @@ Strukturgröße von etwa λ/4 gilt die f²-Formel nicht mehr (keine Sättigung, 
 die App kennzeichnet diesen Bereich im Spektrum nicht, die Erklärung eines Hinweises warnt,
 wenn die stärkste Linie dort liegt.
 
+## 11b. Gleichtakt mit Kabeln (Abschätzung, ungünstigster Fall)
+
+`src/physics/commonMode.ts`, nach dem EMV-Expertensystem der Clemson University
+(Grid Point Voltage Algorithm, Current-Driven Common-Mode Radiation Algorithm; Hockanson,
+Drewniak, Hubing u. a., IEEE TEMC 1996/1997). Der Rückstrom einer Leitung über der Fläche
+erzeugt eine Spannung zwischen den beiden Flächenhälften links und rechts der Leitungsmitte:
+
+    L_p = (4/π²) · µ0 · l · h / (d1 + d2),     V = ω · L_p · I
+
+(l Abstand der Leitungsenden, h Höhe über der Fläche, d1 + d2 Platinenbreite quer zur Leitung
+an ihrer Mitte). Kabelstecker auf beiden Seiten: resonantes Kabelpaar, E ≈ 2·√(30/100)·V/3 m
+= 0,365·V. Stecker nur auf einer Seite: Kabel gegen die Platine, begrenzt durch deren
+Eigenkapazität C_B ≈ 8·ε0·√(A/π) (Scheibe gleicher Fläche; die Clemson-Zusammenfassung
+schreibt ε0·A, das ist dimensional so nicht gemeint). Kein Stecker erkannt: ein
+Versorgungskabel wird angenommen. Gemeldet wird ab 6 dB unter dem Grenzwert.
+
+Prüfung: Das Rechenbeispiel aus docs/research/EMV-FEHLERKATALOG.md (50 mm Takt, h = 0,21 mm,
+60 mm Platinenbreite, 7 mA bei 75 MHz) ergibt L_p = 0,089 nH, 0,29 mV und 40,6 dBµV/m
+(`tests/commonMode.test.ts`).
+
+Grenzen (in der App bei jedem Befund genannt): Resonanz bei jeder Frequenz angenommen, daher
+eher zu hoch; keine Lücken in der Fläche (die erhöhen die Spannung), keine Differenzpaare,
+keine Schaltregler-Schleifen, keine spannungsgetriebene Kopplung an Kühlkörper und Gehäuse,
+keine Summe mehrerer Quellen. Ob ein Footprint ein Kabel trägt, wird aus Bibliothek und
+Referenz geraten.
+
 ## 11a. Diagnose-Regeln
 
 - **Rückstrompfad unterbrochen:** Unter einem waagerechten Stromelement fehlt auf der

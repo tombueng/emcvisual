@@ -21,3 +21,4 @@ tools/openems/.venv/
 tools/openems/runs/
 tools/openems/build.log
 tools/emc-cases/render/
+docs/research/sources/

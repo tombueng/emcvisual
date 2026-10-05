@@ -85,6 +85,13 @@ export function explain(d: Diagnostic): Explanation {
       k = 'edgeTrace';
       figures.push(E.fig.edgeTrace(p.run, p.gap, p.radius, fmtNum((d.run?.min ?? 0) / 5, 2)));
       break;
+    case 'cable-cm': {
+      k = 'cableCm';
+      const c = d.cm;
+      const w = c?.worst ? c.lines.find((l) => l.f === c.worst!.f) : undefined;
+      if (c && w) figures.push(E.fig.cm(fmtNum(c.lp * 1e9, 3), formatEng(w.f, 'Hz', 3), formatEng(w.v, 'V', 2), E.fig.cmMech[c.mechanism]));
+      break;
+    }
     case 'no-reference':
       k = 'noReference';
       figures.push(E.fig.noReference(p.loopArea));
@@ -159,6 +166,7 @@ export function explain(d: Diagnostic): Explanation {
     doubts.push(D.cavity(p.planeNet, p.otherNet, formatEng(C0 / (2 * L * Math.sqrt(er)), 'Hz', 2)));
   }
   if (d.kind === 'return-gap' && s && s.type !== 'loop' && s.type !== 'inductor') doubts.push(D.slotCm);
+  if (d.kind === 'cable-cm') doubts.push(D.cmWorstCase);
   if (d.detour && d.detour.length > 0) doubts.push(D.shortestPath);
   if (d.gain?.scope === 'source') doubts.push(D.idealMirror);
   if (s && (s.type === 'signal' || s.type === 'diffpair')) doubts.push(D.trapezoid);
@@ -166,9 +174,10 @@ export function explain(d: Diagnostic): Explanation {
   if (!app.planes.some((q) => q.override)) doubts.push(D.planesDetected);
 
   // --- severity -------------------------------------------------------------------------------------
-  const margin = worst ? worst.db - worst.lim : null;
+  const margin = d.kind === 'cable-cm' ? (d.cm?.worst?.margin ?? null) : worst ? worst.db - worst.lim : null;
   const severity = findingSeverity(margin, d.gain?.db ?? null, d.kind, d.value);
-  const reason = t.severity.reason(margin !== null ? `${t.diag.margin(margin)} (${formatEng(worst!.f, 'Hz', 3)})` : '–', gain ? gainText(d) : t.severity.noGain);
+  const fAt = d.kind === 'cable-cm' ? d.cm?.worst?.f : worst?.f;
+  const reason = t.severity.reason(margin !== null && fAt !== undefined ? `${t.diag.margin(margin)} (${formatEng(fAt, 'Hz', 3)})` : '–', gain ? gainText(d) : t.severity.noGain);
 
   return {
     what: text.what(p),

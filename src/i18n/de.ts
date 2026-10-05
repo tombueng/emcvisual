@@ -191,9 +191,23 @@ export const de = {
         `Heiße Schleife von etwa ${d.value.toFixed(0)} mm²: größer als die Bauteile verlangen (kompakt: 10–20 mm²).`,
       'no-reference': (d: { value: number }) =>
         `Keine Bezugsfläche: Der Rückstrom läuft über die Masseverbindungen, die Schleife umschließt etwa ${d.value.toFixed(0)} mm².`,
+      'cable-cm': (d: { cm?: { mechanism: string; sideA: string[]; sideB: string[]; worst: { db: number; margin: number } | null } }) => {
+        const c = d.cm;
+        if (!c?.worst) return 'Gleichtakt über Kabel möglich.';
+        const db = c.worst.db.toFixed(0);
+        const m = c.worst.margin >= 0 ? `${c.worst.margin.toFixed(0)} dB über Grenzwert` : `${(-c.worst.margin).toFixed(0)} dB darunter`;
+        const where =
+          c.mechanism === 'cable-cable'
+            ? `zwischen den Steckern ${c.sideA.join(', ')} und ${c.sideB.join(', ')}`
+            : c.mechanism === 'cable-board'
+              ? `zwischen ${[...c.sideA, ...c.sideB].join(', ')} und der übrigen Platine`
+              : 'gegen ein angenommenes Versorgungskabel (kein Stecker erkannt)';
+        return `Spannung über der Fläche ${where}: mit Kabeln geschätzt bis ${db} dBµV/m in 3 m (${m}, ungünstigster Fall).`;
+      },
       'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
+    cmLine: (m: string, f: string, mech: string) => `mit Kabeln, ungünstigster Fall: ${m} (${f}; ${mech})`,
     farCompensated: 'Fernfeld hier nicht bezifferbar: Die durchgehende Fläche unter der flachen Schleife hebt ihr Dipolmoment im Modell auf. Maß ist die Schleifenfläche (siehe Hinweis).',
     detour: (d: { length: number; extraArea: number; via?: string }) =>
       d.via && d.via !== 'via'
@@ -381,6 +395,7 @@ export const de = {
       'hot-loop': 'Heiße Schleife zu groß',
       'no-reference': 'Leitung ohne Bezugsfläche',
       'edge-trace': 'Leitung am Rand der Bezugsfläche',
+      'cable-cm': 'Kabel werden gegeneinander getrieben',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -480,6 +495,9 @@ export const de = {
       radius: (mm: string, net: string) => `Keine ${net}-Via im Umkreis von ${mm} mm um die Signal-Via.`,
       longLine: (mm: string, eeff: string, f: string) => `Längster Weg ${mm} mm, effektive Permittivität ${eeff}: Viertelwellen-Resonanz (offenes Ende) bei ${f}.`,
       edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm der Leitung laufen ${d} mm neben dem Rand der Bezugsfläche; Abstand zur Fläche ${h} mm, Richtwert ${min} mm (5 × Abstand, mindestens 1 mm).`,
+      cm: (lp: string, f: string, v: string, mech: string) =>
+        `Teilinduktivität der Fläche für diese Leitung: L_p ≈ ${lp} nH. Bei ${f} ergibt der Rückstrom darüber eine Spannung von etwa ${v} zwischen den beiden Flächenhälften (${mech}).`,
+      cmMech: { 'cable-cable': 'Stecker auf beiden Seiten: Kabel gegen Kabel', 'cable-board': 'Stecker nur auf einer Seite: Kabel gegen die Platine', 'assumed-cable': 'kein Stecker erkannt: ein Versorgungskabel angenommen' },
       noReference: (mm2: string) => `Hin- und Rückweg (durch das Massekupfer) umschließen etwa ${mm2} mm².`,
       hotLoop: (mm2: string) => `Fläche der Schleife entlang des Kupfers: etwa ${mm2} mm² (kompakt mit SOT-23/0603: 10–20 mm²).`,
       series: (list: string, tr: string, trEff: string) => `Serienwiderstand ${list}: Die Flanke an der Last wird von ${tr} auf etwa ${trEff} langsamer (RC aus Widerstand und Leitungs- plus Lastkapazität, quadratisch addiert).`,
@@ -509,6 +527,7 @@ export const de = {
           : 'Kabel fehlen in der Rechnung. Sobald Kabel angeschlossen sind, dominieren oft deren Gleichtaktströme.',
       cavity: (a: string, b: string, f: string) => `Der Hohlraum zwischen ${a} und ${b} hat seine erste Resonanz bei etwa ${f}. Dort kann der Lagenwechsel weit stärker abstrahlen als gerechnet.`,
       slotCm: 'Die Zahl „behoben … leiser“ rechnet nur die größere Gegentakt-Schleife. Der Rückstrom erzeugt über der Lücke aber eine Spannung, die beide Flächenhälften und angeschlossene Kabel gegeneinander treibt. Dieser Gleichtakt-Effekt ist in Messungen oft deutlich größer (10 dB und mehr) und hier nicht gerechnet. Deshalb ist der Befund höher eingestuft, als die Zahl allein ergäbe.',
+      cmWorstCase: 'Die Gleichtakt-Abschätzung nimmt bei jeder Frequenz ein resonantes Kabel an (Strahlungswiderstand 100 Ω) und einen Messplatz mit Bodenreflexion. Die Quelle der Methode sagt selbst: eher zu hoch. Reale Kabel sind nur bei einzelnen Frequenzen resonant; Ferrite, geschirmte Kabel mit gutem Schirmanschluss oder ein Metallgehäuse senken den Wert stark. Umgekehrt fehlen Lücken in der Fläche, die die Spannung erhöhen, und mehrere Quellen gleichzeitig.',
       shortestPath: 'Der Rückstrom-Umweg folgt dem kürzesten Weg durchs Kupfer. Real verteilt sich der Strom breiter, die zusätzliche Fläche ist eher überschätzt, der Gewinn der Behebung eher etwas kleiner.',
       idealMirror: 'Über einer idealen, unendlichen Fläche heben sich Strom und Spiegelstrom fast auf; deshalb erscheint der Gewinn einer durchgehenden Fläche sehr groß. Real eher 10–20 dB.',
       trapezoid: 'Das Spektrum stammt aus einem idealen Trapez. Überschwingen und Klingeln echter Flanken heben einzelne Oberwellen an; ein Takt mit Spread-Spectrum senkt sie um mehrere dB (beides nicht gerechnet).',
@@ -521,6 +540,9 @@ export const de = {
       bogatin: 'E. Bogatin: Signal and Power Integrity – Simplified. 3. Aufl., Prentice Hall, 2018 (Rückstrompfade, Bezugsflächen).',
       johnson: 'H. Johnson, M. Graham: High-Speed Digital Design. Prentice Hall, 1993 (elektrisch lange Leitungen, Terminierung).',
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (heiße Schleife, Eingangskondensator).',
+      hubing2003: 'T. Hubing: Printed Circuit Board EMI Source Mechanisms. IEEE EMC Symposium 2003 (spannungs- und stromgetriebene Gleichtaktquellen).',
+      hockanson1996: 'D. M. Hockanson, J. L. Drewniak, T. H. Hubing u. a.: Investigation of Fundamental EMI Source Mechanisms Driving Common-Mode Radiation from Printed Circuit Boards with Attached Cables. IEEE Trans. EMC 38(4), 1996.',
+      clemson: 'Clemson University CVEL, EMC Expert System: Grid Point Voltage Algorithm und Current-Driven Common-Mode Radiation Algorithm (cecas.clemson.edu/cvel).',
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
     },
     kinds: {
@@ -633,6 +655,29 @@ export const de = {
         limits: () =>
           'Wie stark die Leitung klingelt, hängt vom Ausgangswiderstand des Treibers und von der Eingangskapazität der Empfänger ab; beides kennt die App nur, wenn es eingetragen ist. Die schnelle Rechnung behandelt die Leitung als konzentriert: Die Resonanzüberhöhung ist in den Zahlen nicht enthalten, der Hinweis ist eine Warnung, keine Rechnung. Schon ein Serienwiderstand von wenigen Ohm kann reichen, wenn der Treiber selbst hochohmig ist.',
         refs: ['johnson', 'bogatin'] as const,
+      },
+      cableCm: {
+        what: () =>
+          'Die Leitung liegt über der Fläche so zwischen angeschlossenen Kabeln (oder zwischen einem Kabel und der übrigen Platine), dass ihr Rückstrom die Fläche wie eine Spannungsquelle zwischen den beiden Seiten wirken lässt. Kabel auf beiden Seiten werden dadurch gegeneinander getrieben, wie die zwei Hälften einer Dipolantenne.',
+        why: () =>
+          'Der Rückstrom unter der Leitung erzeugt einen Magnetfluss, der zum Teil auch die Fläche umschließt. Dadurch entsteht entlang der Fläche eine kleine Spannung, oft nur Millivolt. Kabel sind aber gute Antennen: Für den Grenzwert der Klasse B genügen auf 1 m Kabel einige Mikroampere Gleichtaktstrom, etwa tausendmal weniger als der Strom auf der Leitung. Deshalb kann eine sauber verlegte Leitung über durchgehender Fläche trotzdem die Prüfung kosten, sobald sie zwischen zwei Kabelanschlüssen liegt.',
+        detected: () =>
+          'Methode des Clemson-EMV-Expertensystems: Teilinduktivität der Fläche L_p = (4/π²)·µ0·l·h/(d1+d2) aus dem Abstand der Leitungsenden l, der Höhe über der Fläche h und der Platinenbreite quer zur Leitung d1+d2; Spannung V = ω·L_p·I je Spektrallinie. Als Kabel gelten Footprints aus Steckerbibliotheken oder mit Referenzen wie J, CN, USB, X. Liegen Stecker auf beiden Seiten der Leitungsmitte: E ≈ 0,365·V in 3 m (resonantes Kabelpaar, 100 Ω); sonst Kabel gegen die Platine, begrenzt durch deren Eigenkapazität. Gemeldet wird ab 6 dB unter dem Grenzwert.',
+        fixes: () => [
+          'Alle Kabelanschlüsse an einer Kante oder Ecke der Platine zusammenlegen: Dann liegt keine schnelle Schaltung zwischen ihnen (Hubing: die wichtigste Platzierungsregel).',
+          'Schnelle Schaltungen (Takte, Speicher, Schaltregler) nicht zwischen Steckern platzieren, sondern abseits der Verbindungslinie zwischen ihnen.',
+          'Die Leitung kürzer und näher an der Fläche führen (dünneres Dielektrikum): L_p ist proportional zu Länge und Höhe.',
+          'Flanken verlangsamen oder Serienwiderstand am Treiber: weniger Strom bei den hohen Oberwellen.',
+          'An den Steckern Gleichtaktfilter (Ferrit, Gleichtaktdrossel) oder geschirmte Kabel mit rundum angebundenem Schirm, in einem Metallgehäuse den Schirm mit dem Gehäuse verbinden.',
+        ],
+        avoid: () => [
+          'Stecker nicht auf gegenüberliegende Kanten verteilen, wenn dazwischen schnelle Schaltungen sitzen.',
+          'Die Massefläche nicht zwischen den Steckern teilen: Jede Lücke erhöht die Spannung zwischen den Hälften.',
+          'Sich nicht auf „Gegentakt weit unter dem Grenzwert“ verlassen: Der Gleichtakt auf Kabeln ist ein eigener, meist stärkerer Weg.',
+        ],
+        limits: () =>
+          'Eine Abschätzung für den ungünstigsten Fall, kein Messwert: Resonanz des Kabels bei jeder Frequenz angenommen, 100 Ω Strahlungswiderstand, Abstrahlung in alle Richtungen gleich, Bodenreflexion. Die Quelle nennt das Ergebnis selbst „eher zu hoch“. Nicht enthalten: Lücken in der Fläche (sie erhöhen die Spannung deutlich), spannungsgetriebene Kopplung an Kühlkörper und Gehäuse, Differenzpaare, Schaltregler-Schleifen und die Summe mehrerer Quellen. Welche Bauteile wirklich Kabel tragen, rät die App aus Bibliothek und Referenz.',
+        refs: ['clemson', 'hockanson1996', 'hubing2003'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

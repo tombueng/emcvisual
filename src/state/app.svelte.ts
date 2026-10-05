@@ -120,6 +120,8 @@ class AppState {
   hotspots = $state.raw<Hotspot[]>([]);
   /** Far-field share of return-path problems and plane gaps per source (attribution.ts). */
   attribution = $state.raw<Record<string, SourceAttribution>>({});
+  /** Common-mode estimate with cables per source (physics/commonMode.ts). */
+  commonMode = $state.raw<Record<string, import('../physics/commonMode').CmEstimate>>({});
   /** Parts data that came with the scenario: origin of values, missing parts (AI-PARTS-MANUAL.md). */
   partsInfo = $state.raw<PartsInfo>(EMPTY_PARTS_INFO);
   /** Problem view: key of the finding shown (ui/focusData.ts diagKey), or null. */

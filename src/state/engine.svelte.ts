@@ -22,8 +22,9 @@ import { attributeSource, type SourceAttribution } from '../physics/attribution'
 import { buildLibraryModels, ModelLibrary, type FileSystemDirectoryHandleLike } from '../render/modelLibrary';
 import { buildFieldLines } from '../render/fieldLinesMesh';
 import { seedsFor, type LineTraceInput, type TracedLines } from '../compute/fieldlines';
-import { diagnoseSource } from '../physics/diagnostics';
+import { diagnoseSource, referencePlane } from '../physics/diagnostics';
 import { applyReturnModel, type Detour } from '../physics/returnPaths';
+import { commonModeEstimate, type CmEstimate } from '../physics/commonMode';
 import { buildCharges } from '../physics/charges';
 import { eFieldAt } from '../physics/efield';
 import { packCharges } from '../physics/images';
@@ -733,13 +734,18 @@ class Engine {
     if (!board) return;
     const out = [];
     const detours: Record<string, Detour[]> = {};
+    const cms: Record<string, CmEstimate> = {};
     for (const s of app.sources) {
       const m = app.models[s.id];
       if (!m) continue;
       detours[s.id] = this.detourCache.get(s.id) ?? [];
       if (!s.enabled) continue;
-      out.push(...diagnoseSource(board, app.planes, this.frame, $state.snapshot(s) as Source, m, app.fMax, detours[s.id], this.attribution.get(s.id)?.planeGapsDb));
+      const snap = $state.snapshot(s) as Source;
+      const cm = commonModeEstimate(board, app.planes, this.frame, snap, m, limitsFor(app.standard, 3), (l) => referencePlane(board, app.planes, l));
+      if (cm) cms[s.id] = cm;
+      out.push(...diagnoseSource(board, app.planes, this.frame, snap, m, app.fMax, detours[s.id], this.attribution.get(s.id)?.planeGapsDb, cm));
     }
+    app.commonMode = cms;
     app.diagnostics = out;
     app.detours = detours;
     app.attribution = Object.fromEntries(app.sources.flatMap((s) => (this.attribution.has(s.id) ? [[s.id, this.attribution.get(s.id)!]] : [])));
