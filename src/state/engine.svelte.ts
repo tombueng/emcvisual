@@ -755,7 +755,7 @@ class Engine {
       out.push(...diagnoseSource(board, app.planes, this.frame, snap, m, app.fMax, detours[s.id], this.attribution.get(s.id)?.planeGapsDb, cm, io));
     }
     // board rules without a source: filters, shields, decoupling
-    if (this.ctx) out.push(...layoutRules(this.ctx));
+    if (this.ctx) out.push(...layoutRules(this.ctx, $state.snapshot(app.sources) as Source[]));
     app.commonMode = cms;
     app.diagnostics = out;
     app.detours = detours;

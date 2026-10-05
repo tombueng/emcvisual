@@ -239,6 +239,20 @@ export const de = {
       },
       'no-adjacent-plane': (d: { layer: string; plane: string; planeNet: string; value: number }) =>
         `${d.layer} hat keine angrenzende Fläche: Bezug ist ${d.planeNet} auf ${d.plane}, ${d.value.toFixed(2).replace('.', ',')} mm entfernt, mit einer Kupferlage dazwischen.`,
+      'floating-copper': (d: { value: number; nets?: string[]; copper?: { layer: string; island: boolean } }) =>
+        d.copper?.island
+          ? `Kupferinsel von ${d.nets?.[0] ?? '?'} auf ${d.copper.layer} (${d.value.toFixed(0)} mm²) ohne Pad oder Via: nicht angeschlossen.`
+          : `Kupferfläche ohne Netz auf ${d.copper?.layer ?? '?'} (${d.value.toFixed(0)} mm²): schwebt.`,
+      'heatsink-floating': (d: { parts?: string[] }) => `Kühlkörper ${d.parts?.[0] ?? '?'} ist nicht an Masse angeschlossen.`,
+      'ferrite-ground': (d: { parts?: string[]; nets?: string[] }) => `Ferrit ${d.parts?.[0] ?? '?'} sitzt zwischen zwei Massen (${(d.nets ?? []).join(' und ')}).`,
+      'pair-skew': (d: { value: number; skew?: { dt: number; tr: number } }) =>
+        `Die Beine des Paars unterscheiden sich um ${d.value.toFixed(1).replace('.', ',')} mm (Versatz ${((d.skew?.dt ?? 0) * 1e12).toFixed(0)} ps bei ${((d.skew?.tr ?? 0) * 1e12).toFixed(0)} ps Anstiegszeit).`,
+      'connector-ground': (d: { nets?: string[]; pins?: { connector: string; ground: number; fast: number; apart?: number } }) => {
+        const sig = (d.nets ?? []).slice(0, 3).join(', ') + ((d.nets?.length ?? 0) > 3 ? ' …' : '');
+        return d.pins?.apart !== undefined && d.pins.apart > 1.5 && d.pins.ground * 2 >= d.pins.fast
+          ? `${d.pins.connector}: Schnelle Signale (${sig}) liegen bis zu ${d.pins.apart.toFixed(0)} Pinpositionen vom nächsten Massepin entfernt (Richtwert: direkt daneben).`
+          : `${d.pins?.connector ?? '?'}: ${d.pins?.fast ?? 0} schnelle Signale (${sig}), aber nur ${d.pins?.ground ?? 0} Massepins (Richtwert: einer je zwei schnelle Pins, direkt daneben).`;
+      },
       'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
@@ -449,6 +463,11 @@ export const de = {
       'crystal-under': 'Leitungen unter dem Quarz',
       'sw-node': 'Schaltknoten zu groß',
       'no-adjacent-plane': 'Signallage ohne angrenzende Fläche',
+      'floating-copper': 'Kupfer ohne Anschluss',
+      'heatsink-floating': 'Kühlkörper ohne Masse',
+      'ferrite-ground': 'Ferrit zwischen zwei Massen',
+      'pair-skew': 'Differenzpaar ungleich lang',
+      'connector-ground': 'Zu wenige Massepins am Stecker',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -855,6 +874,51 @@ export const de = {
         avoid: () => ['Keine zwei Signallagen nebeneinander ohne Fläche für schnelle Signale.'],
         limits: () => 'Die größere Schleife ist im Fernfeld der Quelle schon enthalten (über den Abstand zur Fläche); der Hinweis benennt die Ursache. Erkennt die App eine Fläche nicht (Ansicht → Lagen), ist der Befund falsch.',
         refs: ['ott', 'bogatin'] as const,
+      },
+      floatingCopper: {
+        what: () => 'Eine Kupferfläche hat kein Netz oder ist als Insel ihres Netzes nirgends angeschlossen.',
+        why: () => 'Schwebendes Kupfer nimmt Felder von Leitungen in der Nähe auf und gibt sie wieder ab: Es ist ein Resonator und eine Antenne ohne Bezug. Liegt es neben schnellen Leitungen, kann es bei seiner Resonanzfrequenz deutlich abstrahlen.',
+        detected: () => 'Zonen ohne Netz ab 25 mm², und gefüllte Teilflächen eines Netzes ab 25 mm², in denen kein Pad und keine Via dieses Netzes liegt.',
+        fixes: () => ['Inseln entfernen (in KiCad: „Inseln entfernen“ in den Zoneneigenschaften) oder mit Vias an Masse anbinden.', 'Zonen ohne Netz einem Netz (meist Masse) zuordnen und vernähen.'],
+        avoid: () => ['Kein Kupfer „zur Fertigung“ schwebend neben schnelle Leitungen legen.'],
+        limits: () => 'Kupfer zum Fertigungsausgleich weit weg von Quellen ist meist harmlos; die App bewertet die Nähe zu Quellen nicht.',
+        refs: ['hubing2003'] as const,
+      },
+      heatsinkFloating: {
+        what: () => 'Ein Kühlkörper hat Befestigungspads ohne Netz: Er ist nicht an Masse angeschlossen.',
+        why: () => 'Ein schwebender Kühlkörper über einem schnellen Bauteil (Prozessor, Schalttransistor) wird kapazitiv angeregt und strahlt wie eine kleine Antenne; bei Größen über einigen Zentimetern im Bereich mehrerer hundert MHz deutlich.',
+        detected: () => 'Footprints aus Kühlkörper-Bibliotheken oder mit Referenzen HS…, deren Pads alle kein Netz haben.',
+        fixes: () => ['Kühlkörper an mehreren Punkten mit der Massefläche verbinden (Pads auf Masse, Vias direkt daneben).'],
+        avoid: () => ['Kühlkörper über schnellen Bauteilen nicht schweben lassen.'],
+        limits: () => 'Kühlkörper ohne Pads im Layout (nur Gehäuseteil) erkennt die App nicht; bei langsamen Linearreglern ist ein schwebender Kühlkörper meist unkritisch.',
+        refs: ['hubing2003'] as const,
+      },
+      ferriteGround: {
+        what: () => 'Ein Ferrit oder eine Spule verbindet zwei Massenetze, etwa GND und AGND.',
+        why: () => 'Im Rückstrompfad wirkt der Ferrit als Impedanz: Der Rückstrom erzeugt an ihm eine Spannung zwischen den beiden Massen, und genau die treibt Gleichtaktströme auf Kabel, die an den beiden Bereichen hängen.',
+        detected: () => 'Zweipolige Bauteile mit Referenz FB oder L, deren beide Netze Massenamen tragen.',
+        fixes: () => ['Massen niederohmig verbinden (durchgehende Fläche); Bereiche durch Platzierung trennen, nicht durch Bauteile im Rückweg.', 'Wenn eine Trennung gewollt ist (Messtechnik): kein schnelles Signal darf über die Grenze laufen.'],
+        avoid: () => ['Keinen Ferrit in den Rückstrompfad schneller Signale setzen.'],
+        limits: () => 'Ein Ferrit im Schirmpfad eines Steckers ist umstritten (TI empfiehlt ihn für USB, andere Quellen widersprechen); die App unterscheidet das nicht, wenn das Schirmnetz einen Massenamen trägt.',
+        refs: ['hubing2003'] as const,
+      },
+      pairSkew: {
+        what: () => 'Die beiden Leitungen eines Differenzpaars sind unterschiedlich lang.',
+        why: () => 'Der Laufzeitversatz macht aus einem Teil des Gegentaktsignals Gleichtakt: Bei der Frequenz f etwa der Anteil sin(π·f·Δt). Gleichtakt auf einem Paar strahlt viel stärker als der Gegentakt, besonders wenn das Paar auf ein Kabel geht.',
+        detected: () => 'Summe der Leitungslängen beider Netze; Versatz Δt = ΔL·√εeff/c. Gemeldet ab 5 mm Unterschied oder ab 10 % der Anstiegszeit.',
+        fixes: () => ['Längen angleichen (Mäander), und zwar nahe der Stelle, an der der Unterschied entsteht.', 'Beide Leitungen symmetrisch führen, gleiche Vias, gleiche Lagenwechsel.'],
+        avoid: () => ['Den Längenausgleich nicht weit weg von der Ursache setzen: Dazwischen läuft das Paar unsymmetrisch.'],
+        limits: () => 'Die Rechnung des Paars nimmt nur die eingestellte Amplituden-Unsymmetrie an; der Gleichtakt aus dem Versatz ist hier nur benannt, nicht gerechnet. Unsymmetrien in Stecker und Bauteilen sind nicht enthalten.',
+        refs: ['bogatin'] as const,
+      },
+      connectorGround: {
+        what: () => 'Schnelle Signale verlassen die Platine über einen Stecker, an dem Massepins fehlen oder weit weg liegen.',
+        why: () => 'Der Rückstrom der Signale auf dem Kabel braucht einen Leiter daneben. Gibt es zu wenige Massepins, laufen Hin- und Rückstrom weit auseinander, und ein Teil fließt als Gleichtakt über Schirm oder andere Leiter: Das Kabel strahlt. Clemson setzt die Antennenimpedanz des Kabels mit 80·(N+1) Ω an; jeder Massepin mehr senkt den Gleichtaktstrom.',
+        detected: () => 'Für jeden Kabelstecker mit Netzen schneller Quellen (Anstiegszeit bis 5 ns): Zahl der schnellen Pins und der Massepins (ohne Schirmlaschen) und der Abstand jedes schnellen Pins zum nächsten Massepin. Gemeldet, wenn es weniger als einen Massepin je zwei schnelle Pins gibt oder ein schneller Pin mehr als 1,5 Pinabstände vom nächsten Massepin entfernt liegt, und der Stecker nicht geschirmt angeschlossen ist.',
+        fixes: () => ['Neben jedes schnelle Signal oder Paar einen Massepin legen (z. B. Masse-Signal-Masse im Flachkabel).', 'Geschirmtes Kabel mit rundum angebundenem Schirm.'],
+        avoid: () => ['Nicht alle Massen auf einen Pin am Rand legen.'],
+        limits: () => 'Die Pinbelegung auf der Gegenseite und die Kabelart (Twisted Pair, Schirm) kennt die App nicht; ein geschirmtes Kabel mit eigenem Rückleiter kann trotzdem gut sein.',
+        refs: ['clemson', 'hubing2003'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

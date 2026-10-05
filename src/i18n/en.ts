@@ -234,6 +234,19 @@ export const en: Strings = {
         return `Switch node ${d.nets?.[0] ?? '?'}: ${(s?.area ?? 0).toFixed(0)} mm² of copper${extra ? ` (${extra})` : ''}; compact is about 40 mm².`;
       },
       'no-adjacent-plane': (d) => `${d.layer} has no adjacent plane: its reference is ${d.planeNet} on ${d.plane}, ${d.value.toFixed(2)} mm away with a copper layer in between.`,
+      'floating-copper': (d) =>
+        d.copper?.island
+          ? `Copper island of ${d.nets?.[0] ?? '?'} on ${d.copper.layer} (${d.value.toFixed(0)} mm²) without pad or via: not connected.`
+          : `Copper without a net on ${d.copper?.layer ?? '?'} (${d.value.toFixed(0)} mm²): floating.`,
+      'heatsink-floating': (d) => `Heat sink ${d.parts?.[0] ?? '?'} is not connected to ground.`,
+      'ferrite-ground': (d) => `Ferrite ${d.parts?.[0] ?? '?'} sits between two grounds (${(d.nets ?? []).join(' and ')}).`,
+      'pair-skew': (d) => `The legs of the pair differ by ${d.value.toFixed(1)} mm (skew ${((d.skew?.dt ?? 0) * 1e12).toFixed(0)} ps at ${((d.skew?.tr ?? 0) * 1e12).toFixed(0)} ps rise time).`,
+      'connector-ground': (d) => {
+        const sig = (d.nets ?? []).slice(0, 3).join(', ') + ((d.nets?.length ?? 0) > 3 ? ' …' : '');
+        return d.pins?.apart !== undefined && d.pins.apart > 1.5 && d.pins.ground * 2 >= d.pins.fast
+          ? `${d.pins.connector}: fast signals (${sig}) lie up to ${d.pins.apart.toFixed(0)} pin positions from the nearest ground pin (guide value: right next to it).`
+          : `${d.pins?.connector ?? '?'}: ${d.pins?.fast ?? 0} fast signals (${sig}), but only ${d.pins?.ground ?? 0} ground pins (guide value: one per two fast pins, right next to them).`;
+      },
       'edge-trace': (d) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
@@ -444,6 +457,11 @@ export const en: Strings = {
       'crystal-under': 'Lines under the crystal',
       'sw-node': 'Switch node too large',
       'no-adjacent-plane': 'Signal layer without adjacent plane',
+      'floating-copper': 'Copper without connection',
+      'heatsink-floating': 'Heat sink without ground',
+      'ferrite-ground': 'Ferrite between two grounds',
+      'pair-skew': 'Differential pair unequal',
+      'connector-ground': 'Too few ground pins at the connector',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -850,6 +868,51 @@ export const en: Strings = {
         avoid: () => ['No two signal layers next to each other without a plane for fast signals.'],
         limits: () => 'The larger loop is already in the source\'s far field (through the distance to the plane); the hint names the cause. If the app does not recognise a plane (View → Layers), the finding is wrong.',
         refs: ['ott', 'bogatin'] as const,
+      },
+      floatingCopper: {
+        what: () => 'A copper area has no net, or is an island of its net that is connected nowhere.',
+        why: () => 'Floating copper picks up fields of nearby lines and gives them off again: it is a resonator and an antenna without reference. Next to fast lines it can radiate noticeably at its resonance.',
+        detected: () => 'Zones without a net from 25 mm², and filled parts of a net from 25 mm² that hold no pad and no via of that net.',
+        fixes: () => ['Remove islands (in KiCad: "remove islands" in the zone properties) or connect them to ground with vias.', 'Assign zones without a net to a net (usually ground) and stitch them.'],
+        avoid: () => ['Do not put floating copper "for manufacturing" next to fast lines.'],
+        limits: () => 'Copper for manufacturing balance far from sources is usually harmless; the app does not rate the distance to sources.',
+        refs: ['hubing2003'] as const,
+      },
+      heatsinkFloating: {
+        what: () => 'A heat sink has mounting pads without a net: it is not connected to ground.',
+        why: () => 'A floating heat sink over a fast part (processor, switching transistor) is excited capacitively and radiates like a small antenna; for sizes above a few centimetres clearly in the range of several hundred MHz.',
+        detected: () => 'Footprints from heat-sink libraries or with references HS… whose pads all have no net.',
+        fixes: () => ['Connect the heat sink to the ground plane at several points (pads on ground, vias right next to them).'],
+        avoid: () => ['Do not let heat sinks over fast parts float.'],
+        limits: () => 'Heat sinks without pads in the layout (enclosure parts only) are not recognised; on slow linear regulators a floating heat sink is usually uncritical.',
+        refs: ['hubing2003'] as const,
+      },
+      ferriteGround: {
+        what: () => 'A ferrite or inductor connects two ground nets, e.g. GND and AGND.',
+        why: () => 'In the return path the ferrite acts as an impedance: the return current produces a voltage across it between the two grounds, and exactly that drives common-mode currents on cables attached to the two areas.',
+        detected: () => 'Two-terminal parts with reference FB or L whose two nets carry ground names.',
+        fixes: () => ['Connect grounds with low impedance (continuous plane); separate areas by placement, not by parts in the return path.', 'If a separation is intended (measurement equipment): no fast signal may cross the border.'],
+        avoid: () => ['Do not put a ferrite into the return path of fast signals.'],
+        limits: () => 'A ferrite in a connector\'s shield path is disputed (TI recommends it for USB, other sources disagree); the app does not tell that apart when the shield net has a ground name.',
+        refs: ['hubing2003'] as const,
+      },
+      pairSkew: {
+        what: () => 'The two lines of a differential pair have different lengths.',
+        why: () => 'The skew turns part of the differential signal into common mode: at frequency f roughly the share sin(π·f·Δt). Common mode on a pair radiates much more than the differential signal, especially when the pair goes onto a cable.',
+        detected: () => 'Sum of the track lengths of both nets; skew Δt = ΔL·√εeff/c. Reported from 5 mm difference or from 10 % of the rise time.',
+        fixes: () => ['Match the lengths (meanders), close to where the difference arises.', 'Route both lines symmetrically, same vias, same layer changes.'],
+        avoid: () => ['Do not put the length matching far from the cause: in between the pair runs unbalanced.'],
+        limits: () => 'The pair\'s calculation only assumes the set amplitude imbalance; common mode from the skew is only named here, not computed. Asymmetries in connector and parts are not included.',
+        refs: ['bogatin'] as const,
+      },
+      connectorGround: {
+        what: () => 'Fast signals leave the board through a connector where ground pins are missing or far away.',
+        why: () => 'The signals\' return current on the cable needs a conductor next to them. With too few ground pins, signal and return run far apart and part flows as common mode over the shield or other conductors: the cable radiates. Clemson takes the cable\'s antenna impedance as 80·(N+1) Ω; every extra ground pin lowers the common-mode current.',
+        detected: () => 'For each cable connector carrying nets of fast sources (rise time up to 5 ns): number of fast pins and ground pins (without shield tabs) and the distance from each fast pin to the nearest ground pin. Reported when there is less than one ground pin per two fast pins or a fast pin is more than 1.5 pitches from the nearest ground pin, and the connector is not connected as shielded.',
+        fixes: () => ['Put a ground pin next to every fast signal or pair (e.g. ground-signal-ground on a ribbon cable).', 'A shielded cable with the shield bonded all round.'],
+        avoid: () => ['Do not put all grounds on one pin at the edge.'],
+        limits: () => 'The app does not know the pinout on the other side nor the cable type (twisted pair, shield); a shielded cable with its own return can still be fine.',
+        refs: ['clemson', 'hubing2003'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

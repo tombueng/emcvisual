@@ -191,7 +191,7 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
       res.error = e instanceof SourceError ? e.message : (e as Error).message || String(e);
     }
   }
-  const rules = layoutRules(ctx).map((d) => ({ kind: d.kind, x: round(d.at.x), y: round(d.at.y), value: round(d.value), parts: d.parts ?? [], nets: d.nets ?? [] }));
+  const rules = layoutRules(ctx, scenario.sources).map((d) => ({ kind: d.kind, x: round(d.at.x), y: round(d.at.y), value: round(d.value), parts: d.parts ?? [], nets: d.nets ?? [] }));
   return {
     kind: CHECK_KIND,
     version: 1,

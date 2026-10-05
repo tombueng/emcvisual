@@ -485,6 +485,86 @@ def no_adjacent_plane(b, bad):
         b.zone('GND', b.In2)
 
 
+@case('pair-skew', 4, 60, 30,
+      title='Differenzpaar mit 12 mm Längenunterschied',
+      mistake='Die beiden Leitungen eines schnellen Differenzpaars sind 50 und 62 mm lang. Der Laufzeitversatz von rund 80 ps macht aus einem Teil des Signals Gleichtakt.',
+      fix='Längen nahe der Ursache angleichen.',
+      sources=[{'id': 'pair', 'type': 'diffpair', 'kind': 'data', 'name': 'LVDS 100 Mbit/s', 'enabled': True, 'color': '#c084fc', 'netP': 'D_P', 'netN': 'D_N', 'driverP': 'U1.1', 'driverN': 'U1.3', 'waveform': {'f0': 50e6, 'duty': 0.5, 'tr': 0.5e-9, 'amplitude': 0.4}, 'load': {'model': 'capacitive', 'cLoad': 2e-12}, 'imbalance': 0.05}],
+      expect={'bad': ['pair-skew'], 'good_absent': ['pair-skew']})
+def pair_skew(b, bad):
+    b.zone('GND', b.In1)
+    b.zone('GND', b.In2)
+    b.place('Package_TO_SOT_SMD', 'SOT-23-5', 'U1', 'DRV', 6, 15, pins={'1': 'D_P', '2': 'GND', '3': 'D_N'})
+    b.place('Package_TO_SOT_SMD', 'SOT-23-5', 'U2', 'RCV', 56, 15, rot=180, pins={'1': 'D_N', '2': 'GND', '3': 'D_P'})
+    p0, n0 = b.pad('U1', '1'), b.pad('U1', '3')
+    p1, n1 = b.pad('U2', '3'), b.pad('U2', '1')
+    b.track('D_P', b.F, [p0, (10, p0[1]), (10, 14.6), (50, 14.6), (52, p1[1]), p1])
+    if bad:
+        b.track('D_N', b.F, [n0, (10, n0[1]), (10, 15.4), (28, 15.4), (28, 21.4), (34, 21.4), (34, 15.4), (50, 15.4), (52, n1[1]), n1])
+    else:
+        b.track('D_N', b.F, [n0, (10, n0[1]), (10, 15.4), (50, 15.4), (52, n1[1]), n1])
+
+
+@case('connector-ground', 4, 60, 40,
+      title='Schnelle SPI-Leitungen auf einem Flachkabel ohne Massepins',
+      mistake='Der Takt geht über einen 6-poligen Stecker aufs Kabel; am Stecker liegt nur ein Massepin ganz am Rand. Der Rückstrom auf dem Kabel läuft weit weg vom Signal.',
+      fix='Masse neben jedes schnelle Signal (Masse-Signal-Masse).',
+      sources=[clock_source('clk', 'SPI-Takt 25 MHz', ['SCK'], 'Y1.3')],
+      expect={'bad': ['connector-ground'], 'good_absent': ['connector-ground']})
+def connector_ground(b, bad):
+    b.zone('GND', b.In1)
+    b.zone('+3V3', b.In2)
+    clock_driver(b, 'Y1', 30, 20, 'SCK')
+    pins = {'1': 'SCK', '2': 'MOSI', '3': 'MISO', '4': 'CS', '5': '+3V3', '6': 'GND'} if bad else {'1': 'GND', '2': 'SCK', '3': 'GND', '4': 'MOSI', '5': 'GND', '6': 'MISO'}
+    b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x06_P2.54mm_Vertical', 'J1', 'SPI', 54, 14, pins=pins)
+    sck = [k for k, v in pins.items() if v == 'SCK'][0]
+    b.track('SCK', b.F, [b.pad('Y1', '3'), (b.pad('J1', sck)[0] - 3, b.pad('Y1', '3')[1]), (b.pad('J1', sck)[0] - 3, b.pad('J1', sck)[1]), b.pad('J1', sck)])
+
+
+@case('floating-copper', 2, 40, 30,
+      title='Schwebende Kupferfläche neben dem Takt',
+      mistake='Auf der Bestückungsseite liegt eine Kupferfläche ohne Netz neben der Taktleitung (z. B. „zur Fertigung“ gefüllt). Sie nimmt das Feld auf und strahlt ohne Bezug.',
+      fix='Fläche an Masse anbinden und vernähen oder entfernen.',
+      sources=[],
+      expect={'bad': ['floating-copper'], 'good_absent': ['floating-copper']})
+def floating_copper(b, bad):
+    b.zone('GND', b.B)
+    clock_driver(b, 'Y1', 6, 15, 'CLK')
+    receiver(b, 'U1', 34, 15, 'CLK')
+    b.track('CLK', b.F, [b.pad('Y1', '3'), (12, b.pad('Y1', '3')[1]), (12, 15.95), (b.pad('U1', '1')[0] - 2, 15.95), b.pad('U1', '1')])
+    poly = [(12, 18), (30, 18), (30, 26), (12, 26)]
+    if bad:
+        z = b.p.ZONE(b.board)
+        z.SetLayer(b.F)
+        z.SetMinThickness(b.p.FromMM(0.25))
+        z.SetLocalClearance(b.p.FromMM(0.3))
+        z.SetIslandRemovalMode(b.p.ISLAND_REMOVAL_MODE_NEVER)
+        ol = z.Outline()
+        ol.NewOutline()
+        for x, y in poly:
+            ol.Append(b.P(x, y))
+        b.board.Add(z)
+    else:
+        b.zone('GND', b.F, poly)
+        b.via('GND', 14, 20)
+        b.via('GND', 28, 24)
+
+
+@case('ferrite-ground', 2, 40, 30,
+      title='Ferrit zwischen digitaler und analoger Masse',
+      mistake='GND und AGND sind über einen Ferrit verbunden. Der Rückstrom erzeugt an ihm eine Spannung zwischen den beiden Massen, die Kabel an beiden Bereichen gegeneinander treibt.',
+      fix='Eine durchgehende Masse; Bereiche durch Platzierung trennen.',
+      sources=[],
+      expect={'bad': ['ferrite-ground'], 'good_absent': ['ferrite-ground']})
+def ferrite_ground(b, bad):
+    b.zone('GND', b.B, [(0.5, 0.5), (20, 0.5), (20, 29.5), (0.5, 29.5)])
+    b.zone('AGND' if bad else 'GND', b.B, [(20.5, 0.5), (39.5, 0.5), (39.5, 29.5), (20.5, 29.5)])
+    if bad:
+        b.place('Inductor_SMD', 'L_0603_1608Metric', 'FB1', '600R@100MHz', 20.25, 15, rot=90, pins={'1': 'GND', '2': 'AGND'})
+    else:
+        b.place('Resistor_SMD', 'R_0603_1608Metric', 'R1', '0R', 20.25, 15, rot=90, pins={'1': 'GND', '2': 'GND'})
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

@@ -361,6 +361,121 @@
    "far_gain_min": 6
   }
  },
+ "pair-skew": {
+  "layers": 4,
+  "w": 60,
+  "h": 30,
+  "title": "Differenzpaar mit 12 mm Längenunterschied",
+  "mistake": "Die beiden Leitungen eines schnellen Differenzpaars sind 50 und 62 mm lang. Der Laufzeitversatz von rund 80 ps macht aus einem Teil des Signals Gleichtakt.",
+  "fix": "Längen nahe der Ursache angleichen.",
+  "sources": [
+   {
+    "id": "pair",
+    "type": "diffpair",
+    "kind": "data",
+    "name": "LVDS 100 Mbit/s",
+    "enabled": true,
+    "color": "#c084fc",
+    "netP": "D_P",
+    "netN": "D_N",
+    "driverP": "U1.1",
+    "driverN": "U1.3",
+    "waveform": {
+     "f0": 50000000.0,
+     "duty": 0.5,
+     "tr": 5e-10,
+     "amplitude": 0.4
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 2e-12
+    },
+    "imbalance": 0.05
+   }
+  ],
+  "expect": {
+   "bad": [
+    "pair-skew"
+   ],
+   "good_absent": [
+    "pair-skew"
+   ]
+  }
+ },
+ "connector-ground": {
+  "layers": 4,
+  "w": 60,
+  "h": 40,
+  "title": "Schnelle SPI-Leitungen auf einem Flachkabel ohne Massepins",
+  "mistake": "Der Takt geht über einen 6-poligen Stecker aufs Kabel; am Stecker liegt nur ein Massepin ganz am Rand. Der Rückstrom auf dem Kabel läuft weit weg vom Signal.",
+  "fix": "Masse neben jedes schnelle Signal (Masse-Signal-Masse).",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "SPI-Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "SCK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "connector-ground"
+   ],
+   "good_absent": [
+    "connector-ground"
+   ]
+  }
+ },
+ "floating-copper": {
+  "layers": 2,
+  "w": 40,
+  "h": 30,
+  "title": "Schwebende Kupferfläche neben dem Takt",
+  "mistake": "Auf der Bestückungsseite liegt eine Kupferfläche ohne Netz neben der Taktleitung (z. B. „zur Fertigung“ gefüllt). Sie nimmt das Feld auf und strahlt ohne Bezug.",
+  "fix": "Fläche an Masse anbinden und vernähen oder entfernen.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "floating-copper"
+   ],
+   "good_absent": [
+    "floating-copper"
+   ]
+  }
+ },
+ "ferrite-ground": {
+  "layers": 2,
+  "w": 40,
+  "h": 30,
+  "title": "Ferrit zwischen digitaler und analoger Masse",
+  "mistake": "GND und AGND sind über einen Ferrit verbunden. Der Rückstrom erzeugt an ihm eine Spannung zwischen den beiden Massen, die Kabel an beiden Bereichen gegeneinander treibt.",
+  "fix": "Eine durchgehende Masse; Bereiche durch Platzierung trennen.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "ferrite-ground"
+   ],
+   "good_absent": [
+    "ferrite-ground"
+   ]
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

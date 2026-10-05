@@ -3,7 +3,7 @@ import { de } from '../src/i18n/de';
 import { en } from '../src/i18n/en';
 import { BOARD_KINDS, type DiagnosticKind } from '../src/physics/diagnostics';
 
-const ALL: DiagnosticKind[] = ['return-gap', 'ref-change', 'no-stitching', 'long-line', 'hot-loop', 'no-reference', 'edge-trace', 'cable-cm', 'io-coupling', 'no-adjacent-plane', ...BOARD_KINDS];
+const ALL: DiagnosticKind[] = ['return-gap', 'ref-change', 'no-stitching', 'long-line', 'hot-loop', 'no-reference', 'edge-trace', 'cable-cm', 'io-coupling', 'no-adjacent-plane', 'pair-skew', 'connector-ground', ...BOARD_KINDS];
 
 describe('every finding has its texts in both languages', () => {
   for (const [lang, t] of [['de', de], ['en', en]] as const) {

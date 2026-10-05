@@ -127,6 +127,21 @@ export function explain(d: Diagnostic): Explanation {
     case 'no-adjacent-plane':
       k = 'noAdjacentPlane';
       break;
+    case 'floating-copper':
+      k = 'floatingCopper';
+      break;
+    case 'heatsink-floating':
+      k = 'heatsinkFloating';
+      break;
+    case 'ferrite-ground':
+      k = 'ferriteGround';
+      break;
+    case 'pair-skew':
+      k = 'pairSkew';
+      break;
+    case 'connector-ground':
+      k = 'connectorGround';
+      break;
     case 'no-reference':
       k = 'noReference';
       figures.push(E.fig.noReference(p.loopArea));

@@ -30,6 +30,7 @@ Regel fest. Sie ordnet die Arbeit und ist keine Prüfaussage.
 | Signallage ohne angrenzende Fläche (`no-adjacent-plane`) | Bezugsfläche nicht auf der Nachbarlage | K-10; Ott, Hartley | Regel (größere Schleife ist im Fernfeld enthalten) | `no-adjacent-plane` |
 | Heiße Schleife zu groß (`hot-loop`) | Fläche der Schleife entlang des Kupfers ab 30 mm²; ansehen ab 40, hohe Priorität ab 80 mm² | K-29; TI SLYT682, AN-1149 | berechnet (Fläche), Fernfeld über durchgehender Fläche nicht bezifferbar | `buck-loop` |
 | Kabel werden gegeneinander getrieben (`cable-cm`) | L_p = (4/π²)·µ0·l·h/(d1+d2), V = ω·L_p·I; E = 0,365·V (Kabel auf beiden Seiten) bzw. Kabel gegen Platine; gemeldet ab 6 dB unter dem Grenzwert | K-15; Clemson-Expertensystem, Hockanson/Hubing 1996 | Abschätzung (ungünstigster Fall) | `between-connectors` |
+| Differenzpaar ungleich lang (`pair-skew`) | Längendifferenz ab 5 mm oder Versatz ab 10 % der Anstiegszeit; Gleichtakt aus dem Versatz nur benannt, nicht gerechnet | K-14 | Regel | `pair-skew` |
 | Übersprechen auf eine Kabelleitung (`io-coupling`) | parallele Führung zu einer Leitung an einem Kabelstecker; M = µ0/(4π)·ln(1 + 4h²/s²), E = 40·V/Z_ant, Z_ant = 80·(N+1) Ω; höchstens zwei je Quelle | K-16; Clemson I/O-Kopplung | Abschätzung (ungünstigster Fall) | `io-crosstalk` |
 
 ## Befunde der Platine (ohne Quelle)
@@ -44,6 +45,10 @@ Regel fest. Sie ordnet die Arbeit und ist keine Prüfaussage.
 | Quarz an Rand oder Stecker (`crystal-placement`) | näher als 5 mm an der Kante oder 10 mm an einem Kabelstecker | K-17; Infineon AP24026, ST AN2867 | Regel (Richtwerte) | `crystal-edge` |
 | Leitungen unter dem Quarz (`crystal-under`) | fremde Leitungen unter dem Gehäuse, ohne Fläche dazwischen | K-17 | Regel | `crystal-under` |
 | Schaltknoten zu groß (`sw-node`) | SW-Kupfer ab 100 mm², auf mehreren Lagen, oder ab 40 mm² nah an Kante (3 mm) oder Stecker (10 mm) | K-31; LearnEMC, TI | Regel | `sw-node-area` |
+| Zu wenige Massepins am Stecker (`connector-ground`) | Stecker mit Netzen schneller Quellen (Anstieg bis 5 ns): weniger als ein Massepin je zwei schnelle Pins oder ein schneller Pin mehr als 1,5 Pinabstände vom nächsten Massepin; geschirmt angeschlossene Stecker ausgenommen; ein Befund je Stecker | K-22; Clemson (Z_ant = 80·(N+1) Ω) | Regel | `connector-ground` |
+| Kupfer ohne Anschluss (`floating-copper`) | Zone ohne Netz oder Teilfläche eines Netzes ohne Pad und Via, jeweils ab 25 mm² | K-38 | Regel | `floating-copper` |
+| Kühlkörper ohne Masse (`heatsink-floating`) | Kühlkörper-Footprint, alle Pads ohne Netz | K-37 | Regel | – |
+| Ferrit zwischen zwei Massen (`ferrite-ground`) | FB/L mit Massenamen auf beiden Seiten (im Schirmpfad umstritten) | K-26 | Regel | `ferrite-ground` |
 
 ## Was als Kabel, Versorgung oder Fläche gilt
 

@@ -18,6 +18,7 @@ import type { PhysicsContext } from './currents';
 import { lineParams } from './currents';
 import { cableConnectors, SUPPLY_NET } from './commonMode';
 import type { Diagnostic } from './diagnostics';
+import type { Source } from './sources';
 
 const GROUND = /^(\/)?(gnd|vss|0v|agnd|dgnd|pgnd|gndd|gnda|gndpwr|earth|ground|masse|chassis|shield)([_\-.]?\w*)?$/i;
 const SUPPLY = /^(\/)?(\+?\d+(\.\d+)?v\d*|\+?\d+v\d+|v\d+v\d+|vcc\w*|vdd\w*|avdd\w*|dvdd\w*|vio\w*|vbat\w*|vbus\w*|vin\w*|p\d+v\d+|v_?\d+v\d*)$/i;
@@ -39,6 +40,8 @@ export const SW_AREA = 100;
 /** Compact, but at the edge or a connector: still a finding from this size on, mm². */
 export const SW_AREA_COMPACT = 40;
 const SW_EDGE = 3;
+/** Floating copper or unconnected islands from this size, mm². */
+export const FLOAT_AREA = 25;
 const SW_CONN = 10;
 /** Package and vias of a decoupling capacitor, nH (Clemson power-bus decoupling: about 1 nH). */
 const MOUNT_NH = 1;
@@ -86,7 +89,10 @@ const base = (kind: Diagnostic['kind'], at: Vec2, value: number, parts: string[]
   dims,
 });
 
-export function layoutRules(ctx: PhysicsContext): Diagnostic[] {
+/** Sources faster than this rise time count as fast for the connector rule, s. */
+const FAST_TR = 5e-9;
+
+export function layoutRules(ctx: PhysicsContext, sources: Source[] = []): Diagnostic[] {
   const { board, planes } = ctx;
   const out: Diagnostic[] = [];
   const fpByRef = new Map(board.footprints.map((f) => [f.ref, f]));
@@ -245,7 +251,73 @@ export function layoutRules(ctx: PhysicsContext): Diagnostic[] {
       out.push({ ...base('sw-node', at, area, [], [name]), sw: { area, layers, edge: dEdge, connector: dConn } });
     }
   }
+  // --- K-22: fast signals on a connector without ground pins beside them ---------------------------
+  const fastNets = new Set<number>();
+  for (const src of sources) {
+    if (!src.enabled || src.waveform.tr > FAST_TR) continue;
+    const names = src.type === 'signal' ? src.nets : src.type === 'diffpair' ? [src.netP, src.netN] : [];
+    for (const n of names) {
+      const i = board.nets.indexOf(n);
+      if (i > 0) fastNets.add(i);
+    }
+  }
+  if (fastNets.size)
+    for (const fp of conns) {
+      const pads = fp.pads.map((pi) => board.pads[pi]!);
+      const fastPads = pads.filter((p) => fastNets.has(p.net));
+      if (!fastPads.length) continue;
+      const isShieldPad = (p: Pad) => /^(S|SH|SHIELD|MP)\d*$/i.test(p.number);
+      if (pads.some((p) => isShieldPad(p) && p.net > 0)) continue; // shielded cable: its own return
+      const groundPads = pads.filter((p) => isGround(board, p.net) && !isShieldPad(p));
+      let pitch = Infinity;
+      for (const a of pads) for (const b of pads) if (a !== b) pitch = Math.min(pitch, dist(a.at, b.at));
+      const apart = Math.max(...fastPads.map((p) => Math.min(Infinity, ...groundPads.map((g) => dist(g.at, p.at))) / (pitch || 1)));
+      const fast = new Set(fastPads.map((p) => p.number)).size;
+      const ground = new Set(groundPads.map((p) => p.number)).size;
+      if (ground * 2 < fast || apart > 1.5) {
+        const nets = [...new Set(fastPads.map((p) => board.nets[p.net] ?? ''))];
+        out.push({ ...base('connector-ground', fp.at, Number.isFinite(apart) ? apart : 99, [fp.ref], nets), pins: { connector: fp.ref, ground, fast, apart: Number.isFinite(apart) ? apart : undefined } });
+      }
+    }
+
+  // --- K-38: floating copper ------------------------------------------------------------------------
+  for (const z of board.zones) {
+    if (z.net <= 0) {
+      if (z.area > FLOAT_AREA) out.push({ ...base('floating-copper', z.polygons[0]?.[0] ?? { x: 0, y: 0 }, z.area, [], []), copper: { layer: board.layers[z.layer]?.name ?? '', island: false } });
+      continue;
+    }
+    // islands of a net's fill that hold no pad or via of the net
+    const anchors = [...board.pads.filter((p) => p.net === z.net && p.layers.includes(z.layer)).map((p) => p.at), ...board.vias.filter((v) => v.net === z.net).map((v) => v.at)];
+    for (const poly of z.polygons) {
+      const a = Math.abs(polyArea(poly));
+      if (a < FLOAT_AREA) continue;
+      if (!anchors.some((q) => inside(poly, q)))
+        out.push({ ...base('floating-copper', poly[0]!, a, [], [board.nets[z.net] ?? '']), copper: { layer: board.layers[z.layer]?.name ?? '', island: true } });
+    }
+  }
+
+  // --- K-37: heat sinks ----------------------------------------------------------------------------
+  for (const fp of board.footprints) {
+    if (!(/heatsink|heat_sink/i.test(fp.lib) || /^HS\d/i.test(fp.ref))) continue;
+    const pads = fp.pads.map((pi) => board.pads[pi]!);
+    if (pads.length && pads.every((p) => p.net <= 0)) out.push(base('heatsink-floating', fp.at, pads.length, [fp.ref], []));
+  }
+
+  // --- K-26: ferrite between two grounds ---------------------------------------------------------
+  for (const fp of board.footprints) {
+    if (!/^(FB|L)\d/i.test(fp.ref)) continue;
+    const pads = twoPin(board, fp);
+    if (!pads) continue;
+    if (pads.every((p) => isGround(board, p.net)) && pads[0].net !== pads[1].net)
+      out.push(base('ferrite-ground', fp.at, 0, [fp.ref], pads.map((p) => board.nets[p.net] ?? '')));
+  }
   return out;
+}
+
+function polyArea(p: Vec2[]): number {
+  let a = 0;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) a += (p[j]!.x + p[i]!.x) * (p[j]!.y - p[i]!.y);
+  return a / 2;
 }
 
 /** Nets of switching nodes: a pin named SW/LX/PH on a regulator, or a net named like one. */

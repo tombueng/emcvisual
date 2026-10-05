@@ -63,6 +63,11 @@ const RULE_SCORE = {
   'crystal-placement': 0.4,
   'crystal-under': 0.45,
   'sw-node': 0.45,
+  'floating-copper': 0.35,
+  'heatsink-floating': 0.45,
+  'ferrite-ground': 0.4,
+  'pair-skew': 0.4,
+  'connector-ground': 0.45,
 } as const;
 
 /**

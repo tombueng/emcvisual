@@ -37,11 +37,30 @@ export type DiagnosticKind =
   | 'crystal-placement'
   | 'crystal-under'
   | 'sw-node'
+  | 'floating-copper'
+  | 'heatsink-floating'
+  | 'ferrite-ground'
   // per source: the reference plane is not on the next layer
-  | 'no-adjacent-plane';
+  | 'no-adjacent-plane'
+  | 'pair-skew'
+  // board rule that needs the sources (layoutRules.ts)
+  | 'connector-ground';
 
 /** Findings of the board rules, not tied to a field source (sourceId ''). */
-export const BOARD_KINDS: DiagnosticKind[] = ['filter-far', 'filter-ground', 'shield-open', 'shield-weak', 'decoupling', 'crystal-placement', 'crystal-under', 'sw-node'];
+export const BOARD_KINDS: DiagnosticKind[] = [
+  'filter-far',
+  'filter-ground',
+  'shield-open',
+  'shield-weak',
+  'decoupling',
+  'crystal-placement',
+  'crystal-under',
+  'sw-node',
+  'floating-copper',
+  'heatsink-floating',
+  'ferrite-ground',
+  'connector-ground',
+];
 
 export interface Diagnostic {
   kind: DiagnosticKind;
@@ -76,6 +95,12 @@ export interface Diagnostic {
   crystal?: { edge: number; connector: number };
   /** sw-node: copper area (mm²), layers with copper, distances to edge and connector (mm). */
   sw?: { area: number; layers: number; edge: number; connector: number };
+  /** pair-skew: lengths of both legs (mm), the skew (s) and the rise time it is compared with (s). */
+  skew?: { p: number; n: number; dt: number; tr: number };
+  /** connector-ground: the connector, its ground pins and the fast pins of this source on it. */
+  pins?: { connector: string; ground: number; fast: number; apart?: number };
+  /** floating-copper: layer, and whether it is an unconnected island of a net (else no net at all). */
+  copper?: { layer: string; island: boolean };
   otherNet?: string;
   /** Stage 2: how the return current actually goes (detour length, extra loop area, link). */
   detour?: { length: number; extraArea: number; via?: string };
@@ -101,6 +126,10 @@ const DETOUR_MIN = 2;
 const STITCH_RADIUS = 3.0;
 /** Hot loops below this area are about as small as the parts allow (SOT-23/0603 class: 10–20 mm²). */
 export const HOT_LOOP_MIN = 30;
+/** A pair whose legs differ by more than this is reported, mm. */
+const SKEW_MM = 5;
+/** …or whose skew exceeds this share of the rise time. */
+const SKEW_SHARE = 0.1;
 /** A series resistor this close to the driver counts as source termination, mm. */
 const SOURCE_TERMINATION_MM = 15;
 /** Lines whose spectrum at the resonance is below this share of the strongest line are left alone. */
@@ -330,6 +359,29 @@ export function diagnoseSource(
         plane: board.layers[ref.layer]!.name,
         planeNet: board.nets[ref.net] ?? '',
         value: h,
+      });
+    }
+  }
+
+  // differential pair with a length difference: the skew turns part of the signal into common mode
+  if (src.type === 'diffpair') {
+    const len = (name: string) => {
+      const n = board.nets.indexOf(name);
+      return board.tracks.filter((tr) => tr.net === n).reduce((s, tr) => s + Math.hypot(tr.b.x - tr.a.x, tr.b.y - tr.a.y), 0);
+    };
+    const lp = len(src.netP);
+    const ln = len(src.netN);
+    const dt = (Math.abs(lp - ln) * 1e-3 * Math.sqrt(model.info.eeff || 3)) / 299_792_458;
+    if (Math.abs(lp - ln) > SKEW_MM || dt > SKEW_SHARE * src.waveform.tr) {
+      out.push({
+        kind: 'pair-skew',
+        sourceId: src.id,
+        at: toBoard(frame, model.centre[0], model.centre[2]),
+        layer: '',
+        plane: '',
+        planeNet: '',
+        value: Math.abs(lp - ln),
+        skew: { p: lp, n: ln, dt, tr: src.waveform.tr },
       });
     }
   }
