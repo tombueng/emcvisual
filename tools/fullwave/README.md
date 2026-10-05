@@ -12,4 +12,4 @@ npx tsx tools/fullwave/validate-loop.ts compare vertical-loop bad
 
 Other boards: any case with a loop source, e.g. `slot-loop bad` (writes
 `out/slot-loop-bad.*`). openEMS setup: `tools/openems/README.md`. Results and their reading:
-`docs/stufe-1/PHYSIK.md` §11.1. The output folder is not committed.
+`docs/stage-1/PHYSICS.md` §11.1. The output folder is not committed.

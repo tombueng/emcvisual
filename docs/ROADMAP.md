@@ -1,40 +1,40 @@
 # Roadmap
 
-Stand: 2026-10-04
+As of: 2026-10-04
 
-## Die Idee
+## The idea
 
-Elektromagnetische Störungen auf einer Platine sind unsichtbar. Dieses Werkzeug macht sie zu
-einer **begehbaren 3D-Welt mit Bild und Ton**: Man sieht, wo das Feld herkommt, hört die
-Takte und Schaltregler, und probiert Änderungen aus. Die Daten kommen erst aus einer
-schnellen Simulation (reine Software), später aus genaueren Simulationen und aus Messungen
-mit günstiger Hardware, alles in derselben Welt.
+Electromagnetic interference on a board is invisible. This tool turns it into
+a **walkable 3D world with picture and sound**: you see where the field comes from, hear the
+clocks and switching regulators, and try out changes. The data come first from a
+fast simulation (pure software), later from more accurate simulations and from measurements
+with inexpensive hardware, all in the same world.
 
-## Stufen
+## Stages
 
-| Stufe | Inhalt | Art | Status | Dokument |
+| Stage | Content | Type | Status | Document |
 |---|---|---|---|---|
-| **1** | Quasistatische Nahfeld-Simulation im Browser, PCB-World, Klang | Software | **umgesetzt** (M0–M7) | [stufe-1/PLAN.md](stufe-1/PLAN.md) |
-| **2** | Rückströme in Flächen, Leitungseffekte, E-Feld | Software | **in Arbeit** (2a Rückstrom-Umwege, 2b E-Feld, 2c Spulen-Streufeld fertig; Flächenlöser offen) | [zukunft/STUFE-2-FLAECHENSTROEME.md](zukunft/STUFE-2-FLAECHENSTROEME.md) |
-| **3** | Vollwelle mit openEMS, Fernfeld, Kabel | Software (+ lokale Rechnung) | **in Arbeit** (3a Offline-Workflow: Job-Export, Lauf, Import, Vergleich mit Stufe 1) | [zukunft/STUFE-3-VOLLWELLE.md](zukunft/STUFE-3-VOLLWELLE.md) |
-| **4** | Messung: 3D-Drucker als Nahfeld-Scanner | Hardware + Software | **in Arbeit** (Scanner-Kette virtuell geprüft, Treiber für OctoPrint, G-Code und tinySA ungetestet) | [zukunft/STUFE-4-MESSUNG-SCANNER.md](zukunft/STUFE-4-MESSUNG-SCANNER.md) |
-| **5** | Handsonde mit Ortung, Sonden-Array, Phase | Hardware + Software | **begonnen** (5.4 Quellen an die Messung anpassen) | [zukunft/STUFE-5-MESSUNG-ERWEITERT.md](zukunft/STUFE-5-MESSUNG-ERWEITERT.md) |
-| **W** | Querschnitt: VR, Effekte, Klang, KiCad-Kopplung, Berichte | Software | **teilweise** (KiCad-Live-Kopplung, echte 3D-Modelle aus eigenen Bibliotheken, Bericht, Geigerzähler, Isoflächen, VR experimentell, CI-Feldcheck) | [zukunft/QUERSCHNITT-WELT-UND-INTEGRATION.md](zukunft/QUERSCHNITT-WELT-UND-INTEGRATION.md) |
+| **1** | Quasi-static near-field simulation in the browser, PCB-World, sound | Software | **implemented** (M0–M7) | [stage-1/PLAN.md](stage-1/PLAN.md) |
+| **2** | Return currents in planes, line effects, E field | Software | **in progress** (2a return-current detours, 2b E field, 2c inductor stray field done; plane solver open) | [future/STAGE-2-PLANE-CURRENTS.md](future/STAGE-2-PLANE-CURRENTS.md) |
+| **3** | Full wave with openEMS, far field, cables | Software (+ local computation) | **in progress** (3a offline workflow: job export, run, import, comparison with stage 1) | [future/STAGE-3-FULL-WAVE.md](future/STAGE-3-FULL-WAVE.md) |
+| **4** | Measurement: 3D printer as a near-field scanner | Hardware + software | **in progress** (scanner chain checked virtually, drivers for OctoPrint, G-code and tinySA untested) | [future/STAGE-4-SCANNER.md](future/STAGE-4-SCANNER.md) |
+| **5** | Hand-held probe with position tracking, probe array, phase | Hardware + software | **started** (5.4 fitting the sources to the measurement) | [future/STAGE-5-ADVANCED-MEASUREMENT.md](future/STAGE-5-ADVANCED-MEASUREMENT.md) |
+| **W** | Cross-cutting: VR, effects, sound, KiCad coupling, reports | Software | **partly** (KiCad live coupling, real 3D models from your own libraries, report, Geiger counter, isosurfaces, VR experimental, CI field check) | [future/CROSS-CUTTING-WORLD-AND-INTEGRATION.md](future/CROSS-CUTTING-WORLD-AND-INTEGRATION.md) |
 
-## Abhängigkeiten
+## Dependencies
 
 ```
-Stufe 1 ──┬──► Stufe 2 ──► Stufe 3
+Stage 1 ──┬──► Stage 2 ──► Stage 3
           │                  ▲
-          ├──► Stufe 4 ──► Stufe 5
-          │        └───────────┘ (Messung kalibriert Simulation, Ersatzquellen speisen sie)
-          └──► Querschnitt W (jederzeit)
+          ├──► Stage 4 ──► Stage 5
+          │        └───────────┘ (measurement calibrates the simulation, equivalent sources feed it)
+          └──► Cross-cutting W (any time)
 ```
 
-Stufe 1 legt die gemeinsamen Grundlagen: BoardModel, Gitter, Volumenformat, Darstellung,
-Klang. Jede spätere Stufe liefert nur neue **Volumina** (mit Herkunft) oder neue
-**Stromelemente**; Darstellung und Bedienung bleiben dieselben.
+Stage 1 lays the common foundations: BoardModel, grid, volume format, rendering,
+sound. Every later stage only supplies new **volumes** (with their provenance) or new
+**current elements**; rendering and operation stay the same.
 
-## Weitere Dokumente
-- [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): nummerierte Entscheidungen mit Begründung
-- [RENAMING.md](RENAMING.md): Arbeitstitel und Plan für die spätere Umbenennung
+## Further documents
+- [DECISIONS.md](DECISIONS.md): numbered decisions with their rationale
+- [RENAMING.md](RENAMING.md): working title and plan for the later renaming

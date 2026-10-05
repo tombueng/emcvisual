@@ -1,24 +1,24 @@
-# Vollwelle mit openEMS (Stufe 3)
+# Full wave with openEMS (stage 3)
 
-Die App rechnet im Browser quasistatisch (Stufe 1–2). Für Resonanzen und Abstrahlung löst
-openEMS die Maxwell-Gleichungen im Zeitbereich (FDTD). openEMS läuft lokal, nicht im Browser:
+The app calculates quasi-statically in the browser (stages 1–2). For resonances and emission,
+openEMS solves Maxwell's equations in the time domain (FDTD). openEMS runs locally, not in the browser:
 
-1. In der App: rechter Bereich → „Ansicht“ → „Vollwelle (openEMS)“ → **Job exportieren**.
-   Es entsteht `<platine>.openems-job.json` mit Lagenaufbau, Kupfer, Vias, einem Port je
-   Quelle, den Frequenzen und dem Rechengitter der App.
-2. Rechnen:
+1. In the app: right-hand panel → "View" → "Full wave (openEMS)" → **Export job**.
+   This creates `<board>.openems-job.json` with the layer stack-up, copper, vias, one port per
+   source, the frequencies and the app's computation grid.
+2. Calculate:
 
    ```bash
-   tools/openems/.venv/bin/python tools/openems/run_job.py <platine>.openems-job.json
+   tools/openems/.venv/bin/python tools/openems/run_job.py <board>.openems-job.json
    ```
 
-   Optionen: `--res 0.8` (Zellgröße über der Platine in mm, gröber = schneller),
-   `--sources id1,id2` (nur diese Quellen), `--max-steps 100000`, `--keep` (Rechenordner
-   behalten).
-3. In der App **Ergebnis laden** (oder `<platine>.fullwave.bin` auf das Fenster ziehen) und bei
-   „Magnetfeld aus“ zwischen „Schnell“ und „Vollwelle“ umschalten.
+   Options: `--res 0.8` (cell size above the board in mm, coarser = faster),
+   `--sources id1,id2` (only these sources), `--max-steps 100000`, `--keep` (keep the
+   working folder).
+3. In the app, **Load result** (or drag `<board>.fullwave.bin` onto the window) and switch
+   "Magnetic field from" between "Fast" and "Full wave".
 
-## openEMS einrichten (Ubuntu 26.04)
+## Setting up openEMS (Ubuntu 26.04)
 
 ```bash
 sudo apt install build-essential cmake git libhdf5-dev libvtk9-dev libboost-all-dev \
@@ -30,56 +30,56 @@ cd tools/openems/src
   --python-venv-mode site --python-venv-dir "$PWD/../.venv"
 ```
 
-`src/`, `.venv/`, `runs/` und `build.log` stehen in `.gitignore`. openEMS selbst steht unter
-GPL-3.0 und wird nur lokal installiert; `run_job.py` gehört zum Projekt (0BSD).
+`src/`, `.venv/`, `runs/` and `build.log` are listed in `.gitignore`. openEMS itself is
+licensed under GPL-3.0 and is only installed locally; `run_job.py` belongs to the project (0BSD).
 
-## Was gerechnet wird
+## What is calculated
 
-- **Geometrie:** Kupfer jeder Lage als Flächen (Pads, Zonen, Via-Ringe, Leiterbahnen) und
-  zusätzlich als dünne Drähte entlang der Bahnmitten und quer durch jedes Pad. Ohne die
-  Drähte verschwinden Bahnen, die schmaler als eine Zelle sind, im Gitter. Vias und
-  durchkontaktierte Pads werden als Drähte zwischen ihren Lagen modelliert. Die Dielektrika
-  liegen zwischen den Kupferlagen; die Kupferdicke liegt weit unter der Zellgröße.
-- **Abstände bei groben Zellen:** Bei 0,5–1 mm Zellen verschwinden Abstände von 0,2 mm, und
-  Nachbarpads, Füllflächen und Lagen würden die Netze der Quelle berühren. Deshalb hat das
-  Kupfer der gerechneten Quelle Vorrang (Priorität 20). Um ihre Bahnen und Pads liegt ein
-  Freiraum von mindestens einer halben Zelle (15), der fremdes Kupfer (10) auf derselben Lage
-  zurückdrängt. Vias, die Lagen anderer Netze durchqueren, liegen auf einer eigenen
-  Gitterlinie und bekommen dort einen Freistich von mindestens ¾ Zelle. Ports und konzentrierte
-  Bauteile (17) liegen über dem Freiraum und unter dem Kupfer.
-- **Gitter:** gleichmäßig über der Platine (`res`), zusätzliche Linien an den Enden jedes
-  Ports und jedes konzentrierten Bauteils, nach außen sanft gröber (Faktor ≤ 1,4) bis 4 mm,
-  Luft 20–25 mm, Rand PML (8 Zellen).
-- **Anregung je Quelle:**
-  - Takt- und Datenleitungen: Port vom Treiber-Pad senkrecht zur Bezugsfläche (33 Ω).
-    Empfänger sind Kondensatoren mit der Lastkapazität und einem 10-kΩ-Ableitwiderstand;
-    eine Terminierung ist ein Widerstand. Serienwiderstände werden mit ihrem Wert eingesetzt.
-  - Differenzpaare: zwei Ports mit entgegengesetzter Polarität.
-  - Stromschleifen (Schaltregler): Port über dem Schalter, also zwischen den beiden Pads des
-    ICs, mit 10 Ω. Das Feld wird ohnehin auf den Port-Strom bezogen; mit weniger Widerstand
-    klingt der Schleifenstrom (L/R) so lange nach, dass der Lauf ein Vielfaches dauert.
-    Kondensatoren in der Schleife sind Kurzschlüsse.
-  - Spulen: nicht in der Vollwelle; sie bleiben aus dem schnellen Modell.
-- **Puls:** Ableitung eines Gaußpulses, also ohne Gleichanteil, mit −20 dB bei 1,5·f_max.
-  Ein gewöhnlicher Gaußpuls ab 0 Hz treibt durch jede geschlossene Schleife aus idealem Metall
-  (Flächen, Vias, Kurzschlüsse) einen bleibenden Strom. Dann klingt die Feldenergie nie ab, und
-  der Lauf endet erst an der Schrittgrenze. Abbruch bei −30 dB Restenergie.
-- **Ausgabe:** H im Frequenzbereich bei 12 Frequenzen (20 MHz bis f_max, logarithmisch), geteilt
-  durch den Port-Strom und auf das Gitter der App umgerechnet. Die App multipliziert das mit
-  dem Stromspektrum ihres eigenen Quellenmodells, Änderungen am Spektrum (Flanken, Frequenz)
-  bleiben also interaktiv. Fernfeld: stärkste Richtung in 3 m (×2 für die Bodenreflexion wie
-  in Stufe 1) je Ampere. Dazu die Eingangsimpedanz am Port.
+- **Geometry:** the copper of each layer as surfaces (pads, zones, via rings, traces) and
+  additionally as thin wires along the trace centre lines and across each pad. Without the
+  wires, traces narrower than one cell vanish in the grid. Vias and plated-through pads are
+  modelled as wires between their layers. The dielectrics lie between the copper layers;
+  the copper thickness is far below the cell size.
+- **Clearances with coarse cells:** with 0.5–1 mm cells, clearances of 0.2 mm vanish, and
+  neighbouring pads, fill areas and layers would touch the nets of the source. Therefore the
+  copper of the source being calculated has precedence (priority 20). Around its traces and
+  pads lies a keep-out of at least half a cell (15), which pushes back foreign copper (10) on
+  the same layer. Vias that pass through layers of other nets lie on a grid line of their
+  own and get an anti-pad of at least ¾ cell there. Ports and lumped components (17) lie
+  above the keep-out and below the copper.
+- **Grid:** uniform above the board (`res`), additional lines at the ends of each port and
+  each lumped component, smoothly coarser outwards (factor ≤ 1.4) up to 4 mm,
+  air 20–25 mm, boundary PML (8 cells).
+- **Excitation per source:**
+  - Clock and data lines: port from the driver pad perpendicular to the reference plane (33 Ω).
+    Receivers are capacitors with the load capacitance and a 10 kΩ bleeder resistor;
+    a termination is a resistor. Series resistors are inserted with their value.
+  - Differential pairs: two ports with opposite polarity.
+  - Current loops (switching regulators): port across the switch, i.e. between the two pads
+    of the IC, with 10 Ω. The field is referred to the port current anyway; with less
+    resistance the loop current (L/R) keeps ringing for so long that the run takes many
+    times longer. Capacitors in the loop are short circuits.
+  - Inductors: not in the full wave; they stay with the fast model.
+- **Pulse:** derivative of a Gaussian pulse, i.e. without a DC component, with −20 dB at
+  1.5·f_max. An ordinary Gaussian pulse starting at 0 Hz drives a persistent current through
+  every closed loop of ideal metal (planes, vias, short circuits). Then the field energy never
+  decays, and the run only ends at the step limit. Termination at −30 dB residual energy.
+- **Output:** H in the frequency domain at 12 frequencies (20 MHz to f_max, logarithmic),
+  divided by the port current and resampled onto the app's grid. The app multiplies this by
+  the current spectrum of its own source model, so changes to the spectrum (edges, frequency)
+  remain interactive. Far field: strongest direction at 3 m (×2 for the ground reflection as
+  in stage 1) per ampere. In addition, the input impedance at the port.
 
-Format von `*.fullwave.bin`: 8 Byte `PCBFW1\0\0`, uint32 Headerlänge, JSON-Header,
-dann int16-Blöcke in centi-dB von |H|² je A² (Quelle für Quelle, darin Frequenz für Frequenz),
-angeordnet wie die Volumina der App (`index = ix + nx·(iy + ny·iz)`).
+Format of `*.fullwave.bin`: 8 bytes `PCBFW1\0\0`, uint32 header length, JSON header,
+then int16 blocks in centi-dB of |H|² per A² (source by source, within that frequency by
+frequency), arranged like the app's volumes (`index = ix + nx·(iy + ny·iz)`).
 
-## Plausibilität prüfen
+## Checking plausibility
 
-`run_job.py` meldet je Quelle die Eingangsimpedanz bei der tiefsten Frequenz. Eine Schleife
-von einigen Millimetern hat einige nH, also Ohm bei einigen zehn MHz. Liegt |Zin| unter 0,5 Ω,
-ist der Port kurzgeschlossen: Pads, die enger als eine Zelle beieinander liegen (SOT-23 mit
-0,35 mm Spalt bei 0,5 mm Gitter), verschmelzen. Das Ergebnis ist dann ungültig; mit feinerem
-`--res` neu rechnen. Ein Abgleich der schnellen Rechnung mit der Vollwelle steht in
+`run_job.py` reports, per source, the input impedance at the lowest frequency. A loop of a
+few millimetres has a few nH, i.e. ohms (of that order) at a few tens of MHz. If |Zin| is below 0.5 Ω,
+the port is short-circuited: pads that are closer together than one cell (SOT-23 with a
+0.35 mm gap on a 0.5 mm grid) merge. The result is then invalid; recalculate with a finer
+`--res`. A comparison of the fast calculation with the full wave is in
 `tools/fullwave/README.md`.
 

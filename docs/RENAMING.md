@@ -1,78 +1,79 @@
-# Arbeitstitel und Umbenennung
+# Working title and renaming
 
-Der aktuelle Name ist ein **Arbeitstitel (Codename)**. Er soll sich später mit wenig Aufwand
-und ohne Datenverlust ersetzen lassen. Dieses Dokument beschreibt, wie das sichergestellt
-wird und was bei der Umbenennung zu tun ist.
+The current name is a **working title (codename)**. It should be replaceable later with little effort
+and without data loss. This document describes how that is ensured
+and what has to be done when renaming.
 
-Aktueller Codename: `emcvisual`
+Current codename: `emcvisual`
 
-## 1. Regeln, damit die Umbenennung billig bleibt
+## 1. Rules that keep renaming cheap
 
-1. **Eine Quelle für den Namen:** `branding.config.json`
+1. **A single source for the name:** `branding.config.json`
    ```json
    { "codename": "…", "displayName": "…", "tagline": "…", "repo": "owner/name",
      "siteUrl": "https://owner.github.io/name/", "storageNamespace": "pcbfield",
      "previousCodenames": [] }
    ```
-   Code liest den Namen nur über `src/branding.ts`. Titel, Meta-Tags, JSON-LD und der
-   statische Einführungstext in `index.html` werden beim Build per Vite-Plugin
-   (`tools/vite/seo.ts`) eingesetzt (`%APP_NAME%`, `%SITE_URL%` …); `robots.txt`,
-   `sitemap.xml` und `llms.txt` erzeugt dasselbe Plugin. Suchtexte ohne Namen stehen in
+   Code reads the name only via `src/branding.ts`. The title, meta tags, JSON-LD and the
+   static introductory text in `index.html` are filled in at build time by a Vite plugin
+   (`tools/vite/seo.ts`) (`%APP_NAME%`, `%SITE_URL%` …); the same plugin generates `robots.txt`,
+   `sitemap.xml` and `llms.txt`. Search texts without the name live in
    `seo.config.json`.
-2. **Der Name steht nur in diesen Dateien** (Erlaubnisliste in `scripts/check-codename.mjs`):
-   `branding.config.json`, `package.json`, `package-lock.json`, `README.md` (Titel),
-   `docs/RENAMING.md`. Die CI bricht ab, wenn er woanders auftaucht.
-3. **Namensneutrale Dauerformate:**
-   - `localStorage`-Schlüssel nutzen `storageNamespace` (`pcbfield`), **nicht** den Codenamen.
-     Dieser Wert wird bei einer Umbenennung **nicht** geändert.
-   - Szenario-Dateien: `"kind": "pcb-field-scenario"`, Endung `.scenario.json`.
-   - Spätere Volumen-/Messdateien ebenso mit neutralem `kind`.
-4. **Keine Namen in Bezeichnern:** keine Klassen, CSS-Präfixe, Ereignisnamen, Worker-Namen
-   oder Pfade mit dem Codenamen.
-5. **Basis-Pfad für GitHub Pages** kommt beim Build aus `GITHUB_REPOSITORY`, nicht aus einer
-   festen Zeichenkette.
+2. **The name appears only in these files** (allow list in `scripts/check-codename.mjs`):
+   `branding.config.json`, `package.json`, `package-lock.json`, `README.md` (title),
+   `docs/RENAMING.md`. CI fails if it shows up anywhere else.
+3. **Name-neutral persistent formats:**
+   - `localStorage` keys use `storageNamespace` (`pcbfield`), **not** the codename.
+     This value is **not** changed when renaming.
+   - Scenario files: `"kind": "pcb-field-scenario"`, extension `.scenario.json`.
+   - Later volume/measurement files likewise get a neutral `kind`.
+4. **No names in identifiers:** no classes, CSS prefixes, event names, worker names
+   or paths containing the codename.
+5. **The base path for GitHub Pages** comes from `GITHUB_REPOSITORY` at build time, not from a
+   fixed string.
 
-## 2. Ablauf der Umbenennung
+## 2. Renaming procedure
 
-### Schritt 1: im Repo (ein Commit)
+### Step 1: in the repo (one commit)
 ```bash
 node scripts/rename.mjs --codename neuername --display "Neuer Name" --tagline "…"
-npm install            # aktualisiert package-lock.json
-npm run check:codename # prüft: alter Name nur noch in RENAMING.md/previousCodenames
+npm install            # updates package-lock.json
+npm run check:codename # checks: old name only left in RENAMING.md/previousCodenames
 npm run check && npm test && npm run build
 ```
-Das Skript ändert `branding.config.json` (alter Name wandert nach `previousCodenames`,
-`siteUrl` folgt dem Repo-Namen),
-`package.json` (`name`), den README-Titel und gibt die manuellen Schritte unten aus.
+The script changes `branding.config.json` (the old name moves to `previousCodenames`,
+`siteUrl` follows the repo name),
+`package.json` (`name`) and the README title, and prints the manual steps below.
+(In the examples, `neuername`/"Neuer Name" stand for the new name and `alter-name` for the old one.)
 
-### Schritt 2: GitHub
+### Step 2: GitHub
 ```bash
-gh repo rename neuername          # im Repo-Verzeichnis
+gh repo rename neuername          # in the repo directory
 git remote set-url origin https://github.com/<owner>/neuername.git
 ```
-- GitHub leitet Repo-, Clone- und Release-URLs automatisch weiter.
-- **GitHub Pages leitet NICHT weiter:** `<owner>.github.io/alter-name/` liefert danach 404.
-  Gegenmittel, je nach Lage: rechtzeitig eine eigene Domain auf Pages legen (dann ist der
-  Repo-Name egal), oder unter dem alten Pfad eine Weiterleitungsseite in einem kleinen
-  Rest-Repo stehen lassen. (Erfahrung aus einer früheren Umbenennung.)
-- Repo-Beschreibung, Topics, Homepage-Link, Social-Preview anpassen.
+- GitHub redirects repo, clone and release URLs automatically.
+- **GitHub Pages does NOT redirect:** `<owner>.github.io/alter-name/` returns 404 afterwards.
+  Remedies, depending on the situation: put a custom domain on Pages in good time (then the
+  repo name does not matter), or leave a redirect page under the old path in a small
+  remnant repo. (Lesson from an earlier renaming.)
+- Update the repo description, topics, homepage link and social preview.
 
-### Schritt 3: lokal
-- Projektordner umbenennen (`~/alter-name` → `~/neuername`); Editor- und Sitzungsverweise
-  auf den Ordner anpassen.
+### Step 3: locally
+- Rename the project folder (`~/alter-name` → `~/neuername`); update editor and session references
+  to the folder.
 
-### Schritt 4: Außenflächen (zuletzt, gebündelt)
-- Links in Beiträgen, Videos, Foren; Domain; Pakete (falls es npm-Pakete gibt).
+### Step 4: external surfaces (last, all at once)
+- Links in posts, videos, forums; domain; packages (if there are npm packages).
 
-## 3. Was bei Nutzern erhalten bleibt
-- Gespeicherte Szenarien im Browser (Namensraum unverändert).
-- Szenario-Dateien (neutrales Format).
-- Lesezeichen auf die Pages-Seite **nur** mit eigener Domain oder Weiterleitungsseite (s. o.).
+## 3. What is preserved for users
+- Scenarios saved in the browser (namespace unchanged).
+- Scenario files (neutral format).
+- Bookmarks of the Pages site **only** with a custom domain or a redirect page (see above).
 
-## 4. Checkliste
-- [ ] Neuer Name entschieden (Verfügbarkeit: GitHub, Domain, Markenrecherche)
-- [ ] `scripts/rename.mjs` ausgeführt, CI grün
-- [ ] Pages-Strategie umgesetzt (Domain oder Weiterleitung)
-- [ ] `gh repo rename`, Remote angepasst
-- [ ] Ordner lokal umbenannt
-- [ ] Außenflächen angepasst
+## 4. Checklist
+- [ ] New name decided (availability: GitHub, domain, trademark search)
+- [ ] `scripts/rename.mjs` run, CI green
+- [ ] Pages strategy implemented (domain or redirect)
+- [ ] `gh repo rename` done, remote updated
+- [ ] Folder renamed locally
+- [ ] External surfaces updated

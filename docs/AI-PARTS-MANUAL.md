@@ -10,7 +10,7 @@ could not find the information**.
 
 ## Input
 
-The app exports `<board>.ai-request.json` (Diagnose tab → "Export parts data for AI"). It has:
+The app exports `<board>.ai-request.json` (Diagnostics tab → "Export parts data for AI"). It has:
 
 - `board`: file name, hash, copper layers, whether the stack-up came from the file.
 - `components`: every footprint with `ref`, `value`, `footprint`, the symbol fields KiCad copied
@@ -195,5 +195,5 @@ All sources have `id` (unique text), `name` (shown to the user), `enabled` (`tru
   what was assumed.
 - Any doubts about the identification of a part.
 
-The app shows the same: in the source editor the origin of each value, in the Diagnose tab and
+The app shows the same: in the source editor the origin of each value, in the Diagnostics tab and
 in the report the list of missing information.
