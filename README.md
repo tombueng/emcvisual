@@ -40,8 +40,11 @@ Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 - Klang: jede Quelle klingt, laut wo das Feld stark ist
 - Diagnose: unterbrochene Rückstrompfade (auch Flächentrennungen und schmale Schlitze),
   Bezugswechsel an Vias, fehlende Stitching-Vias, ungedämpfte Leitungen mit Resonanz im
-  Messbereich, Leitungen am Rand der Fläche, Leitungen ohne Bezugsfläche, zu große heiße
-  Schleifen von Schaltreglern, Gleichtakt mit Kabeln (Abschätzung im ungünstigsten Fall).
+  Messbereich, Leitungen am Rand der Fläche, Signallagen ohne angrenzende Fläche, Leitungen
+  ohne Bezugsfläche, zu große heiße Schleifen und Schaltknoten von Schaltreglern, Gleichtakt
+  mit Kabeln und Übersprechen auf Kabelleitungen (Abschätzungen im ungünstigsten Fall), Filter
+  und Schirme an Steckern, Entkopplung, Quarze an Rand oder Stecker. Alle Regeln mit Schwelle,
+  Quelle und Testplatine: [docs/REGELN.md](docs/REGELN.md).
   Die Hinweise sind nach ihrem Anteil am berechneten Fernfeld geordnet; die Zahl an der Blase
   sagt, was das Beheben nur dieser Stelle im Modell bringt. Jede Diagnose hat eine Priorität
   (rot, gelb, grün), eine Erklärung mit Rechnung, Abhilfe, Dingen, die man vermeiden sollte,
@@ -157,6 +160,7 @@ Fachreview in [docs/review/FACHREVIEW-2026-10.md](docs/review/FACHREVIEW-2026-10
 
 ## Dokumentation
 
+- [docs/REGELN.md](docs/REGELN.md): alle Befunde mit Schwelle, Herkunft, Belastbarkeit und Testplatine
 - [docs/ROADMAP.md](docs/ROADMAP.md): Stufen und Abhängigkeiten
 - [docs/stufe-1/PLAN.md](docs/stufe-1/PLAN.md): Ziele, Meilensteine, Abnahmekriterien
 - [docs/stufe-1/PHYSIK.md](docs/stufe-1/PHYSIK.md): Modell, Formeln, Gültigkeit, Literatur
