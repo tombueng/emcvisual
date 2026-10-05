@@ -29,6 +29,9 @@ export interface FocusScene {
   dispose(): void;
 }
 
+/** Cables drawn at connectors in the problem view: colour and length, mm. */
+const CABLE = new THREE.Color('#f2a33a');
+export const CABLE_LEN = 22;
 const GREY = new THREE.Color('#8a97a6');
 const PLANE_COLORS = ['#5aa0d6', '#b97ad1', '#7cc28a', '#c9b458', '#d07a7a'];
 
@@ -112,6 +115,34 @@ export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: Focu
     box.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
     box.renderOrder = 3;
     group.add(box);
+  }
+  // further nets in their own colour (the I/O line a clock couples into)
+  for (const o of spec.others ?? []) {
+    const c = new THREE.Color(o.color);
+    const m = mat(new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.5, roughness: 0.5 }));
+    for (const tr of o.pieces) {
+      const a = w(tr.a, yOf(tr.layer) + ribbonH / 2);
+      const b = w(tr.b, yOf(tr.layer) + ribbonH / 2);
+      const lenAB = a.distanceTo(b);
+      if (lenAB < 1e-6) continue;
+      const box = new THREE.Mesh(new THREE.BoxGeometry(lenAB + tr.width, ribbonH, tr.width), m);
+      box.position.copy(a).add(b).multiplyScalar(0.5);
+      box.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
+      box.renderOrder = 3;
+      group.add(box);
+    }
+  }
+  // cables leaving at the connectors: the antenna of common mode
+  const cableMat = mat(new THREE.MeshStandardMaterial({ color: CABLE, emissive: CABLE, emissiveIntensity: 0.25, roughness: 0.6, transparent: true, opacity: 0.9 }));
+  for (const cab of spec.cables ?? []) {
+    const y = yOf(0) + 1.2;
+    const a = w(cab.at, y);
+    const b = w({ x: cab.at.x + cab.dir.x * CABLE_LEN, y: cab.at.y + cab.dir.y * CABLE_LEN }, y);
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, a.distanceTo(b), 16), cableMat);
+    tube.position.copy(a).add(b).multiplyScalar(0.5);
+    tube.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    tube.renderOrder = 3;
+    group.add(tube);
   }
   const partSet = new Set(spec.parts);
   board.pads.forEach((p) => {

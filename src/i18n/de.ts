@@ -466,6 +466,11 @@ export const de = {
     bases: { datasheet: 'Datenblatt', calculated: 'berechnet', schematic: 'Schaltplan/Wert', assumed: 'Annahme' },
   },
   focus: {
+    cmLength: (mm: string) => `l = ${mm} mm (Leitungsenden)`,
+    cmWidth: (mm: string) => `d1 + d2 = ${mm} mm (Platinenbreite quer zur Leitung)`,
+    cmVoltage: (v: string, f: string) => `≈ ${v} zwischen den Flächenhälften bei ${f}`,
+    cable: (side: string, ref: string) => `Kabel ${side ? `${side} ` : ''}an ${ref}: Antenne für Gleichtakt`,
+    ioNet: (net: string, mm: string, s: string) => `${net}: ${mm} mm parallel, ${s} mm Abstand`,
     groundReach: (mm: string) => `nächste Masse ${mm} mm`,
     back: 'Zurück zur Gesamtansicht',
     open: 'In 3D erklären',
@@ -487,6 +492,8 @@ export const de = {
     noStitch: (net: string, mm: string) => `kein ${net}-Via im Umkreis von ${mm} mm`,
     longLine: (f: string) => `Resonanz bei ${f} (λ/4, ohne Abschluss)`,
     suggest: {
+      oneEdge: 'Stecker an eine Kante legen, Schaltung nicht dazwischen',
+      spaceIo: 'I/O-Leitung weg vom Takt führen, am Stecker filtern',
       shieldToGround: 'Schirm an Masse, Vias direkt am Pad',
       filterHere: 'Filter hierher, direkt an den Stecker',
       decoupleHere: (pin: string) => `Kondensator direkt an ${pin}, Vias an den Pads`,

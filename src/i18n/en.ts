@@ -461,6 +461,11 @@ export const en: Strings = {
     bases: { datasheet: 'datasheet', calculated: 'calculated', schematic: 'schematic/value', assumed: 'assumption' },
   },
   focus: {
+    cmLength: (mm: string) => `l = ${mm} mm (line ends)`,
+    cmWidth: (mm: string) => `d1 + d2 = ${mm} mm (board width across the line)`,
+    cmVoltage: (v: string, f: string) => `≈ ${v} between the plane halves at ${f}`,
+    cable: (side: string, ref: string) => `cable ${side ? `${side} ` : ''}at ${ref}: antenna for common mode`,
+    ioNet: (net: string, mm: string, s: string) => `${net}: ${mm} mm parallel, ${s} mm apart`,
     groundReach: (mm: string) => `nearest ground ${mm} mm`,
     back: 'Back to the whole board',
     open: 'Explain in 3D',
@@ -482,6 +487,8 @@ export const en: Strings = {
     noStitch: (net: string, mm: string) => `no ${net} via within ${mm} mm`,
     longLine: (f: string) => `resonance at ${f} (λ/4, unterminated)`,
     suggest: {
+      oneEdge: 'put the connectors on one edge, no circuit in between',
+      spaceIo: 'route the I/O line away from the clock, filter at the connector',
       shieldToGround: 'shield to ground, vias right at the pad',
       filterHere: 'filter here, right at the connector',
       decoupleHere: (pin: string) => `capacitor right at ${pin}, vias at the pads`,

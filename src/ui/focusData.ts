@@ -57,6 +57,27 @@ export interface FocusSpec {
   suggestions: { at: Vec2; layer: number; kind: 'cap' | 'via' | 'res' | 'area'; poly?: Vec2[]; text: string }[];
   /** Where this finding adds field (or the source's field), on a plane above the board. */
   field: FieldMap | null;
+  /** Further nets in their own colour (e.g. the I/O line a clock couples into). */
+  others?: { pieces: { a: Vec2; b: Vec2; layer: number; width: number }[]; color: string }[];
+  /** Cables drawn leaving the board at connectors: they are the antenna of common mode. */
+  cables?: { at: Vec2; dir: Vec2; text: string }[];
+}
+
+/** Colour of a victim line in the problem view. */
+const VICTIM = '#e879f9';
+
+/** A cable leaving at a connector, pointing away from the board centre. */
+function cableAt(board: BoardModel, ref: string, text: string): { at: Vec2; dir: Vec2; text: string } | null {
+  const fp = board.footprints.find((f) => f.ref === ref);
+  if (!fp) return null;
+  const c = { x: (board.bbox.x0 + board.bbox.x1) / 2, y: (board.bbox.y0 + board.bbox.y1) / 2 };
+  const dx = fp.at.x - c.x;
+  const dy = fp.at.y - c.y;
+  // out through the nearer edge
+  const toX = Math.min(fp.at.x - board.bbox.x0, board.bbox.x1 - fp.at.x);
+  const toY = Math.min(fp.at.y - board.bbox.y0, board.bbox.y1 - fp.at.y);
+  const dir = toX < toY ? { x: Math.sign(dx) || 1, y: 0 } : { x: 0, y: Math.sign(dy) || 1 };
+  return { at: fp.at, dir, text };
 }
 
 export const diagKey = (d: Diagnostic) => `${d.sourceId}|${d.kind}|${d.at.x.toFixed(2)},${d.at.y.toFixed(2)}`;
@@ -308,8 +329,55 @@ export function buildFocus(d: Diagnostic): FocusSpec | null {
     if (pi >= 0) suggestions.push({ at: { x: board.pads[pi]!.at.x + 1.2, y: board.pads[pi]!.at.y }, layer: 0, kind: 'res', text: t.focus.suggest.seriesR(model.info.driver) });
   }
 
+  // --- common mode: what drives the cables, and the cables themselves --------------------------------
+  const others: NonNullable<FocusSpec['others']> = [];
+  const cables: NonNullable<FocusSpec['cables']> = [];
+  const extra: Vec2[] = [];
+  const planeLayer = planes[0]?.layer ?? trackLayer;
+  if (d.kind === 'cable-cm' && d.cm) {
+    const c = d.cm;
+    dims.push({ a: c.ends[0], b: c.ends[1], layer: trackLayer, text: t.focus.cmLength(fmtNum(c.length, 0)) });
+    dims.push({ a: c.across[0], b: c.across[1], layer: planeLayer, text: t.focus.cmWidth(fmtNum(c.width, 0)) });
+    const w = c.worst ? c.lines.find((l) => l.f === c.worst!.f) : undefined;
+    if (w) labels.push({ at: c.at, layer: planeLayer, text: t.focus.cmVoltage(formatEng(w.v, 'V', 2), formatEng(w.f, 'Hz', 3)), kind: 'note', color: 'var(--warn)' });
+    for (const [side, refs] of [['A', c.sideA], ['B', c.sideB]] as const)
+      for (const ref of refs) {
+        const cab = cableAt(board, ref, t.focus.cable(side, ref));
+        if (cab) cables.push(cab);
+        const fi = board.footprints.findIndex((f) => f.ref === ref);
+        if (fi >= 0) parts.add(fi);
+      }
+    extra.push(...c.ends, ...c.across, ...cables.map((x) => x.at));
+    suggestions.push({ at: { x: c.at.x + 2, y: c.at.y + 2 }, layer: 0, kind: 'area', text: t.focus.suggest.oneEdge });
+  }
+  if (d.kind === 'io-coupling' && d.io) {
+    const e = d.io;
+    const ioNet = board.nets.indexOf(e.ioNet);
+    const pieces = board.tracks.filter((tr) => tr.net === ioNet).map((tr) => ({ a: tr.a, b: tr.b, layer: tr.layer, width: tr.width }));
+    others.push({ pieces, color: VICTIM });
+    labels.push({ at: e.at, layer: trackLayer, text: t.focus.ioNet(e.ioNet, fmtNum(e.length, 0), fmtNum(e.spacing, 1)), kind: 'net', color: VICTIM });
+    const cab = cableAt(board, e.connector, t.focus.cable('', e.connector));
+    if (cab) cables.push(cab);
+    const fi = board.footprints.findIndex((f) => f.ref === e.connector);
+    if (fi >= 0) parts.add(fi);
+    extra.push(e.at, ...pieces.flatMap((x) => [x.a, x.b]), ...cables.map((x) => x.at));
+    suggestions.push({ at: { x: e.at.x + 2, y: e.at.y + 2 }, layer: trackLayer, kind: 'area', text: t.focus.suggest.spaceIo });
+  }
+  // the cables' labels at their far ends
+  for (const cab of cables) {
+    const end = { x: cab.at.x + cab.dir.x * 22, y: cab.at.y + cab.dir.y * 22 };
+    labels.push({ at: end, layer: 0, text: cab.text, kind: 'note', color: '#f2a33a' });
+    extra.push(end);
+  }
+  if (extra.length) {
+    region.x0 = Math.min(region.x0, ...extra.map((p) => p.x - 4));
+    region.y0 = Math.min(region.y0, ...extra.map((p) => p.y - 4));
+    region.x1 = Math.max(region.x1, ...extra.map((p) => p.x + 4));
+    region.y1 = Math.max(region.y1, ...extra.map((p) => p.y + 4));
+  }
+
   // --- where this finding adds field --------------------------------------------------------------
   const field = computeFieldMap(s.id, detour, d.kind === 'return-gap' && !detour, region, frame);
 
-  return { key: diagKey(d), diag: d, source: s, color, nets, path, planes, parts: [...parts], vias, stitchVias, detour, region, labels, dims, areas, circles, paths, suggestions, field };
+  return { key: diagKey(d), diag: d, source: s, color, nets, path, planes, parts: [...parts], vias, stitchVias, detour, region, labels, dims, areas, circles, paths, suggestions, field, others, cables };
 }

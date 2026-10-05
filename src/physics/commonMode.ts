@@ -84,6 +84,9 @@ export interface CmEstimate {
   width: number;
   /** Midpoint of the line, board mm. */
   at: Vec2;
+  /** The line's end points, and the dividing line across the board through the midpoint. */
+  ends: [Vec2, Vec2];
+  across: [Vec2, Vec2];
   /** Per spectral line: plane voltage (V) and the estimated field at 3 m (dBµV/m). */
   lines: { f: number; v: number; db: number }[];
   /** Strongest line against the limit (null: no line in the limit range). */
@@ -190,5 +193,9 @@ export function commonModeEstimate(
     const lim = limitAt(limits, l.f);
     if (lim !== null && (!worst || l.db - lim > worst.margin)) worst = { f: l.f, db: l.db, margin: l.db - lim };
   }
-  return { sourceId: src.id, mechanism, sideA, sideB, lp, length: far, height: h, width, at: M, lines, worst };
+  const across: [Vec2, Vec2] = [
+    { x: M.x + n.x * (Number.isFinite(d1) ? d1 : width / 2), y: M.y + n.y * (Number.isFinite(d1) ? d1 : width / 2) },
+    { x: M.x - n.x * (Number.isFinite(d2) ? d2 : width / 2), y: M.y - n.y * (Number.isFinite(d2) ? d2 : width / 2) },
+  ];
+  return { sourceId: src.id, mechanism, sideA, sideB, lp, length: far, height: h, width, at: M, ends: [P, Q], across, lines, worst };
 }
