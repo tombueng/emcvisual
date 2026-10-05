@@ -77,6 +77,8 @@ export function findingSeverity(margin: number | null, gain: number | null, kind
   const m = margin !== null && (kind === 'cable-cm' || kind === 'io-coupling') ? margin - WORST_CASE : margin;
   let score = marginScore(m) * (0.35 + 0.65 * share);
   if (kind === 'hot-loop' && value !== undefined) score = Math.max(score, hotLoopScore(value));
+  // a computed effect of practically nothing (detours that cancel, a capacitor right there)
+  if (gain !== null && gain < 0.5 && (kind === 'ref-change' || kind === 'no-stitching')) score = Math.min(score, 0.25);
   // board rules have no margin of their own: a fixed priority per rule
   if (kind in RULE_SCORE) score = RULE_SCORE[kind as keyof typeof RULE_SCORE];
   // a gap in the return plane under a source with spectrum in the measured range: the voltage

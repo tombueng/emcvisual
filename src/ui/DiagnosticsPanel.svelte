@@ -99,6 +99,11 @@
     return out;
   });
   const expand = (g: string) => (expanded = new Set([...expanded, g]));
+  const levelCount = $derived.by(() => {
+    const c = { critical: 0, check: 0, minor: 0 };
+    for (const r of ranked) c[r.severity.level]++;
+    return c;
+  });
 
   // worst margin per source against the 3 m limit
   const far = $derived.by(() => {
@@ -116,6 +121,101 @@
 </script>
 
 <div class="diag">
+  <div class="section-title">{t.diag.warnings}</div>
+  {#if app.diagnostics.length === 0}
+    <p class="hint">{t.diag.none}</p>
+  {:else}
+    <p class="hint value counts">{t.diag.counts(levelCount.critical, levelCount.check, levelCount.minor)}</p>
+    <details class="how">
+      <summary>{t.diag.howRanked}</summary>
+      <p class="hint">{t.diag.rankHint} {t.severity.scale}</p>
+    </details>
+  {/if}
+  <ol class="ranked">
+    {#each rows as row, i (i)}
+      {#if row.type === 'more'}
+        <li class="more">
+          <button onclick={() => expand(row.group)}>{t.diag.moreOfKind(row.n, t.callouts.kinds[row.r.d.kind], nameOf(row.r.d.sourceId))}</button>
+        </li>
+      {:else}
+      {@const { d, margin, severity } = row.r}
+      <li style:--c={severityColor(severity.score)} data-rank={row.rank}>
+        <button onclick={() => (app.focusKey = diagKey(d))} title={t.focus.open}>
+          <span class="row"><span class="src"><span class="dot" style:background={colorOf(d.sourceId)}></span>{nameOf(d.sourceId)}</span><span class="sev" style:--s={severityColor(severity.score)}>{t.severity[severity.level]}</span></span>
+          {#if margin !== null}<span class="value hint" class:over={margin >= 0}>{t.diag.margin(margin)}</span>{/if}
+          <span class:warn={d.kind !== 'long-line'}>{diagnosticText(d)}</span>
+          {#if d.gain}<span class="gain value">{gainText(d)}</span>{/if}
+        </button>
+      </li>
+      {/if}
+    {/each}
+  </ol>
+
+  <div class="section-title">{t.diag.far(standardShort())}</div>
+  <ul>
+    {#each far as s (s.id)}
+      <li style:--c={s.color}>
+        <div class="static">
+          <span class="row"><span class="src">{s.name}</span><span class="value" class:over={s.worst >= 0}>{t.diag.margin(s.worst)}</span></span>
+          <span class="hint value">{formatEng(s.at, 'Hz', 3)}{shares(s.id)}</span>
+          {#if app.commonMode[s.id]?.worst}
+            {@const cm = app.commonMode[s.id]!}
+            <span class="hint value cm" class:over={cm.worst!.margin >= 0}>{t.diag.cmLine(t.diag.margin(cm.worst!.margin), formatEng(cm.worst!.f, 'Hz', 3), t.explain.fig.cmMech[cm.mechanism])}</span>
+          {/if}
+        </div>
+      </li>
+    {/each}
+    {#each compensated as s (s.id)}
+      <li style:--c={s.color}>
+        <div class="static">
+          <span class="row"><span class="src">{s.name}</span><span class="value">–</span></span>
+          <span class="hint">{t.diag.farCompensated}</span>
+        </div>
+      </li>
+    {/each}
+  </ul>
+  <p class="hint">{t.diag.farHint}</p>
+
+  <div class="section-title">{t.diag.hotspots}</div>
+  {#if app.hotspots.length === 0}
+    <p class="hint">{t.diag.hotspotsNone}</p>
+  {/if}
+  <ul>
+    {#each app.hotspots as h, i (i)}
+      <li style:--c={colorOf(h.sourceId)}>
+        <button onclick={() => goToWorld(h.x, h.z)} title={t.diag.goTo}>
+          <span class="row"><span class="src">{nameOf(h.sourceId)}</span><span class="value db">{h.db.toFixed(0)} {t.units.dBuAm}</span></span>
+          {#if h.nets.length || h.parts.length}
+            <span class="hint">{t.diag.near}: {[...h.parts, ...h.nets].join(', ')}</span>
+          {/if}
+        </button>
+      </li>
+    {/each}
+  </ul>
+
+  <div class="section-title">{t.standards.title}</div>
+  <select
+    class="standard"
+    aria-label={t.standards.pick}
+    value={app.standard}
+    onchange={(e) => {
+      app.standard = (e.currentTarget as HTMLSelectElement).value;
+      engine.scheduleSave();
+    }}
+  >
+    {#each STANDARDS as st (st.id)}<option value={st.id}>{stdText(st.id).name}</option>{/each}
+  </select>
+  <p class="hint std">{stdText(app.standard).text}</p>
+  <details class="stds">
+    <summary>{t.standards.allTitle}</summary>
+    {#each STANDARDS as st (st.id)}
+      <p class="hint"><b>{stdText(st.id).name}.</b> {stdText(st.id).text}</p>
+    {/each}
+    <p class="hint">{t.standards.common}</p>
+    <p class="hint">{t.standards.missing}</p>
+  </details>
+
+  <div class="section-title">{t.report.title}</div>
   <div class="report">
     <button class="btn small" onclick={exportAiRequest} disabled={!app.board} title={t.parts.exportHint}>{t.parts.export}</button>
     <button class="btn small" onclick={saveReport} disabled={!app.board} title={t.report.buttonHint}>{t.report.button}</button>
@@ -144,95 +244,6 @@
     {/if}
     {#if app.partsInfo.notes}<p class="hint">{app.partsInfo.notes}</p>{/if}
   {/if}
-  <div class="section-title">{t.standards.title}</div>
-  <select
-    class="standard"
-    aria-label={t.standards.pick}
-    value={app.standard}
-    onchange={(e) => {
-      app.standard = (e.currentTarget as HTMLSelectElement).value;
-      engine.scheduleSave();
-    }}
-  >
-    {#each STANDARDS as st (st.id)}<option value={st.id}>{stdText(st.id).name}</option>{/each}
-  </select>
-  <p class="hint std">{stdText(app.standard).text}</p>
-  <details class="stds">
-    <summary>{t.standards.allTitle}</summary>
-    {#each STANDARDS as st (st.id)}
-      <p class="hint"><b>{stdText(st.id).name}.</b> {stdText(st.id).text}</p>
-    {/each}
-    <p class="hint">{t.standards.common}</p>
-    <p class="hint">{t.standards.missing}</p>
-  </details>
-
-  <div class="section-title">{t.diag.warnings}</div>
-  {#if app.diagnostics.length === 0}
-    <p class="hint">{t.diag.none}</p>
-  {:else}
-    <p class="hint">{t.diag.rankHint} {t.severity.scale}</p>
-  {/if}
-  <ol class="ranked">
-    {#each rows as row, i (i)}
-      {#if row.type === 'more'}
-        <li class="more">
-          <button onclick={() => expand(row.group)}>{t.diag.moreOfKind(row.n, t.callouts.kinds[row.r.d.kind], nameOf(row.r.d.sourceId))}</button>
-        </li>
-      {:else}
-      {@const { d, margin, severity } = row.r}
-      <li style:--c={severityColor(severity.score)} data-rank={row.rank}>
-        <button onclick={() => (app.focusKey = diagKey(d))} title={t.focus.open}>
-          <span class="row"><span class="src"><span class="dot" style:background={colorOf(d.sourceId)}></span>{nameOf(d.sourceId)}</span><span class="sev" style:--s={severityColor(severity.score)}>{t.severity[severity.level]}</span></span>
-          {#if margin !== null}<span class="value hint" class:over={margin >= 0}>{t.diag.margin(margin)}</span>{/if}
-          <span class:warn={d.kind !== 'long-line'}>{diagnosticText(d)}</span>
-          {#if d.gain}<span class="gain value">{gainText(d)}</span>{/if}
-        </button>
-      </li>
-      {/if}
-    {/each}
-  </ol>
-
-  <div class="section-title">{t.diag.hotspots}</div>
-  {#if app.hotspots.length === 0}
-    <p class="hint">{t.diag.hotspotsNone}</p>
-  {/if}
-  <ul>
-    {#each app.hotspots as h, i (i)}
-      <li style:--c={colorOf(h.sourceId)}>
-        <button onclick={() => goToWorld(h.x, h.z)} title={t.diag.goTo}>
-          <span class="row"><span class="src">{nameOf(h.sourceId)}</span><span class="value db">{h.db.toFixed(0)} {t.units.dBuAm}</span></span>
-          {#if h.nets.length || h.parts.length}
-            <span class="hint">{t.diag.near}: {[...h.parts, ...h.nets].join(', ')}</span>
-          {/if}
-        </button>
-      </li>
-    {/each}
-  </ul>
-
-  <div class="section-title">{t.diag.far(standardShort())}</div>
-  <ul>
-    {#each far as s (s.id)}
-      <li style:--c={s.color}>
-        <div class="static">
-          <span class="row"><span class="src">{s.name}</span><span class="value" class:over={s.worst >= 0}>{t.diag.margin(s.worst)}</span></span>
-          <span class="hint value">{formatEng(s.at, 'Hz', 3)}{shares(s.id)}</span>
-          {#if app.commonMode[s.id]?.worst}
-            {@const cm = app.commonMode[s.id]!}
-            <span class="hint value cm" class:over={cm.worst!.margin >= 0}>{t.diag.cmLine(t.diag.margin(cm.worst!.margin), formatEng(cm.worst!.f, 'Hz', 3), t.explain.fig.cmMech[cm.mechanism])}</span>
-          {/if}
-        </div>
-      </li>
-    {/each}
-    {#each compensated as s (s.id)}
-      <li style:--c={s.color}>
-        <div class="static">
-          <span class="row"><span class="src">{s.name}</span><span class="value">–</span></span>
-          <span class="hint">{t.diag.farCompensated}</span>
-        </div>
-      </li>
-    {/each}
-  </ul>
-  <p class="hint">{t.diag.farHint}</p>
 </div>
 
 <style>
@@ -261,6 +272,15 @@
     font-size: 11px;
     color: var(--faint);
     font-variant-numeric: tabular-nums;
+  }
+  .counts {
+    margin-bottom: 2px;
+  }
+  .how summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 6px;
   }
   .gain {
     color: var(--field);

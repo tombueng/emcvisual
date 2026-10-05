@@ -74,12 +74,21 @@ export function farMargins(): FarMargin[] {
 export const sourceName = (id: string) => (id === '' ? t.diag.board : (app.sources.find((s) => s.id === id)?.name ?? ''));
 export const sourceColor = (id: string) => app.sources.find((s) => s.id === id)?.color ?? '#9aa4b2';
 
-/** Layout hints in the order to work on them (attribution.ts): worst source first, biggest fix first. */
+const LEVEL_ORDER = { critical: 0, check: 1, minor: 2 } as const;
+
+/**
+ * Layout hints in the order to work on them: high priority first, then worth a look, then the
+ * rest; within a priority the worst source first, biggest share first (attribution.ts).
+ */
 export function rankedDiagnostics(): { d: Diagnostic; margin: number | null; severity: Severity }[] {
   const margins = new Map(farMargins().map((f) => [f.id, f.worst]));
   return rankFindings(
     app.diagnostics.map((d) => ({ item: d, sourceMargin: marginOf(d, margins.get(d.sourceId) ?? null), gainDb: d.gain?.db ?? null })),
-  ).map((r) => ({ d: r.item, margin: r.sourceMargin, severity: findingSeverity(r.sourceMargin, r.item.gain?.db ?? null, r.item.kind, r.item.value) }));
+  )
+    .map((r) => ({ d: r.item, margin: r.sourceMargin, severity: findingSeverity(r.sourceMargin, r.item.gain?.db ?? null, r.item.kind, r.item.value) }))
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => LEVEL_ORDER[a.r.severity.level] - LEVEL_ORDER[b.r.severity.level] || a.i - b.i)
+    .map((x) => x.r);
 }
 
 /** Severity of a source from its far-field margin. */

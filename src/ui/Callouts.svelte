@@ -55,6 +55,8 @@
         continue;
       }
       const important = c.level === 'critical' || c.level === 'check';
+      // only red is pushed into the view at any cost; yellow becomes its numbered pin then
+      const forced = c.level === 'critical';
       if (!onScreen && !important) {
         el.style.visibility = 'hidden';
         continue;
@@ -104,14 +106,15 @@
         h = el.offsetHeight;
         spot = free();
       }
-      if (!spot && important) spot = candidates(w, h).map(inside).reduce((best, s) => (overlap(rect(s)) < overlap(rect(best)) ? s : best));
+      if (!spot && forced) spot = candidates(w, h).map(inside).reduce((best, s) => (overlap(rect(s)) < overlap(rect(best)) ? s : best));
       if (!spot) {
-        // no room for an unrated bubble: a numbered one still shows its number at the spot
+        // no room: a numbered bubble still shows its number at the spot (or at the edge)
         el.classList.remove('compact');
-        if (c.badge) {
+        if (c.badge && (onScreen || important)) {
+          const pin = onScreen ? p : target;
           el.classList.add('pin');
           el.style.visibility = 'visible';
-          el.style.transform = `translate(${Math.round(p.x - 9)}px, ${Math.round(p.y - 9)}px)`;
+          el.style.transform = `translate(${Math.round(pin.x - 9)}px, ${Math.round(pin.y - 9)}px)`;
         } else el.style.visibility = 'hidden';
         continue;
       }
@@ -147,7 +150,7 @@
     {#if c.level === 'minor'}
       <button class="point {c.kind}" style:--c={c.color} style:--s={c.severity} bind:this={els[i]} onclick={c.onclick} title={pointText(c)} aria-label={pointText(c)}>{c.badge ?? ''}</button>
     {:else}
-      <button class="bubble {c.kind}" class:important={c.level === 'critical' || c.level === 'check'} style:--c={c.color} bind:this={els[i]} onclick={c.onclick}>
+      <button class="bubble {c.kind}" class:important={c.level === 'critical' || c.level === 'check'} class:critical={c.level === 'critical'} style:--c={c.color} bind:this={els[i]} onclick={c.onclick}>
         <span class="head">
           {#if c.badge}<span class="badge" style:background={c.severity}>{c.badge}</span>{:else if c.severity}<span class="sevdot" style:background={c.severity}></span>{/if}
           <span class="title">{c.title}</span>
@@ -204,6 +207,9 @@
   }
   .bubble.important {
     z-index: 1;
+  }
+  .bubble.critical {
+    z-index: 2;
   }
   .bubble:hover {
     z-index: 3;
