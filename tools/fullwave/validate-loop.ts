@@ -19,11 +19,15 @@ import { buildJob, DEFAULT_JOB_OPTIONS } from '../../src/fullwave/job';
 import { parseFullwave, valueAtFrequency } from '../../src/fullwave/result';
 import type { Source } from '../../src/physics/sources';
 
-const BOARD = 'tests/fixtures/emc-cases/vertical-loop.bad.kicad_pcb';
+// usage: … export|compare [case] [bad|good]   (default: vertical-loop bad)
+const CASE = process.argv[3] ?? 'vertical-loop';
+const VARIANT = process.argv[4] ?? 'bad';
+const BOARD = `tests/fixtures/emc-cases/${CASE}.${VARIANT}.kicad_pcb`;
 const OUT = 'tools/fullwave/out';
+const NAME = CASE === 'vertical-loop' && VARIANT === 'bad' ? 'vloop' : `${CASE}-${VARIANT}`;
 const cases = JSON.parse(readFileSync('tests/fixtures/emc-cases/cases.json', 'utf8'));
-const src = cases['vertical-loop'].sources[0] as Source;
-const board = parseBoard(readFileSync(BOARD, 'utf8'), 'vloop.kicad_pcb');
+const src = cases[CASE].sources[0] as Source;
+const board = parseBoard(readFileSync(BOARD, 'utf8'), `${NAME}.kicad_pcb`);
 const frame = worldFrame(board);
 const planes = detectPlanes(board);
 const ctx: PhysicsContext = { board, frame, planes, fMax: 1e9 };
@@ -32,12 +36,12 @@ model.elements = applyReturnModel(ctx, src, model.elements).elements;
 
 if (process.argv[2] === 'export') {
   const grid = makeGrid(board, frame, { quality: 'normal' });
-  const job = buildJob(ctx, [src], { [src.id]: model }, grid, { fileName: 'vloop.kicad_pcb', hash: '' }, { ...DEFAULT_JOB_OPTIONS, fMax: 1e9 }, []);
+  const job = buildJob(ctx, [src], { [src.id]: model }, grid, { fileName: `${NAME}.kicad_pcb`, hash: '' }, { ...DEFAULT_JOB_OPTIONS, fMax: 1e9 }, []);
   mkdirSync(OUT, { recursive: true });
-  writeFileSync(`${OUT}/vloop.openems-job.json`, JSON.stringify(job));
-  console.log(`wrote ${OUT}/vloop.openems-job.json`);
+  writeFileSync(`${OUT}/${NAME}.openems-job.json`, JSON.stringify(job));
+  console.log(`wrote ${OUT}/${NAME}.openems-job.json`);
 } else {
-  const file = `${OUT}/vloop.fullwave.bin`;
+  const file = `${OUT}/${NAME}.fullwave.bin`;
   if (!existsSync(file)) throw new Error(`run openEMS first: ${file} missing`);
   const r = parseFullwave(new Uint8Array(readFileSync(file)).buffer);
   const meta = r.sources.find((s) => s.id === src.id)!;

@@ -583,6 +583,18 @@ def vertical_loop(b, bad):
         b.via('GND', x + dx, y)
 
 
+@case('slot-loop', 2, 60, 40,
+      title='Senkrechte Schleife über einem Schlitz in der Massefläche',
+      mistake='Dieselbe Schleife wie vertical-loop, aber die Massefläche hat unter der Leitungsmitte einen 2 mm breiten, 30 mm langen Schlitz. Der Rückstrom muss außen herum.',
+      fix='Schlitz schließen.',
+      sources=[loop_source('loop', 'Schleife 10 MHz', ['R1.1', 'R1.2', 'R2.1', 'R2.2'], 'TR', f0=10e6, amplitude=0.1, tr=2e-9, voltage=3.3)],
+      expect={'bad': ['return-gap'], 'good_absent': ['return-gap']})
+def slot_loop(b, bad):
+    vertical_loop(b, True)
+    if bad:
+        b.keepout(b.B, (29, 5, 31, 35))
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

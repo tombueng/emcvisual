@@ -512,6 +512,47 @@
    "far_gain_min": 5
   }
  },
+ "slot-loop": {
+  "layers": 2,
+  "w": 60,
+  "h": 40,
+  "title": "Senkrechte Schleife über einem Schlitz in der Massefläche",
+  "mistake": "Dieselbe Schleife wie vertical-loop, aber die Massefläche hat unter der Leitungsmitte einen 2 mm breiten, 30 mm langen Schlitz. Der Rückstrom muss außen herum.",
+  "fix": "Schlitz schließen.",
+  "sources": [
+   {
+    "id": "loop",
+    "type": "loop",
+    "name": "Schleife 10 MHz",
+    "enabled": true,
+    "color": "#f472b6",
+    "pads": [
+     "R1.1",
+     "R1.2",
+     "R2.1",
+     "R2.2"
+    ],
+    "waveform": {
+     "f0": 10000000.0,
+     "duty": 0.28,
+     "tr": 2e-09,
+     "amplitude": 0.1
+    },
+    "node": {
+     "net": "TR",
+     "voltage": 3.3
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "return-gap"
+   ],
+   "good_absent": [
+    "return-gap"
+   ]
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

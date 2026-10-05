@@ -381,6 +381,20 @@ Erklärung der Vorbehalt „oberhalb der Grenze, bis zu der die Leitung elektris
 Das ist ein Abgleich an einer Struktur und keine Messung: Er prüft die Rechnung gegen eine
 genauere Rechnung, nicht gegen die Wirklichkeit eines Messplatzes.
 
+**Schlitz unter der Schleife** (Testplatine `slot-loop`, dieselbe Schleife über einem 2 × 30 mm
+Schlitz in der Massefläche, ohne Kabel). Unterschied mit gegen ohne Schlitz:
+
+| f / MHz | 20–240 | 344 | 491 | 701 | 1000 |
+|---|---|---|---|---|---|
+| Vollwelle | unter ±1 dB | +1,6 | +3,2 | +6,0 | +6,9 |
+| schnelle Rechnung | +1,5 | +1,5 | +1,5 | +1,5 | +1,5 |
+
+Unter 250 MHz bestätigt die Vollwelle das kleine Ergebnis der Schleifenrechnung für die Platine
+allein. Darüber strahlt der Schlitz selbst, was die schnelle Rechnung nicht kennt. Die großen
+Unterschiede aus der Literatur (10–17 dB, Wyatt) entstehen mit angeschlossenen Kabeln, die hier
+fehlen. Die Regel „Lücke unter schnellen Leitungen: hohe Priorität“ stützt sich deshalb auf diese
+beiden Wege, nicht auf die Zahl der Schleifenrechnung; der Vorbehalt in der Erklärung sagt das.
+
 ## 11a. Diagnose-Regeln
 
 - **Rückstrompfad unterbrochen:** Unter einem waagerechten Stromelement fehlt auf der
