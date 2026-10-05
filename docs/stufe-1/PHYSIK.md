@@ -395,6 +395,28 @@ Unterschiede aus der Literatur (10–17 dB, Wyatt) entstehen mit angeschlossenen
 fehlen. Die Regel „Lücke unter schnellen Leitungen: hohe Priorität“ stützt sich deshalb auf diese
 beiden Wege, nicht auf die Zahl der Schleifenrechnung; der Vorbehalt in der Erklärung sagt das.
 
+**Heiße Schleife über durchgehender Fläche** (Testplatine `buck-loop`, 40 × 30 mm, zwei Lagen,
+Massefläche unten; Port zwischen VIN- und GND-Pin des Reglers, Eingangskondensator als Kurzschluss;
+0,2-mm-Gitter, |Z_in| bei 20 MHz 1,5 bzw. 1,6 Ω). Schlecht: Kondensator 14 mm entfernt, Hin- und
+Rückleitung oben, Schleife ≈ 132 mm². Gut: Kondensator direkt an den Pins, ≈ 4 mm².
+
+| f / MHz | 20 | 41 | 83 | 118 | 241 | 491 | 1000 |
+|---|---|---|---|---|---|---|---|
+| schlecht (dBµV/m je A) | 13,1 | 20,8 | 31,5 | 37,2 | 48,5 | 57,8 | 66,0 |
+| gut | 6,2 | 16,1 | 27,6 | 33,4 | 44,5 | 53,2 | 61,1 |
+| Unterschied | 6,9 | 4,7 | 3,9 | 3,8 | 4,0 | 4,6 | 4,9 |
+
+Die schnelle Rechnung gibt hier keinen Wert (das Dipolmoment der flachen Schleife hebt sich mit
+dem Spiegelstrom auf, Erklärung: „nicht bezifferbar“). Die Vollwelle zeigt, was übrig bleibt: Die
+große Schleife liegt bei 118 MHz rund 47 dB unter derselben Schleife frei im Raum (Ott-Formel:
+84 dBµV/m je A), die kleine nur rund 21 dB. Der Rest kommt aus dem, was die Fläche nicht
+kompensiert (Bauteilhöhen, Via, Rand der Fläche) und ist bei beiden ähnlich, daher nur 4–5 dB
+Unterschied statt der 30 dB des Flächenverhältnisses. Für die Abstrahlung der Platine allein ist
+die Fläche der heißen Schleife über einer durchgehenden Fläche also ein schwaches Maß. Ihre
+Bedeutung kommt über die Induktivität (Spannungsspitzen und Klingeln am Schaltknoten, das über
+dessen Kupfer und die Kabel abstrahlt) und das Nahfeld in Nachbarschaltungen; beides rechnet die
+App nicht. Die Erklärung zur heißen Schleife nennt diese Zahlen.
+
 ## 11a. Diagnose-Regeln
 
 - **Rückstrompfad unterbrochen:** Unter einem waagerechten Stromelement fehlt auf der
