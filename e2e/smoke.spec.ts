@@ -32,9 +32,11 @@ test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
   for (const d of [0, 6, 12]) await page.mouse.move(spot![0]! + d, spot![1]! + d);
   await expect(page.getByText(/Höchste Linie/)).toBeVisible();
 
-  // diagnostics list the built-in mistakes
+  // diagnostics list the built-in mistakes, with a short plan of what to do first on top
   await page.getByRole('tab', { name: /Diagnose/ }).click();
   const diag = page.locator('.diag');
+  await expect(diag.getByText('Was zuerst tun')).toBeVisible();
+  expect(await diag.locator('ol.plan li').count()).toBeGreaterThanOrEqual(2);
   await expect(diag.getByText(/Rückstrompfad unterbrochen/).first()).toBeVisible();
   await expect(diag.getByText(/Bezugswechsel am Via/).first()).toBeVisible();
   // speech bubbles in 3D: hint 1 carries the same finding as the top of the list

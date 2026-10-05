@@ -8,7 +8,13 @@
 **In English:** a browser tool that computes the quasi-static magnetic near field of a KiCad
 board and turns it into a 3D world you can look at and listen to: glowing field volumes,
 field lines, a virtual near-field probe with a spectrum-analyzer view, a far-field estimate
-against CISPR 32 and layout hints (return paths over plane gaps, reference changes at vias).
+against CISPR 32, FCC 15, CISPR 11 and 14-1, and a rule check for about 25 known EMC layout
+mistakes (return paths over plane gaps and splits, reference changes at vias, hot loops,
+crystals at the edge, filters and shields at connectors, common mode on cables after the
+Clemson expert system, …), each with a priority, a plain explanation, the fix, what to avoid
+and why the statement may be wrong. Every rule is tested on generated boards with the mistake
+and its fixed twin, and the fast far field agrees with openEMS within 1 dB between 30 and
+350 MHz on a validation board.
 Return currents detour around plane slots and jump through stitching vias or capacitors, the
 electric field can be shown as well, a full-wave openEMS run can be exported, computed locally and
 loaded as a second field source, and a near-field scanner (a 3D printer moving a probe,
@@ -19,6 +25,13 @@ Elektromagnetische Felder einer Leiterplatte kann man nicht sehen. Dieses Werkze
 sie aus einer KiCad-Platine aus und macht daraus eine **begehbare 3D-Welt mit Bild und Ton**:
 Wo leuchtet es, wo brummt es, und was passiert, wenn die Flanke langsamer wird oder der
 Eingangskondensator näher an den Schaltregler rückt?
+
+Dazu prüft es rund 25 bekannte EMV-Layoutfehler, sagt, was zuerst zu tun ist, erklärt jeden
+Befund mit Rechnung und Abhilfe, und sagt jedes Mal dazu, warum die Aussage hier falsch sein
+kann. Grundlage sind ein Fehlerkatalog mit Quellen
+([docs/research/EMV-FEHLERKATALOG.md](docs/research/EMV-FEHLERKATALOG.md)), ein Fachreview
+([docs/review/FACHREVIEW-2026-10.md](docs/review/FACHREVIEW-2026-10.md)), erzeugte
+Fehler-Platinen als Prüfstand und der Abgleich mit einer Vollwellenrechnung.
 
 Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 

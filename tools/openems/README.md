@@ -73,3 +73,13 @@ GPL-3.0 und wird nur lokal installiert; `run_job.py` gehört zum Projekt (0BSD).
 Format von `*.fullwave.bin`: 8 Byte `PCBFW1\0\0`, uint32 Headerlänge, JSON-Header,
 dann int16-Blöcke in centi-dB von |H|² je A² (Quelle für Quelle, darin Frequenz für Frequenz),
 angeordnet wie die Volumina der App (`index = ix + nx·(iy + ny·iz)`).
+
+## Plausibilität prüfen
+
+`run_job.py` meldet je Quelle die Eingangsimpedanz bei der tiefsten Frequenz. Eine Schleife
+von einigen Millimetern hat einige nH, also Ohm bei einigen zehn MHz. Liegt |Zin| unter 0,5 Ω,
+ist der Port kurzgeschlossen: Pads, die enger als eine Zelle beieinander liegen (SOT-23 mit
+0,35 mm Spalt bei 0,5 mm Gitter), verschmelzen. Das Ergebnis ist dann ungültig; mit feinerem
+`--res` neu rechnen. Ein Abgleich der schnellen Rechnung mit der Vollwelle steht in
+`tools/fullwave/README.md`.
+

@@ -334,6 +334,11 @@ def main():
             'zin': [[float(z.real), float(z.imag)] for z in z_in],
         })
         log(f'   {secs:.0f} s, |Zin| at {freqs[0] / 1e6:.0f} MHz = {abs(z_in[0]):.2f} Ω')
+        # a structure of this size has some nH of loop inductance, i.e. ohms at tens of MHz; far
+        # less means the port is shorted, usually because pads closer than one cell merged
+        if abs(z_in[0]) < 0.5:
+            log(f'   WARNING: |Zin| is only {abs(z_in[0]):.2f} Ω: the port looks shorted (pads closer than the '
+                f'cell size merge, e.g. SOT-23 at 0.5 mm). The result is not valid; run again with a finer --res.')
         if not a.keep:
             shutil.rmtree(sim, ignore_errors=True)
 
