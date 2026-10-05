@@ -4,7 +4,7 @@
   import { t } from '../i18n';
   import { formatEng } from '../physics/units';
   import { toWorld } from '../model/world';
-  import { diagnosticText, farMargins, gainText, rankedDiagnostics, standardShort } from '../report/texts';
+  import { actionPlan, diagnosticText, farMargins, gainText, rankedDiagnostics, standardShort } from '../report/texts';
   import { MAX_GAIN_DB } from '../physics/attribution';
   import { diagKey } from './focusData';
   import { severityColor } from '../physics/severity';
@@ -99,6 +99,10 @@
     return out;
   });
   const expand = (g: string) => (expanded = new Set([...expanded, g]));
+  const plan = $derived.by(() => {
+    void ranked;
+    return actionPlan(5);
+  });
   const levelCount = $derived.by(() => {
     const c = { critical: 0, check: 0, minor: 0 };
     for (const r of ranked) c[r.severity.level]++;
@@ -121,6 +125,20 @@
 </script>
 
 <div class="diag">
+  {#if plan.length}
+    <div class="section-title">{t.diag.planTitle}</div>
+    <ol class="plan">
+      {#each plan as st, i (i)}
+        <li style:--s={st.level === 'critical' ? 'var(--bad, #f05a5a)' : 'var(--warn)'}>
+          <button onclick={() => (app.focusKey = diagKey(st.first))} title={t.focus.open}>
+            <span class="n">{i + 1}.</span>
+            <span class="what">{(t.diag.plan as Record<string, (n: number, who: string) => string>)[st.kind]?.(st.count, st.who.slice(0, 3).join(', ') + (st.who.length > 3 ? ' …' : '')) ?? t.diag.planGeneric(t.callouts.kinds[st.kind], st.count)}</span>
+          </button>
+        </li>
+      {/each}
+    </ol>
+  {/if}
+
   <div class="section-title">{t.diag.warnings}</div>
   {#if app.diagnostics.length === 0}
     <p class="hint">{t.diag.none}</p>
@@ -275,6 +293,44 @@
   }
   .counts {
     margin-bottom: 2px;
+  }
+  ol.plan {
+    margin: 0 0 6px;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+  }
+  ol.plan li {
+    counter-increment: step;
+    border-left: 3px solid var(--s);
+    margin-bottom: 4px;
+  }
+  .diag ol.plan li button {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-size: 12.5px;
+    line-height: 1.35;
+    color: var(--text);
+    background: color-mix(in srgb, var(--plate) 70%, transparent);
+    border: 0;
+    padding: 6px 8px;
+    cursor: pointer;
+  }
+  ol.plan .n {
+    flex: none;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  ol.plan .what {
+    flex: 1;
+    min-width: 0;
+  }
+  ol.plan li button:hover {
+    background: var(--plate);
   }
   .how summary {
     cursor: pointer;

@@ -76,6 +76,33 @@ export const sourceColor = (id: string) => app.sources.find((s) => s.id === id)?
 
 const LEVEL_ORDER = { critical: 0, check: 1, minor: 2 } as const;
 
+export interface PlanStep {
+  kind: Diagnostic['kind'];
+  /** The most important hint of this kind (opens the problem view). */
+  first: Diagnostic;
+  count: number;
+  /** Names of the sources (or parts) involved. */
+  who: string[];
+  level: Severity['level'];
+}
+
+/**
+ * What to do first: the high-priority and yellow hints grouped by kind, in the order of their
+ * most important hint, at most `max` steps.
+ */
+export function actionPlan(max = 5): PlanStep[] {
+  const steps = new Map<string, PlanStep>();
+  for (const { d, severity } of rankedDiagnostics()) {
+    if (severity.level === 'minor') continue;
+    let st = steps.get(d.kind);
+    if (!st) steps.set(d.kind, (st = { kind: d.kind, first: d, count: 0, who: [], level: severity.level }));
+    st.count++;
+    const who = d.sourceId ? sourceName(d.sourceId) : (d.parts?.[0] ?? '');
+    if (who && !st.who.includes(who)) st.who.push(who);
+  }
+  return [...steps.values()].slice(0, max);
+}
+
 /**
  * Layout hints in the order to work on them: high priority first, then worth a look, then the
  * rest; within a priority the worst source first, biggest share first (attribution.ts).

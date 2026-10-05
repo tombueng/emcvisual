@@ -565,6 +565,24 @@ def ferrite_ground(b, bad):
         b.place('Resistor_SMD', 'R_0603_1608Metric', 'R1', '0R', 20.25, 15, rot=90, pins={'1': 'GND', '2': 'GND'})
 
 
+@case('vertical-loop', 2, 60, 40,
+      title='Senkrechte Schleife über Massefläche: 40 mm gegen 20 mm',
+      mistake='Eine Leitung über der Massefläche, an beiden Enden über eine Via an die Fläche angeschlossen: eine senkrechte Schleife aus Länge mal Lagenabstand. Doppelte Länge, doppelte Fläche, 6 dB mehr Fernfeld.',
+      fix='Schleife kürzer (oder dünneres Dielektrikum).',
+      sources=[loop_source('loop', 'Schleife 10 MHz', ['R1.1', 'R1.2', 'R2.1', 'R2.2'], 'TR', f0=10e6, amplitude=0.1, tr=2e-9, voltage=3.3)],
+      expect={'far_gain_min': 5})
+def vertical_loop(b, bad):
+    b.zone('GND', b.B)
+    x2 = 50 if bad else 30
+    b.place('Resistor_SMD', 'R_0603_1608Metric', 'R1', '0R', 10, 20, pins={'1': 'GND', '2': 'TR'})
+    b.place('Resistor_SMD', 'R_0603_1608Metric', 'R2', '0R', x2, 20, pins={'1': 'TR', '2': 'GND'})
+    b.track('TR', b.F, [b.pad('R1', '2'), b.pad('R2', '1')], width=0.3)
+    for ref, pad, dx in (('R1', '1', -1.2), ('R2', '2', 1.2)):
+        x, y = b.pad(ref, pad)
+        b.track('GND', b.F, [(x, y), (x + dx, y)], width=0.4)
+        b.via('GND', x + dx, y)
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

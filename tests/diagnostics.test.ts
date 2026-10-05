@@ -41,11 +41,16 @@ describe('demo board diagnostics', () => {
 });
 
 describe('far-field estimate', () => {
-  it('a 1 cm² loop at 100 MHz with 1 mA matches Ott (263e-16 f² A I / r)', () => {
+  it('a 1 cm² loop at 100 MHz with 1 mA matches Ott (263e-16 f² A I / r) plus the induction term', () => {
     const m: [number, number, number] = [0, 1e-4, 0];
     const [l] = farField(m, [{ f: 100e6, amp: 1e-3 }], 3);
     const expected = (2 * K_DIPOLE * 1e16 * 1e-4 * 1e-3) / 3;
-    expect(l!.db).toBeCloseTo(20 * Math.log10(expected) + 120, 6);
+    // at 3 m and 100 MHz k·r = 6.3: √(1 + 1/(k·r)²) adds 0.11 dB to Ott's far-field formula
+    const kr = (2 * Math.PI * 100e6 * 3) / 299_792_458;
+    expect(l!.db).toBeCloseTo(20 * Math.log10(expected * Math.sqrt(1 + 1 / (kr * kr))) + 120, 6);
+    // far away the term vanishes and Ott's formula holds exactly
+    const [far] = farField(m, [{ f: 100e6, amp: 1e-3 }], 3000);
+    expect(far!.db).toBeCloseTo(20 * Math.log10((2 * K_DIPOLE * 1e16 * 1e-4 * 1e-3) / 3000) + 120, 3);
   });
 
   it('the sprawling buck radiates far more than the tight one', () => {

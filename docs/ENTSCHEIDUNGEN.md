@@ -110,3 +110,21 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
     erzeugte Platine mit Fehler und einen Zwilling mit der üblichen Behebung
     (tools/emc-cases); ein Test prüft, dass die App den Fehler meldet und den Zwilling nicht.
     Regeln, die dort nicht bestehen, werden geändert, nicht die Erwartung.
+37. **2026-10-05 · Gleichtakt mit Kabeln als Abschätzung nach Clemson, nicht als Rechnung.** Die
+    meisten Prüfungen scheitern am Gleichtakt; ohne Kabelmodell schweigt eine reine
+    Gegentaktrechnung genau dort. Die veröffentlichten Formeln des Clemson-Expertensystems
+    (Spannung über der Fläche, Übersprechen auf Kabelleitungen) sind einfach, nachprüfbar und
+    ausdrücklich ungünstig; die App zeigt sie als solche und bewertet sie 6 dB vorsichtiger.
+38. **2026-10-05 · Platinenregeln mit fester Priorität.** Filter, Schirme, Entkopplung, Quarze,
+    Schaltknoten, schwebendes Kupfer: Diese Fehler lassen sich aus der Geometrie erkennen, aber
+    nicht sinnvoll beziffern. Sie erscheinen als Regel mit Richtwert und Quelle, nicht mit einer
+    erfundenen dB-Zahl.
+39. **2026-10-05 · Jede Regel muss sich an echten Platinen bewähren.** Der Prüfstand mit
+    Fehler-Platinen zeigt, dass eine Regel greift; die Durchsicht von 23 echten Platinen
+    (tools/survey) zeigt, ob sie nervt. Regeln, die auf sorgfältig entworfenen Platinen
+    dutzendfach anschlagen, werden enger gefasst (Beispiele: Stecker-Massepins je Stecker statt
+    je Quelle, Platine-zu-Platine-Stecker sind keine Kabel, Serienwiderstand ist kein Filter).
+40. **2026-10-05 · Fläche ab 15 % statt 25 %.** Wo Kupfer unter einer Leitung liegt, ist es ihr
+    Bezug; das Raster sagt, wo. Eine analoge Masse unter einem Audioteil (22 %) wurde sonst
+    übersehen und erzeugte falsche Lagenaufbau-Befunde.
+

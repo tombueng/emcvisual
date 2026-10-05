@@ -277,8 +277,8 @@ Gl. 12-2: E = 263·10⁻¹⁶ · f²·A·I / r, A die wirkliche Schleifenfläche
 3 m und 10 m gegen den gewählten Grenzwert (standards.ts). An einer Stufe zwischen zwei
 Bändern gilt der strengere Wert (CISPR 32 Anhang A, CISPR 11 §6.1, 47 CFR §15.109): Eine
 Linie auf genau 230 MHz oder 1 GHz wird mit dem niedrigeren verglichen. Bei 30 MHz in 3 m ist
-k·r ≈ 1,9; das Nahfeldglied des Dipols (Faktor √(1 + 1/(k·r)²), etwa +1 dB) fehlt in der
-Formel.
+k·r ≈ 1,9; deshalb rechnet die App das Induktionsglied des Dipols mit (Faktor √(1 + 1/(k·r)²),
++2,1 dB bei 20 MHz, +1,1 dB bei 30 MHz, über 50 MHz vernachlässigbar).
 
 Eigenschaften, die das Modell wiedergibt: Eine flache Schleife über einer Fläche hat ein
 senkrechtes Moment, das der Rückstrom in der Fläche fast aufhebt (dann zeigt die App keine
@@ -353,6 +353,33 @@ Priorität je Regel:
 
 Die Abstände sind Luftlinien, nicht Leitungswege; ob ein Bauteil als Filter gemeint ist und ob
 ein Footprint ein Kabel trägt, wird aus Referenz, Netz und Bibliothek geraten.
+
+### 11.1 Abgleich mit der Vollwelle (2026-10-05)
+
+Testplatine `vertical-loop` (60 × 40 mm, zwei Lagen, 1,6 mm, Massefläche unten): 40 mm Leitung
+oben, an beiden Enden über eine Via an die Fläche, angeregt mit einem Port am einen Ende. Fernfeld
+in 3 m je Ampere Port-Strom, openEMS (FDTD, 0,5 mm Gitter, NF2FF, Bodenfaktor 2) gegen die schnelle
+Rechnung (`tools/fullwave/validate-loop.ts`):
+
+| f / MHz | Vollwelle | schnell (Rückstrom in der Fläche) | Differenz | früher (Spiegeltiefe) |
+|---|---|---|---|---|
+| 20 | 52,2 | 49,7 | −2,5 | +3,5 |
+| 29 | 56,0 | 54,9 | −1,1 | +4,9 |
+| 41 | 60,6 | 60,5 | 0,0 | +6,0 |
+| 83 | 71,8 | 72,4 | +0,6 | +6,7 |
+| 169 | 85,1 | 84,7 | −0,4 | +5,6 |
+| 344 | 97,9 | 97,0 | −0,9 | +5,1 |
+| 491 | 105,4 | 103,2 | −2,3 | +3,8 |
+| 701 | 115,6 | 109,3 | −6,3 | −0,2 |
+
+(dBµV/m je A.) Zwischen 30 und 350 MHz stimmt die schnelle Rechnung auf ±1 dB; das alte
+Spiegelmodell lag 5–7 dB zu hoch (Fachreview Nr. 2). Darunter fehlen noch 1–2,5 dB (genauere
+Frequenzauflösung der Vollwelle bei langen Laufzeiten, Feldverteilung der Fläche). Darüber nähert
+sich die Leitung ihrer eigenen Resonanz (kurzgeschlossene Leitung, λ/4 bei etwa 1 GHz), der Strom
+ist nicht mehr gleichförmig, und die schnelle Rechnung liegt zu tief; genau dort erscheint in der
+Erklärung der Vorbehalt „oberhalb der Grenze, bis zu der die Leitung elektrisch kurz ist“.
+Das ist ein Abgleich an einer Struktur und keine Messung: Er prüft die Rechnung gegen eine
+genauere Rechnung, nicht gegen die Wirklichkeit eines Messplatzes.
 
 ## 11a. Diagnose-Regeln
 

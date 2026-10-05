@@ -61,12 +61,22 @@ export interface FarLine {
   db: number;
 }
 
+/**
+ * E field of a small magnetic dipole broadside at distance r. Besides the radiating 1/r term it
+ * keeps the induction term: |E| ∝ k²·√(1 + 1/(k·r)²). At 3 m that adds 2.1 dB at 20 MHz,
+ * 1.1 dB at 30 MHz and fades above 50 MHz; without it the estimate fell below openEMS at the
+ * low end (tools/fullwave/validate-loop.ts).
+ */
 export function farField(moment: [number, number, number], lines: Line[], r: number, groundReflection = true): FarLine[] {
   const m = Math.hypot(...moment);
   const k = (groundReflection ? 2 : 1) * K_DIPOLE;
+  const near = (f: number) => {
+    const kr = (2 * Math.PI * f * r) / 299_792_458;
+    return Math.sqrt(1 + 1 / (kr * kr));
+  };
   return lines
     // each harmonic on its own, as the receiver sees it (not the band-power scaled amplitude)
-    .map((l) => ({ f: l.f, e: (k * l.f * l.f * m * lineAmp(l)) / r }))
+    .map((l) => ({ f: l.f, e: (k * l.f * l.f * m * lineAmp(l) * near(l.f)) / r }))
     .filter((x) => x.e > 0)
     .map((x) => ({ f: x.f, db: 20 * Math.log10(x.e) + 120 }));
 }
