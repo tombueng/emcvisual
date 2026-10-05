@@ -189,50 +189,52 @@ Einträge sind die, die ein layoutbasiertes Werkzeug unbedingt finden sollte.
 
 | Rang | ID | Fehler (DE / EN) | Belastbarkeit | Häufigkeit | Engine heute | Top 12 |
 |---|---|---|---|---|---|---|
-| 1 | K-01 | Signal über Schlitz in der Bezugsfläche / Trace over a slot in the reference plane | gesichert | hoch | ja (Lücken ≥ 1 mm) | **ja** |
-| 2 | K-15 | Schnelle Schaltung zwischen Steckern an verschiedenen Kanten / High-speed circuit between connectors | gesichert | hoch | nein | **ja** |
+| 1 | K-01 | Signal über Schlitz in der Bezugsfläche / Trace over a slot in the reference plane | gesichert | hoch | ja (Lücken ab 0,2 mm mit Umweg) | **ja** |
+| 2 | K-15 | Schnelle Schaltung zwischen Steckern an verschiedenen Kanten / High-speed circuit between connectors | gesichert | hoch | ja (Abschätzung `cable-cm`) | **ja** |
 | 3 | K-29 | Großer heißer Kreis im Schaltregler / Large hot loop | gesichert | hoch | ja | **ja** |
-| 4 | K-02 | Getrennte Analog- und Digitalmasse / Split AGND–DGND | gesichert | hoch | teilweise | **ja** |
-| 5 | K-09 | Zweilagig ohne Rückleiterfläche / Two-layer board without return plane | gesichert | hoch | teilweise | **ja** |
+| 4 | K-02 | Getrennte Analog- und Digitalmasse / Split AGND–DGND | gesichert | hoch | ja (Trennung als `return-gap`) | **ja** |
+| 5 | K-09 | Zweilagig ohne Rückleiterfläche / Two-layer board without return plane | gesichert | hoch | ja (`no-reference`, Rückweg über Masse-Kupfer) | **ja** |
 | 6 | K-07 | Lagenwechsel ohne Masse-Via / Layer change without ground stitching via | gesichert | hoch | ja | **ja** |
 | 7 | K-08 | Referenzwechsel GND↔Versorgung ohne Kondensator / Reference change without capacitor | gesichert | mittel | ja | **ja** |
 | 8 | K-19 | Filter durch Überlappung oder Parallelführung umgangen / Filter bypassed by layout | Konsens | hoch | ja (Überlappung; Parallelführung nein) | **ja** |
-| 9 | K-18 | I/O-Filter weit vom Stecker / I/O filter far from the connector | Konsens | hoch | nein | **ja** |
-| 10 | K-20 | Steckerschirm schlecht angebunden / Poor connector shield termination | gesichert | hoch | nein | **ja** |
-| 11 | K-16 | HF-Leitungen koppeln auf I/O-Leitungen / HF traces coupling into I/O nets | Konsens | mittel–hoch | nein | **ja** |
-| 12 | K-24 | Entkopplung fehlt oder ist hochinduktiv angeschlossen / Missing or high-inductance decoupling | gesichert | hoch | teilweise | **ja** |
-| 13 | K-10 | Signallage ohne angrenzende Fläche, schlechter Lagenaufbau / Poor stack-up | gesichert | mittel | teilweise | |
-| 14 | K-11 | Schnelle Leitung an der Platinenkante / High-speed trace near board edge | Konsens | mittel | nein | |
-| 15 | K-31 | Schaltknoten zu groß oder exponiert / Oversized or exposed switch node | Konsens | mittel | teilweise | |
+| 9 | K-18 | I/O-Filter weit vom Stecker / I/O filter far from the connector | Konsens | hoch | ja (`filter-far`, `filter-ground`) | **ja** |
+| 10 | K-20 | Steckerschirm schlecht angebunden / Poor connector shield termination | gesichert | hoch | ja (`shield-open`, `shield-weak`) | **ja** |
+| 11 | K-16 | HF-Leitungen koppeln auf I/O-Leitungen / HF traces coupling into I/O nets | Konsens | mittel–hoch | ja (Abschätzung `io-coupling`) | **ja** |
+| 12 | K-24 | Entkopplung fehlt oder ist hochinduktiv angeschlossen / Missing or high-inductance decoupling | gesichert | hoch | ja (`decoupling`, Anschlussinduktivität grob) | **ja** |
+| 13 | K-10 | Signallage ohne angrenzende Fläche, schlechter Lagenaufbau / Poor stack-up | gesichert | mittel | ja (`no-adjacent-plane`) | |
+| 14 | K-11 | Schnelle Leitung an der Platinenkante / High-speed trace near board edge | Konsens | mittel | ja (`edge-trace`) | |
+| 15 | K-31 | Schaltknoten zu groß oder exponiert / Oversized or exposed switch node | Konsens | mittel | ja (`sw-node`; spannungsgetriebene Kopplung nein) | |
 | 16 | K-32 | Massefläche unter dem Wandler aufgetrennt / Ground cut under the converter | gesichert | mittel | ja | |
 | 17 | K-36 | Isolationsbarriere ohne HF-Rückweg / Isolation barrier without HF return | gesichert | mittel | nein | |
 | 18 | K-34 | Eingangsfilter des Wandlers fehlt oder sitzt falsch / Missing converter input filter | gesichert | hoch | ja (Abschätzung Gegentakt) | |
-| 19 | K-03 | Signal über Inselgrenze der Versorgungsfläche / Trace over split power plane | Konsens | mittel | teilweise | |
-| 20 | K-14 | Differenzielles Paar unsymmetrisch / Asymmetric differential pair | gesichert | mittel | teilweise | |
-| 21 | K-17 | Quarz an Rand oder Stecker, Leitungen darunter / Crystal near edge or connector | Konsens | mittel | teilweise | |
-| 22 | K-22 | Zu wenige Massepins in Steckern und Flachkabeln / Too few ground pins | Konsens | mittel | nein | |
-| 23 | K-04 | Leiterbahnen in der Masselage / Tracks routed through the ground plane | Konsens | mittel | teilweise | |
+| 19 | K-03 | Signal über Inselgrenze der Versorgungsfläche / Trace over split power plane | Konsens | mittel | ja (Trennung als `return-gap`) | |
+| 20 | K-14 | Differenzielles Paar unsymmetrisch / Asymmetric differential pair | gesichert | mittel | ja (`pair-skew`; Gleichtakt nicht gerechnet) | |
+| 21 | K-17 | Quarz an Rand oder Stecker, Leitungen darunter / Crystal near edge or connector | Konsens | mittel | ja (`crystal-placement`, `crystal-under`) | |
+| 22 | K-22 | Zu wenige Massepins in Steckern und Flachkabeln / Too few ground pins | Konsens | mittel | ja (`connector-ground`) | |
+| 23 | K-04 | Leiterbahnen in der Masselage / Tracks routed through the ground plane | Konsens | mittel | ja (Lücken ab 0,2 mm) | |
 | 24 | K-05 | Antipad-Ketten als Schlitz / Antipad chains forming a slot | Konsens | mittel | ja | |
 | 25 | K-12 | Elektrisch lange Leitung ohne Terminierung / Long unterminated line | Konsens | mittel | ja | |
-| 26 | K-33 | Speicherdrossel ungeschirmt oder falsch orientiert / Unshielded or misoriented inductor | gesichert | mittel | teilweise | |
-| 27 | K-37 | Kühlkörper oder Metallteil ohne Masseanbindung / Floating heatsink | Konsens | mittel | nein | |
-| 28 | K-26 | Ferritperle falsch eingesetzt / Misused ferrite bead | gesichert | mittel | nein | |
+| 26 | K-33 | Speicherdrossel ungeschirmt oder falsch orientiert / Unshielded or misoriented inductor | gesichert | mittel | ja (`inductor-placement`; Schirmung, Wicklungsanfang nein) | |
+| 27 | K-37 | Kühlkörper oder Metallteil ohne Masseanbindung / Floating heatsink | Konsens | mittel | ja (`heatsink-floating`) | |
+| 28 | K-26 | Ferritperle falsch eingesetzt / Misused ferrite bead | gesichert | mittel | ja (`ferrite-ground`) | |
 | 29 | K-28 | Versorgungsschleife auf Zweilagen / Power loop on two-layer boards | Konsens | mittel | teilweise | |
 | 30 | K-21 | Keine Chassisanbindung am Steckerbereich / Missing chassis bond near connectors | Konsens | mittel | nein | |
 | 31 | K-35 | Große Gate-Schleifen, fehlender Snubber / Large gate-drive loops | Konsens | mittel | teilweise | |
-| 32 | K-30 | Falscher Kreis kompakt gemacht / Wrong loop minimised | Konsens | gering–mittel | teilweise | |
+| 32 | K-30 | Falscher Kreis kompakt gemacht / Wrong loop minimised | Konsens | gering–mittel | teilweise (Buck und Boost im Quellenvorschlag) | |
 | 33 | K-13 | Schnelle Netze außen mit vielen Vias / Fast nets on outer layers with many vias | Konsens | mittel | teilweise | |
 | 34 | K-06 | Engstelle in der Massefläche / Ground-plane neck | Konsens | gering | nein | |
 | 35 | K-25 | Stark unterschiedliche MLCC parallel / Widely different MLCCs in parallel | umstritten | mittel | nein | |
 | 36 | K-27 | Gleichtaktdrossel an unsymmetrischer Versorgung / CM choke on unbalanced DC input | umstritten | mittel | nein | |
-| 37 | K-38 | Schwebende oder schlecht vernähte Kupferflächen / Floating or poorly stitched copper | umstritten | mittel | nein | |
+| 37 | K-38 | Schwebende oder schlecht vernähte Kupferflächen / Floating or poorly stitched copper | umstritten | mittel | ja (`floating-copper`; Vernähung nein) | |
 | 38 | K-23 | Ethernet: Flächen und Chassis am Übertrager / Ethernet magnetics and chassis planes | umstritten | gering | nein | |
 | 39 | K-39 | Flächenränder und Hohlraumresonanz / Plane edges and cavity resonance | umstritten | gering | nein | |
 | 40 | K-40 | Abschirmhaube mit zu wenigen Kontakten / Shield can with too few contacts | Konsens | gering | nein | |
 
-Kurz gesagt: Von den Top 12 erkennt die Engine heute vier (K-01, K-29, K-07, K-08), drei
-teilweise (K-02, K-09, K-24) und fünf gar nicht (K-15, K-19, K-18, K-20, K-16). Alle fünf nicht
-erkannten gehören zum Gleichtakt- und Kabelmechanismus.
+Kurz gesagt (Stand 2026-10-05): Alle Top 12 werden erkannt, die Kabel- und Gleichtaktfälle
+(K-15, K-16) als Abschätzung für den ungünstigsten Fall, K-19 nur für die Überlappung. Offen
+sind vor allem K-06, K-13, K-21, K-23, K-25, K-27, K-36, K-39 und K-40. Die aktuelle Liste mit
+Schwellen und Testplatinen steht in [docs/REGELN.md](../REGELN.md); die Angabe „Engine heute“ in
+den Einzeleinträgen von Abschnitt 5 gibt den Stand beim Schreiben des Katalogs wieder.
 
 ---
 
@@ -1941,10 +1943,12 @@ Quellen zu den Mythen: [LearnEMC, Worst EMC Design Guidelines](https://learnemc.
 
 ## 7. Was die Engine heute nicht erkennt und was dafür nötig wäre
 
-### 7.1 Nicht erkennbar (heute "nein")
+### 7.1 Nicht erkennbar (Stand 2026-10-05)
 
-K-06, K-11, K-15, K-16, K-18, K-19, K-20, K-21, K-22, K-23, K-25, K-26, K-27, K-34, K-36, K-37,
-K-38, K-39, K-40. Darunter fünf der Top 12: **K-15, K-16, K-18, K-19, K-20**.
+K-06, K-13 (als eigene Regel), K-21, K-23, K-25, K-27, K-36, K-39, K-40. Erkannt seit dem
+ersten Stand des Katalogs: K-02, K-03, K-04, K-09, K-10, K-11, K-14, K-15, K-16, K-17, K-18,
+K-19, K-20, K-22, K-24, K-26, K-31, K-33, K-34, K-37, K-38 (siehe [docs/REGELN.md](../REGELN.md)).
+Die Liste in 7.2 und die Reihenfolge in 7.3 sind der ursprüngliche Plan.
 
 ### 7.2 Nur teilweise erkennbar
 
