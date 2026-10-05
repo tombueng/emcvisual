@@ -349,7 +349,24 @@ export class Viewer {
     if (k >= 1) this.flight = null;
   }
 
+  /**
+   * Near plane from the camera's distance to its target. A fixed near of 0.05 mm left the depth
+   * buffer about 0.02 mm of resolution at an overview distance, less than the gap between the
+   * copper and the substrate surface: the two flickered while turning. 1/200 of the distance
+   * keeps the resolution near 0.001 mm and clips only what lies within half a percent of that
+   * distance in front of the camera.
+   */
+  private fitNear() {
+    const d = this.camera.position.distanceTo(this.controls.target);
+    const near = Math.min(Math.max(0.02, d / 200), this.camera.far / 1000);
+    if (Math.abs(near - this.camera.near) > near * 0.05) {
+      this.camera.near = near;
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
   private render() {
+    this.fitNear();
     this.camera.updateMatrixWorld();
     if (this.problem) {
       // the problem view: its own scene, no glow

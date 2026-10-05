@@ -102,14 +102,28 @@ export function buildBoardMeshes(board: BoardModel, frame: WorldFrame): BoardMes
   const topY = top.y + top.thickness / 2;
   const bottomY = nL > 1 ? bottom.y - bottom.thickness / 2 : top.y - board.thickness;
 
-  // substrate: outline extruded between the outer copper layers
+  // substrate: outline extruded between the inner faces of the outer copper layers, so the copper
+  // lies a copper thickness (about 0.04 mm) above it; the viewer keeps the depth resolution well
+  // below that (Viewer.fitNear). A small constant polygon offset adds a margin. No slope-dependent
+  // offset: at grazing angles that pushed the substrate behind the inner layers.
   const [outer, ...holes] = board.outline;
   const shape = new THREE.Shape(outer!.map((p) => new THREE.Vector2(p.x - frame.ox, -(p.y - frame.oy))));
   for (const h of holes) shape.holes.push(new THREE.Path(h.map((p) => new THREE.Vector2(p.x - frame.ox, -(p.y - frame.oy)))));
-  const sub = new THREE.ExtrudeGeometry(shape, { depth: topY - bottomY - 0.004, bevelEnabled: false, curveSegments: 12 });
+  const subTop = topY - top.thickness;
+  const subBottom = nL > 1 ? bottomY + bottom.thickness : bottomY;
+  const sub = new THREE.ExtrudeGeometry(shape, { depth: Math.max(0.01, subTop - subBottom), bevelEnabled: false, curveSegments: 12 });
   sub.rotateX(-Math.PI / 2);
-  sub.translate(0, bottomY + 0.002, 0);
-  const substrateMat = new THREE.MeshStandardMaterial({ color: '#1f5135', roughness: 0.75, metalness: 0.05, transparent: true, opacity: 1 });
+  sub.translate(0, subBottom, 0);
+  const substrateMat = new THREE.MeshStandardMaterial({
+    color: '#1f5135',
+    roughness: 0.75,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 1,
+    polygonOffset: true,
+    polygonOffsetFactor: 0,
+    polygonOffsetUnits: 4,
+  });
   const substrate = new THREE.Mesh(sub, substrateMat);
   substrate.name = 'substrate';
   group.add(substrate);
@@ -250,7 +264,8 @@ function zoneQuad(rs: Vec2[][], net: number, y: number, frame: WorldFrame, color
   const h = raster.ny * raster.cell;
   const geo = new THREE.PlaneGeometry(w, h);
   geo.rotateX(-Math.PI / 2);
-  const mat = new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.5, metalness: 0.55, roughness: 0.4, side: THREE.DoubleSide });
+  // behind the tracks and pads of the same layer (same height), in front of the substrate
+  const mat = new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.5, metalness: 0.55, roughness: 0.4, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: 1 });
   const quad = new THREE.Mesh(geo, mat);
   // after the rotation v = 1 lies at -Z, but raster row 0 (texture v = 0) is the smallest board
   // y, i.e. -Z: flip v
