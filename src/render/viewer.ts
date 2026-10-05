@@ -141,6 +141,10 @@ export class Viewer {
       transparent: true,
       depthWrite: false,
       side: THREE.DoubleSide,
+      // a slice at the height of a copper layer stays in front of it instead of fighting it
+      polygonOffset: true,
+      polygonOffsetFactor: 0,
+      polygonOffsetUnits: -4,
       uniforms: {
         tVolume: { value: empty },
         tLut: { value: this.lut },

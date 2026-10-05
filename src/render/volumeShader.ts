@@ -74,26 +74,36 @@ void main() {
     return;
   }
 
-  float jitter = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+  // Samples on planes fixed in world space (perpendicular to the ray, every stepSize): when the
+  // view moves they move with it continuously. A random offset per screen pixel (the former
+  // dither) made the glow shimmer while turning, worst at the board surface, where the field is
+  // strongest and the ray ends. Each segment is weighted by its exact length, the partial ones
+  // at entry and exit included, so the brightness does not depend on where the samples fall.
   vec3 size = boxMax - boxMin;
   vec3 acc = vec3(0.0);
   float alpha = 0.0;
-  float t = tEnter + jitter * stepSize;
   float span = max(window.y - window.x, 1e-3);
-  for (int i = 0; i < 1024; i++) {
-    if (i >= maxSteps || t > tExit) break;
-    vec3 p = ro + rd * t;
-    float v = texture(tVolume, (p - boxMin) / size).r;
-    float x = (v - window.x) / span;
-    if (x > 0.0) {
-      x = min(x, 1.0);
-      vec3 c = texture(tLut, vec2(x, 0.5)).rgb;
-      float a = 1.0 - exp(-density * pow(x, gammaA) * stepSize);
-      acc += (1.0 - alpha) * a * c;
-      alpha += (1.0 - alpha) * a;
-      if (alpha > 0.985) break;
+  float d0 = dot(ro, rd);
+  float a0 = tEnter;
+  float b0 = min((floor((tEnter + d0) / stepSize) + 1.0) * stepSize - d0, tExit);
+  for (int i = 0; i < 1025; i++) {
+    if (i > maxSteps || a0 >= tExit) break;
+    float len = b0 - a0;
+    if (len > 1e-6) {
+      vec3 p = ro + rd * (0.5 * (a0 + b0));
+      float v = texture(tVolume, (p - boxMin) / size).r;
+      float x = (v - window.x) / span;
+      if (x > 0.0) {
+        x = min(x, 1.0);
+        vec3 c = texture(tLut, vec2(x, 0.5)).rgb;
+        float a = 1.0 - exp(-density * pow(x, gammaA) * len);
+        acc += (1.0 - alpha) * a * c;
+        alpha += (1.0 - alpha) * a;
+        if (alpha > 0.985) break;
+      }
     }
-    t += stepSize;
+    a0 = b0;
+    b0 = min(b0 + stepSize, tExit);
   }
   // mostly emissive: the glow adds light and only partly hides what is behind it
   fragColor = vec4(toSRGB(scene.rgb * (1.0 - 0.55 * alpha) + acc), 1.0);
