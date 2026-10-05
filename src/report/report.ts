@@ -72,7 +72,7 @@ export function buildReport(image: string | null): string {
   const summary = [
     `<div><span class="k">${esc(R.sumSources)}</span><span class="v">${enabled.length} / ${app.sources.length}</span></div>`,
     `<div><span class="k">${esc(R.sumFindings)}</span><span class="v">${app.diagnostics.length}</span></div>`,
-    top ? `<div><span class="k">${esc(R.sumHotspot)}</span><span class="v">${top.db.toFixed(0)} ${esc(t.units.dBuAm)}</span><span class="s">${esc(sourceName(top.sourceId))}</span></div>` : '',
+    top ? `<div><span class="k">${esc(R.sumHotspot)}</span><span class="v">${top.db.toFixed(0)} ${esc(app.view.fieldKind === 'E' ? t.units.dBuVm : t.units.dBuAm)}</span><span class="s">${esc(sourceName(top.sourceId))}</span></div>` : '',
     worstFar
       ? `<div class="${worstFar.worst >= 0 ? 'over' : ''}"><span class="k">${esc(R.sumFar)}</span><span class="v">${esc(t.diag.margin(worstFar.worst))}</span><span class="s">${esc(worstFar.name)}, ${esc(formatEng(worstFar.at, 'Hz', 3))}</span></div>`
       : '',
@@ -100,7 +100,7 @@ export function buildReport(image: string | null): string {
         .map((h) => {
           const bx = h.x + engine.frame.ox;
           const by = h.z + engine.frame.oy;
-          return `<tr><td>${dot(sourceColor(h.sourceId))}${esc(sourceName(h.sourceId))}</td><td class="n">${h.db.toFixed(0)} ${esc(t.units.dBuAm)}</td><td>${fmtNum(bx, 1)} / ${fmtNum(by, 1)} mm, ${fmtNum(h.y, 1)} mm</td><td>${esc([...h.parts, ...h.nets].join(', '))}</td></tr>`;
+          return `<tr><td>${dot(sourceColor(h.sourceId))}${esc(sourceName(h.sourceId))}</td><td class="n">${h.db.toFixed(0)} ${esc(app.view.fieldKind === 'E' ? t.units.dBuVm : t.units.dBuAm)}</td><td>${fmtNum(bx, 1)} / ${fmtNum(by, 1)} mm, ${fmtNum(h.y, 1)} mm</td><td>${esc([...h.parts, ...h.nets].join(', '))}</td></tr>`;
         })
         .join('')}</tbody></table>`
     : `<p>${esc(t.diag.hotspotsNone)}</p>`;

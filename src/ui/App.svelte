@@ -81,7 +81,10 @@
     }
     if (file.name.endsWith('.json')) {
       try {
-        engine.applyScenario(JSON.parse(await file.text()));
+        const raw = JSON.parse(await file.text());
+        engine.applyScenario(raw);
+        // same warning as "Load scenario": the scenario was saved for another board
+        if (raw?.board?.hash && raw.board.hash !== app.boardHash) app.toast = t.errors.scenarioOtherBoard;
       } catch {
         app.toast = t.errors.scenario;
       }

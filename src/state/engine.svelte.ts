@@ -932,7 +932,7 @@ class Engine {
     const c = this.composite;
     if (!g || !c) return null;
     const iy = Math.max(0, Math.min(g.ny - 1, Math.round((height - g.y0) / g.dy)));
-    const rows = [`# x_mm;y_mm;H_dBuA_m;height_mm=${(g.y0 + iy * g.dy).toFixed(2)}`];
+    const rows = [`# x_mm;y_mm;${app.view.fieldKind === 'E' ? 'E_dBuV_m' : 'H_dBuA_m'};height_mm=${(g.y0 + iy * g.dy).toFixed(2)}`];
     for (let iz = 0; iz < g.nz; iz++) {
       for (let ix = 0; ix < g.nx; ix++) {
         const p = c.power[ix + g.nx * (iy + g.ny * iz)]!;

@@ -144,7 +144,7 @@ export function buildCallouts(viewer: Viewer): Callout[] {
         kind: 'hotspot',
         pos: [h.x, h.y, h.z],
         color: sourceColor(h.sourceId),
-        title: `${h.db.toFixed(0)} ${t.units.dBuAm}`,
+        title: `${h.db.toFixed(0)} ${app.view.fieldKind === 'E' ? t.units.dBuVm : t.units.dBuAm}`,
         lines: [sourceName(h.sourceId), ...(h.parts.length || h.nets.length ? [[...h.parts, ...h.nets].slice(0, 4).join(', ')] : [])],
         onclick: () => probeTo(h.x, h.z),
       }),

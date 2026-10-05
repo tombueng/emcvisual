@@ -226,7 +226,7 @@
     {#each app.hotspots as h, i (i)}
       <li style:--c={colorOf(h.sourceId)}>
         <button onclick={() => goToWorld(h.x, h.z)} title={t.diag.goTo}>
-          <span class="row"><span class="src">{nameOf(h.sourceId)}</span><span class="value db">{h.db.toFixed(0)} {t.units.dBuAm}</span></span>
+          <span class="row"><span class="src">{nameOf(h.sourceId)}</span><span class="value db">{h.db.toFixed(0)} {app.view.fieldKind === 'E' ? t.units.dBuVm : t.units.dBuAm}</span></span>
           {#if h.nets.length || h.parts.length}
             <span class="hint">{t.diag.near}: {[...h.parts, ...h.nets].join(', ')}</span>
           {/if}
