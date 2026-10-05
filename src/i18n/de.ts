@@ -269,6 +269,16 @@ export const de = {
         `Filter ${d.parts?.[0] ?? '?'} umgangen: Kupfer von ${d.nets?.[0] ?? '?'} und ${d.nets?.[1] ?? '?'} liegt auf ${(d.bypass?.area ?? 0).toFixed(0)} mm² übereinander (≈ ${((d.bypass?.cap ?? 0) * 1e12).toFixed(0)} pF); oberhalb von etwa ${f(d.value)} geht die Störung daran vorbei.`,
       'supply-noise': (d: { value: number; supply?: { connector: string; regulators: string[]; filters: string[]; worst: { f: number; db: number } } }, f: (v: number) => string) =>
         `Schaltstrom von ${d.supply?.regulators.join(', ') || '?'} auf dem Kabel an ${d.supply?.connector ?? '?'}${d.supply?.filters.length ? ` (trotz ${d.supply.filters.join(', ')})` : ', ohne Filter'}: rechnerisch ${(d.supply?.worst.db ?? 0).toFixed(0)} dBµV bei ${f(d.supply?.worst.f ?? 0)} an einer Netznachbildung, ${d.value.toFixed(0)} dB über dem Maßstab.`,
+      'esd-missing': (d: { esd?: { connector: string; iface: string; missing?: string[]; tvs?: string; conn?: number; ic?: number; gnd?: number } }) =>
+        `${d.esd?.connector ?? '?'} (${d.esd?.iface ?? ''}): ${(d.esd?.missing ?? []).join(', ')} ohne ESD-Schutzdiode.`,
+      'esd-placement': (d: { esd?: { connector: string; iface: string; missing?: string[]; tvs?: string; conn?: number; ic?: number; gnd?: number } }) => {
+        const e = d.esd;
+        const parts = [
+          e?.ic !== undefined && (e.conn ?? 0) >= e.ic ? `sitzt näher am IC (${e.ic.toFixed(0)} mm) als am Stecker (${(e.conn ?? 0).toFixed(0)} mm)` : '',
+          e?.gnd !== undefined && e.gnd > 2 ? (e.gnd >= 99 ? 'ihr Massepad hat keine Masse-Via in der Nähe' : `ihr Massepad erreicht Masse erst ${e.gnd.toFixed(1).replace('.', ',')} mm weiter`) : '',
+        ].filter(Boolean);
+        return `ESD-Schutz ${e?.tvs ?? '?'} an ${e?.connector ?? '?'}: ${parts.join(', und ')}.`;
+      },
       'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
@@ -302,6 +312,8 @@ export const de = {
       'inductor-placement': (n: number, who: string) => `Drossel ${who} weg von Stecker und Rand, nah an den Regler.`,
       'filter-bypass': (n: number, who: string) => `Ein- und Ausgangskupfer von Filter ${who} auseinanderlegen, Massefläche dazwischen.`,
       'supply-noise': (n: number, who: string) => `LC-Filter (Spule einige µH, Kondensator einige µF) in den Versorgungseingang an ${who}.`,
+      'esd-missing': (n: number, who: string) => `ESD-Schutzdioden an die Datenleitungen von ${who}, direkt am Stecker.`,
+      'esd-placement': (n: number, who: string) => `ESD-Diode an ${who} direkt an den Stecker, Massepad mit eigener Via.`,
     },
     counts: (r: number, y: number, g: number) => `${r} hohe Priorität · ${y} ansehen · ${g} nachrangig`,
     howRanked: 'Wie Reihenfolge und Priorität entstehen',
@@ -517,6 +529,8 @@ export const de = {
       'inductor-placement': 'Speicherdrossel an Rand oder Stecker',
       'filter-bypass': 'Filter durch Überlappung umgangen',
       'supply-noise': 'Schaltstrom auf dem Versorgungskabel',
+      'esd-missing': 'ESD-Schutz fehlt am Stecker',
+      'esd-placement': 'ESD-Schutz ungünstig platziert',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -697,6 +711,8 @@ export const de = {
       adiFerrite: 'C. Burket: All About Ferrite Beads / Ferrite Beads Demystified. Analog Devices, Analog Dialogue 50-02, 2016.',
       ti2155: 'Texas Instruments AN-2155 (SNVA638): Layout Tips for EMI Reduction in DC/DC Converters.',
       wurthDcdc: 'Würth Elektronik: Filtering considerations for DC/DC converters (Application Note, 2025).',
+      slva680: 'G. Yater: ESD Protection Layout Guide. Texas Instruments SLVA680A, 2015, überarbeitet 2022.',
+      iec61000_4_2: 'IEC 61000-4-2: Prüf- und Messverfahren – Prüfung der Störfestigkeit gegen die Entladung statischer Elektrizität.',
     },
     kinds: {
       gapDetour: {
@@ -958,6 +974,38 @@ export const de = {
         limits: () =>
           'Eine Abschätzung mit angenommenen Bauteilwerten: ESR und ESL der Kondensatoren, die Gleichspannungsabsenkung der Keramikkapazität (oft −50 % und mehr) und die echte Impedanz des Ferrits und die Eigenresonanz der Spule (oberhalb davon filtert sie kaum noch, oft schon ab 20–50 MHz) sind nicht berücksichtigt; die Netznachbildung ersetzt das, was wirklich am Kabel hängt. Gerechnet ist nur der Gegentaktanteil; der Gleichtaktanteil über Schaltknoten-Kapazitäten fehlt, er überwiegt oft oberhalb einiger MHz. Ob und mit welchem Grenzwert ein Gleichspannungseingang gemessen wird, hängt von Norm und Aufbau ab (Steckernetzteil: am Netzanschluss des Netzteils; Fahrzeug: CISPR 25 direkt am Eingang); der Maßstab zeigt die Größenordnung. Wege über Transistoren (Verpolschutz mit P-FET) verfolgt die App nicht; dann gibt es keinen Befund.',
         refs: ['ti2155', 'wurthDcdc'] as const,
+      },
+      esdMissing: {
+        what: () => 'Datenleitungen einer Schnittstelle, an der Kabel gesteckt und Stecker berührt werden (USB, HDMI, DisplayPort), haben keine ESD-Schutzdiode.',
+        why: () =>
+          'Eine Entladung nach IEC 61000-4-2 treibt bei 8 kV rund 30 A mit weniger als 1 ns Anstiegszeit in den Pin (TI SLVA680). Die eingebauten Schutzstrukturen vieler ICs sind für die Handhabung beim Bestücken ausgelegt (Human Body Model, meist 2 kV), nicht für eine Entladung am fertigen Gerät; ohne externe Diode fließt der Strom durch den IC. Das betrifft die Störfestigkeit, nicht die Abstrahlung: Für Multimediageräte verlangt EN 55035 ±4 kV Kontakt- und ±8 kV Luftentladung.',
+        detected: () =>
+          'Für Kabelstecker, deren Bibliothek, Wert oder Referenz USB, HDMI oder DisplayPort nennt: Jedes Netz an einem Pin, das nicht Masse, Versorgung oder Schirm ist, braucht ein Bauteil, das nach Bibliothek, Wert oder Referenz eine TVS- oder ESD-Diode ist (z. B. USBLC6, PESD, TPD, PRTR, ESD…, TVS…). Ein Befund je Stecker mit den Netzen ohne Schutz.',
+        fixes: () => [
+          'Eine ESD-Diode oder ein Diodenarray mit so niedriger Kapazität, wie die Schnittstelle sie verträgt (das Datenblatt nennt die Eignung, z. B. für USB 2.0 High-Speed), direkt an den Stecker.',
+          'Die Leitung vom Steckerpin zuerst über das Pad der Diode und dann zum IC führen, ohne Via dazwischen.',
+          'Das Massepad der Diode mit einer eigenen Via direkt am Pad an die Massefläche.',
+        ],
+        avoid: () => ['Sich nicht auf den internen Schutz des ICs verlassen, wenn sein Datenblatt keine Festigkeit nach IEC 61000-4-2 nennt.', 'Keine Diode mit großer Kapazität (gewöhnliche Z-Diode) an schnelle Datenleitungen.'],
+        limits: () =>
+          'Schutzbauteile erkennt die App nur an Namen und Werten; eine anders benannte Diode zählt nicht. Ein IC mit spezifizierter Festigkeit nach IEC 61000-4-2 an diesen Pins (manche Schnittstellen-ICs und USB-Hubs) braucht keine externe Diode. Ob das Gerät die Prüfung besteht, hängt außerdem von Gehäuse und Schirmanbindung ab. Die Abstrahlung ändert eine ESD-Diode kaum.',
+        refs: ['slva680', 'iec61000_4_2'] as const,
+      },
+      esdPlacement: {
+        what: () => 'Die ESD-Schutzdiode einer Steckerleitung sitzt nicht nah genug am Stecker, oder ihr Massepad erreicht die Massefläche erst über eine längere Strecke.',
+        why: () =>
+          'Bei einer Entladung mit 8 kV steigt der Strom in unter 1 ns auf etwa 30 A, rund 4·10¹⁰ A/s. Jede Induktivität im Weg vom Stecker zur Diode und von der Diode zur Masse erzeugt eine zusätzliche Spannung, die am IC ankommt; schon 0,25 nH ergeben 10 V (TI SLVA680). Liegt die Diode näher am IC als am Stecker, teilt sich der Strom zwischen Diode und IC, und das schnell ansteigende Feld der langen ungeschützten Strecke koppelt in benachbarte Leitungen.',
+        detected: () =>
+          'Für jede Schutzdiode an einer Steckerleitung: Luftlinie vom Steckerpin zum Diodenpad und vom Diodenpad zum nächsten IC-Pin (Referenz U) desselben Netzes. Gemeldet, wenn die Diode nicht näher am Stecker liegt als am IC (TI: der IC soll viel weiter von der Diode entfernt sein als die Diode vom Stecker), oder wenn ihr Massepad weder in einer Massefläche seiner Lage liegt noch eine Masse-Via innerhalb 2 mm hat. Ein Befund je Stecker, die ungünstigste Leitung.',
+        fixes: () => [
+          'Diode direkt an den Stecker; die Leitung vom Pin zuerst über das Diodenpad, dann weiter zum IC.',
+          'Massepad der Diode mit einer Via direkt am Pad, besser zwei, an die Massefläche; bei geschirmtem Stecker Schirmanschluss und Diodenmasse dicht beieinander.',
+          'Keine Via zwischen Steckerpin und Diode.',
+        ],
+        avoid: () => ['Die Diode nicht über eine Stichleitung (T-Abzweig) anschließen.', 'Keine ungeschützten Leitungen neben der Strecke vom Stecker zur Diode führen.'],
+        limits: () =>
+          'Abstände sind Luftlinie, nicht der Leitungsweg; ob die Leitung über das Diodenpad läuft oder als Stichleitung abzweigt, prüft die App nicht. Die 2 mm für die Masse-Via sind ein Richtwert der App (TI: eine Via unmittelbar am Massepin).',
+        refs: ['slva680'] as const,
       },
       noAdjacentPlane: {
         what: (p: P) => `Die Leitung läuft auf ${p.layer}, ihre nächste Bezugsfläche (${p.planeNet} auf ${p.plane}) liegt aber nicht auf der Nachbarlage: Dazwischen ist eine weitere Kupferlage.`,

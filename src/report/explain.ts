@@ -145,6 +145,12 @@ export function explain(d: Diagnostic): Explanation {
     case 'inductor-placement':
       k = 'inductorPlacement';
       break;
+    case 'esd-missing':
+      k = 'esdMissing';
+      break;
+    case 'esd-placement':
+      k = 'esdPlacement';
+      break;
     case 'supply-noise': {
       k = 'supplyNoise';
       const sn = d.supply;

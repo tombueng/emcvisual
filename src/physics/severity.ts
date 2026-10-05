@@ -73,6 +73,8 @@ const RULE_SCORE = {
   'connector-ground': 0.45,
   'inductor-placement': 0.4,
   'filter-bypass': 0.45,
+  'esd-missing': 0.45,
+  'esd-placement': 0.35,
 } as const;
 
 /**

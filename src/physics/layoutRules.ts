@@ -60,6 +60,12 @@ export const BYPASS_MIN_C = 3e-12;
 /** Reported when the capacitance takes over below this frequency (the usual limit range ends at 1 GHz), Hz. */
 export const BYPASS_MAX_F = 1e9;
 /** A ferrite bead without a readable value: the common 600 Ω at 100 MHz. */
+/** ESD protection parts (TVS diodes and arrays) by library, value or reference. */
+const ESD_PART = /tvs|esd|usblc|pesd|prtr\d|tpd\d|srv05|sp05\d|ip42\d\d|rclamp|nup\d|cdsot|sm712|smaj|smbj|lesd|d_tvs/i;
+/** Interfaces where cables are plugged in and the shell is touched: ESD protection is expected there. */
+const ESD_IFACE = /usb|hdmi|displayport/i;
+/** A TVS ground pad farther than this from a ground via or pour, mm (TI SLVA680: a via right at the pin). */
+export const ESD_GND_MAX = 2;
 /** Package and vias of a decoupling capacitor, nH (Clemson power-bus decoupling: about 1 nH). */
 const MOUNT_NH = 1;
 
@@ -360,6 +366,58 @@ export function layoutRules(ctx: PhysicsContext, sources: Source[] = []): Diagno
       ...base('filter-bypass', ov.at, fx, [fp.ref], [board.nets[pa.net] ?? '', board.nets[pb.net] ?? '']),
       bypass: { cap: ov.cap, area: ov.area, layers: ov.layers, pair: ov.pair, box: ov.box, ohms: part.ohms, henry: part.henry, assumed: part.assumed },
     });
+  }
+
+  // --- ESD protection at user-facing connectors (TI SLVA680) ------------------------------------
+  const isEsd = (fp: Footprint) => ESD_PART.test(fp.lib.split(':').pop() ?? '') || ESD_PART.test(fp.value) || /^(ESD|TVS)\d/i.test(fp.ref);
+  const esdParts = board.footprints.filter((fp) => isEsd(fp) && !conns.includes(fp));
+  for (const conn of conns) {
+    const ifaceMatch = ESD_IFACE.exec(`${conn.lib} ${conn.value}`) ?? (/^USB\d/i.test(conn.ref) ? ['USB'] : null);
+    if (!ifaceMatch) continue;
+    const iface = ifaceMatch[0].toUpperCase();
+    const isShieldPad = (p: Pad) => /^(S|SH|SHIELD|MP)\d*$/i.test(p.number);
+    const signal = new Map<number, Pad>();
+    for (const pi of conn.pads) {
+      const p = board.pads[pi]!;
+      if (p.net <= 0 || isGround(board, p.net) || isSupply(p.net) || isShieldPad(p) || signal.has(p.net)) continue;
+      // data lines only: not CC/SBU/ID/VBUS or shield nets, not KiCad's unconnected pads, and the net goes somewhere
+      const name = board.nets[p.net] ?? '';
+      if (/unconnected|(^|[/_\-.(])(cc\d?|sbu\d?|id|vbus|shield)\)?$/i.test(name)) continue;
+      if (!board.pads.some((q) => q.net === p.net && q.footprint !== p.footprint)) continue;
+      signal.set(p.net, p);
+    }
+    if (!signal.size) continue;
+    const missing: string[] = [];
+    let worst: { tvs: Footprint; pad: Pad; conn: number; ic: number; gnd: number; icPad?: Pad; cp: Pad } | null = null;
+    for (const [net, cp] of signal) {
+      const prot = esdParts.flatMap((fp) => fp.pads.map((pi) => board.pads[pi]!).filter((q) => q.net === net).map((q) => ({ fp, q })));
+      if (!prot.length) {
+        missing.push(board.nets[net] ?? '');
+        continue;
+      }
+      // the protecting pad nearest to the connector, and the nearest IC pin on the line
+      const { fp, q } = prot.reduce((a, b) => (dist(a.q.at, cp.at) <= dist(b.q.at, cp.at) ? a : b));
+      const ics = board.pads.filter((x) => x.net === net && /^(U|IC)\d/i.test(x.ref) && x.ref !== fp.ref);
+      const icPad = ics.length ? ics.reduce((a, b) => (dist(a.at, q.at) <= dist(b.at, q.at) ? a : b)) : undefined;
+      const dConn = dist(cp.at, q.at);
+      const dIc = icPad ? dist(icPad.at, q.at) : Infinity;
+      const gnds = fp.pads.map((pi) => board.pads[pi]!).filter((x) => isGround(board, x.net));
+      const gnd = gnds.length ? Math.min(...gnds.map((x) => groundReach(board, planes, x))) : Infinity;
+      const bad = dConn >= dIc || gnd > ESD_GND_MAX;
+      const score = (dConn >= dIc ? dConn - dIc + 10 : 0) + (gnd > ESD_GND_MAX ? Math.min(gnd, 50) : 0);
+      const worstScore = worst ? (worst.conn >= worst.ic ? worst.conn - worst.ic + 10 : 0) + (worst.gnd > ESD_GND_MAX ? Math.min(worst.gnd, 50) : 0) : -1;
+      if (bad && score > worstScore) worst = { tvs: fp, pad: q, conn: dConn, ic: dIc, gnd, icPad, cp };
+    }
+    if (missing.length)
+      out.push({ ...base('esd-missing', conn.at, missing.length, [conn.ref], missing), esd: { connector: conn.ref, iface, missing } });
+    if (worst) {
+      const dims: Diagnostic['dims'] = [{ a: worst.cp.at, b: worst.pad.at, text: `${worst.conn.toFixed(0)} mm` }];
+      if (worst.icPad && Number.isFinite(worst.ic)) dims.push({ a: worst.pad.at, b: worst.icPad.at, text: `${worst.ic.toFixed(0)} mm` });
+      out.push({
+        ...base('esd-placement', worst.pad.at, worst.conn, [conn.ref, worst.tvs.ref, ...(worst.icPad ? [worst.icPad.ref] : [])], [board.nets[worst.pad.net] ?? ''], dims),
+        esd: { connector: conn.ref, iface, tvs: worst.tvs.ref, conn: worst.conn, ic: Number.isFinite(worst.ic) ? worst.ic : undefined, gnd: Number.isFinite(worst.gnd) ? worst.gnd : 99 },
+      });
+    }
   }
 
   // --- K-34: switching current of the regulators on the supply cable -----------------------------

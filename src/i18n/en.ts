@@ -263,6 +263,15 @@ export const en: Strings = {
         `Filter ${d.parts?.[0] ?? '?'} bypassed: copper of ${d.nets?.[0] ?? '?'} and ${d.nets?.[1] ?? '?'} overlaps on ${(d.bypass?.area ?? 0).toFixed(0)} mm² (≈ ${((d.bypass?.cap ?? 0) * 1e12).toFixed(0)} pF); above about ${f(d.value)} the noise goes around it.`,
       'supply-noise': (d, f) =>
         `Switching current of ${d.supply?.regulators.join(', ') || '?'} on the cable at ${d.supply?.connector ?? '?'}${d.supply?.filters.length ? ` (despite ${d.supply.filters.join(', ')})` : ', no filter'}: estimated ${(d.supply?.worst.db ?? 0).toFixed(0)} dBµV at ${f(d.supply?.worst.f ?? 0)} on a LISN, ${d.value.toFixed(0)} dB over the yardstick.`,
+      'esd-missing': (d) => `${d.esd?.connector ?? '?'} (${d.esd?.iface ?? ''}): ${(d.esd?.missing ?? []).join(', ')} without an ESD protection diode.`,
+      'esd-placement': (d) => {
+        const e = d.esd;
+        const parts = [
+          e?.ic !== undefined && (e.conn ?? 0) >= e.ic ? `sits closer to the IC (${e.ic.toFixed(0)} mm) than to the connector (${(e.conn ?? 0).toFixed(0)} mm)` : '',
+          e?.gnd !== undefined && e.gnd > 2 ? (e.gnd >= 99 ? 'its ground pad has no ground via nearby' : `its ground pad reaches ground only ${e.gnd.toFixed(1)} mm away`) : '',
+        ].filter(Boolean);
+        return `ESD protection ${e?.tvs ?? '?'} at ${e?.connector ?? '?'}: ${parts.join(', and ')}.`;
+      },
       'edge-trace': (d) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
@@ -296,6 +305,8 @@ export const en: Strings = {
       'inductor-placement': (n: number, who: string) => `Move inductor ${who} away from connector and edge, close to the regulator.`,
       'filter-bypass': (n: number, who: string) => `Separate the input and output copper of filter ${who}, with a ground plane between them.`,
       'supply-noise': (n: number, who: string) => `Put an LC filter (inductor of a few µH, capacitor of a few µF) into the supply input at ${who}.`,
+      'esd-missing': (n: number, who: string) => `ESD protection diodes on the data lines of ${who}, right at the connector.`,
+      'esd-placement': (n: number, who: string) => `Move the ESD diode at ${who} right to the connector, ground pad with its own via.`,
     },
     counts: (r: number, y: number, g: number) => `${r} high priority · ${y} check · ${g} low priority`,
     howRanked: 'How order and priority come about',
@@ -511,6 +522,8 @@ export const en: Strings = {
       'inductor-placement': 'Storage inductor at edge or connector',
       'filter-bypass': 'Filter bypassed by overlap',
       'supply-noise': 'Switching current on the supply cable',
+      'esd-missing': 'No ESD protection at the connector',
+      'esd-placement': 'ESD protection placed poorly',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -690,6 +703,8 @@ export const en: Strings = {
       adiFerrite: 'C. Burket: All About Ferrite Beads / Ferrite Beads Demystified. Analog Devices, Analog Dialogue 50-02, 2016.',
       ti2155: 'Texas Instruments AN-2155 (SNVA638): Layout Tips for EMI Reduction in DC/DC Converters.',
       wurthDcdc: 'Würth Elektronik: Filtering considerations for DC/DC converters (application note, 2025).',
+      slva680: 'G. Yater: ESD Protection Layout Guide. Texas Instruments SLVA680A, 2015, revised 2022.',
+      iec61000_4_2: 'IEC 61000-4-2: Testing and measurement techniques – Electrostatic discharge immunity test.',
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (hot loop, input capacitor).',
     },
     kinds: {
@@ -952,6 +967,38 @@ export const en: Strings = {
         limits: () =>
           'An estimate with assumed part values: ESR and ESL of the capacitors, the DC-bias loss of ceramic capacitance (often −50 % and more) and the real impedance of the ferrite and the inductor\'s self-resonance (above it the inductor hardly filters, often from 20–50 MHz on) are not taken into account; the LISN stands in for whatever is really connected to the cable. Only the differential-mode part is computed; the common-mode part through switch-node capacitances is missing and often dominates above a few MHz. Whether and against which limit a DC input is measured depends on the standard and the setup (wall adapter: at the adapter\'s mains port; vehicle: CISPR 25 right at the input); the yardstick shows the order of magnitude. Paths through transistors (reverse-polarity P-FET) are not followed; then there is no finding.',
         refs: ['ti2155', 'wurthDcdc'] as const,
+      },
+      esdMissing: {
+        what: () => 'Data lines of an interface where cables are plugged in and connectors are touched (USB, HDMI, DisplayPort) have no ESD protection diode.',
+        why: () =>
+          'A discharge per IEC 61000-4-2 drives about 30 A at 8 kV with a rise time under 1 ns into the pin (TI SLVA680). The built-in protection of many ICs is designed for handling during assembly (human body model, usually 2 kV), not for a discharge to the finished device; without an external diode the current flows through the IC. This is immunity, not emission: for multimedia equipment EN 55035 asks for ±4 kV contact and ±8 kV air discharge.',
+        detected: () =>
+          'For cable connectors whose library, value or reference names USB, HDMI or DisplayPort: every net on a pin that is not ground, supply or shield needs a part that is a TVS or ESD diode by library, value or reference (e.g. USBLC6, PESD, TPD, PRTR, ESD…, TVS…). One finding per connector with the unprotected nets.',
+        fixes: () => [
+          'An ESD diode or diode array with a capacitance as low as the interface needs (the datasheet states what it suits, e.g. USB 2.0 high speed), right at the connector.',
+          'Route the line from the connector pin over the diode\'s pad first and then on to the IC, with no via in between.',
+          'Connect the diode\'s ground pad to the ground plane with its own via right at the pad.',
+        ],
+        avoid: () => ['Do not rely on the IC\'s internal protection unless its datasheet states IEC 61000-4-2 robustness.', 'No high-capacitance diode (an ordinary Zener) on fast data lines.'],
+        limits: () =>
+          'The app recognises protection parts only by names and values; a differently named diode does not count. An IC with specified IEC 61000-4-2 robustness on these pins (some interface ICs and USB hubs) needs no external diode. Whether the device passes the test also depends on the enclosure and the shield connection. An ESD diode hardly changes emissions.',
+        refs: ['slva680', 'iec61000_4_2'] as const,
+      },
+      esdPlacement: {
+        what: () => 'The ESD protection diode of a connector line does not sit close enough to the connector, or its ground pad reaches the ground plane only over a longer way.',
+        why: () =>
+          'In an 8 kV discharge the current rises to about 30 A in under 1 ns, about 4·10¹⁰ A/s. Every inductance on the way from the connector to the diode and from the diode to ground adds a voltage that reaches the IC; 0.25 nH already give 10 V (TI SLVA680). With the diode closer to the IC than to the connector, the current splits between diode and IC, and the fast-rising field of the long unprotected stretch couples into neighbouring lines.',
+        detected: () =>
+          'For every protection diode on a connector line: straight distance from the connector pin to the diode pad and from the diode pad to the nearest IC pin (reference U) of the same net. Reported when the diode is not closer to the connector than to the IC (TI: the IC should be much farther from the diode than the diode is from the connector), or when its ground pad neither lies in a ground pour on its layer nor has a ground via within 2 mm. One finding per connector, the worst line.',
+        fixes: () => [
+          'Diode right at the connector; the line from the pin over the diode pad first, then on to the IC.',
+          'Ground pad of the diode to the ground plane with a via right at the pad, better two; with a shielded connector keep shield connection and diode ground close together.',
+          'No via between connector pin and diode.',
+        ],
+        avoid: () => ['Do not connect the diode through a stub (T branch).', 'Do not route unprotected lines next to the stretch from the connector to the diode.'],
+        limits: () =>
+          'Distances are straight lines, not the routed path; whether the line runs over the diode pad or branches off as a stub is not checked. The 2 mm for the ground via are a guide value of the app (TI: a via right at the ground pin).',
+        refs: ['slva680'] as const,
       },
       noAdjacentPlane: {
         what: (p: P) => `The line runs on ${p.layer}, but its nearest reference plane (${p.planeNet} on ${p.plane}) is not on the next layer: another copper layer lies in between.`,

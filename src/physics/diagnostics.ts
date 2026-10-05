@@ -44,6 +44,8 @@ export type DiagnosticKind =
   | 'inductor-placement'
   | 'filter-bypass'
   | 'supply-noise'
+  | 'esd-missing'
+  | 'esd-placement'
   // per source: the reference plane is not on the next layer
   | 'no-adjacent-plane'
   | 'pair-skew'
@@ -67,6 +69,8 @@ export const BOARD_KINDS: DiagnosticKind[] = [
   'inductor-placement',
   'filter-bypass',
   'supply-noise',
+  'esd-missing',
+  'esd-placement',
 ];
 
 export interface Diagnostic {
@@ -122,6 +126,12 @@ export interface Diagnostic {
     henry?: number;
     assumed: boolean;
   };
+  /**
+   * esd-missing (value: number of lines): the connector, its interface and the lines without a
+   * protection diode. esd-placement (value: distance connector pin → diode, mm): the diode, its
+   * distances to the connector pin and to the nearest IC pin, and its way to ground (mm).
+   */
+  esd?: { connector: string; iface: string; missing?: string[]; tvs?: string; conn?: number; ic?: number; gnd?: number };
   /** supply-noise (value: dB over the conducted yardstick): the estimate (supplyNoise.ts). */
   supply?: SupplyNoise;
   /** floating-copper: layer, and whether it is an unconnected island of a net (else no net at all). */
