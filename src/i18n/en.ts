@@ -247,6 +247,11 @@ export const en: Strings = {
           ? `${d.pins.connector}: fast signals (${sig}) lie up to ${d.pins.apart.toFixed(0)} pin positions from the nearest ground pin (guide value: right next to it).`
           : `${d.pins?.connector ?? '?'}: ${d.pins?.fast ?? 0} fast signals (${sig}), but only ${d.pins?.ground ?? 0} ground pins (guide value: one per two fast pins, right next to them).`;
       },
+      'inductor-placement': (d) => {
+        const c = d.crystal;
+        const where = [c && c.edge < 3 ? `${c.edge.toFixed(1)} mm from the board edge` : '', c && c.connector < 10 ? `${c.connector.toFixed(0)} mm from a cable connector` : ''].filter(Boolean).join(' and ');
+        return `Storage inductor ${d.parts?.[0] ?? '?'} on the switch node sits ${where}.`;
+      },
       'edge-trace': (d) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
@@ -277,6 +282,7 @@ export const en: Strings = {
       'floating-copper': (n: number, who: string) => `Remove floating copper or connect it to ground (${n}×).`,
       'heatsink-floating': (n: number, who: string) => `Connect heat sink ${who} to ground.`,
       'ferrite-ground': (n: number, who: string) => `Replace ferrite ${who} between the grounds with a direct connection.`,
+      'inductor-placement': (n: number, who: string) => `Move inductor ${who} away from connector and edge, close to the regulator.`,
     },
     counts: (r: number, y: number, g: number) => `${r} high priority · ${y} check · ${g} low priority`,
     howRanked: 'How order and priority come about',
@@ -489,6 +495,7 @@ export const en: Strings = {
       'ferrite-ground': 'Ferrite between two grounds',
       'pair-skew': 'Differential pair unequal',
       'connector-ground': 'Too few ground pins at the connector',
+      'inductor-placement': 'Storage inductor at edge or connector',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -940,6 +947,15 @@ export const en: Strings = {
         avoid: () => ['Do not put all grounds on one pin at the edge.'],
         limits: () => 'The app does not know the pinout on the other side nor the cable type (twisted pair, shield); a shielded cable with its own return can still be fine.',
         refs: ['clemson', 'hubing2003'] as const,
+      },
+      inductorPlacement: {
+        what: () => 'The storage inductor of a switching regulator sits close to a cable connector or the board edge.',
+        why: () => 'The inductor has a stray field (a large one for open types) and carries the switch node with its steep edges at one end. Close to a connector, magnetic and electric field couple straight into the cable, which radiates them as an antenna.',
+        detected: () => 'Inductors (reference L) with one pad on the switch node; distance of the package corners to the board edge (reported under 3 mm) and to pins of cable connectors (under 10 mm). Guide values, not values from a standard.',
+        fixes: () => ['Move the inductor away from connectors and edges, close to the regulator.', 'Choose a shielded type; for inductors with a marked winding start, connect that to the switch node (then the outer winding sits at the quiet potential).'],
+        avoid: () => ['Do not put the inductor next to input or output connectors, nor under cables routed across the board.'],
+        limits: () => 'The app knows neither the shielding type nor the winding start (the pin number in the footprint says nothing reliable about it). A shielded inductor is much less critical than the finding sounds.',
+        refs: ['slyt682', 'an1149'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

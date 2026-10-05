@@ -553,6 +553,23 @@
    ]
   }
  },
+ "inductor-connector": {
+  "layers": 4,
+  "w": 60,
+  "h": 40,
+  "title": "Speicherdrossel direkt neben dem Ausgangsstecker",
+  "mistake": "Die Drossel des Abwärtswandlers sitzt 3 mm neben dem Stecker, an dem das Ausgangskabel hängt; ihr Streufeld und der Schaltknoten koppeln direkt ins Kabel.",
+  "fix": "Drossel nah an den Regler, weg vom Stecker.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "inductor-placement"
+   ],
+   "good_absent": [
+    "inductor-placement"
+   ]
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

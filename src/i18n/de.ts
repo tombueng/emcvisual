@@ -253,6 +253,11 @@ export const de = {
           ? `${d.pins.connector}: Schnelle Signale (${sig}) liegen bis zu ${d.pins.apart.toFixed(0)} Pinpositionen vom nächsten Massepin entfernt (Richtwert: direkt daneben).`
           : `${d.pins?.connector ?? '?'}: ${d.pins?.fast ?? 0} schnelle Signale (${sig}), aber nur ${d.pins?.ground ?? 0} Massepins (Richtwert: einer je zwei schnelle Pins, direkt daneben).`;
       },
+      'inductor-placement': (d: { parts?: string[]; crystal?: { edge: number; connector: number } }) => {
+        const c = d.crystal;
+        const where = [c && c.edge < 3 ? `${c.edge.toFixed(1).replace('.', ',')} mm von der Platinenkante` : '', c && c.connector < 10 ? `${c.connector.toFixed(0)} mm von einem Kabelstecker` : ''].filter(Boolean).join(' und ');
+        return `Speicherdrossel ${d.parts?.[0] ?? '?'} am Schaltknoten sitzt ${where}.`;
+      },
       'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
@@ -283,6 +288,7 @@ export const de = {
       'floating-copper': (n: number, who: string) => `Schwebendes Kupfer entfernen oder an Masse anbinden (${n}×).`,
       'heatsink-floating': (n: number, who: string) => `Kühlkörper ${who} an Masse anschließen.`,
       'ferrite-ground': (n: number, who: string) => `Ferrit ${who} zwischen den Massen durch eine direkte Verbindung ersetzen.`,
+      'inductor-placement': (n: number, who: string) => `Drossel ${who} weg von Stecker und Rand, nah an den Regler.`,
     },
     counts: (r: number, y: number, g: number) => `${r} hohe Priorität · ${y} ansehen · ${g} nachrangig`,
     howRanked: 'Wie Reihenfolge und Priorität entstehen',
@@ -495,6 +501,7 @@ export const de = {
       'ferrite-ground': 'Ferrit zwischen zwei Massen',
       'pair-skew': 'Differenzpaar ungleich lang',
       'connector-ground': 'Zu wenige Massepins am Stecker',
+      'inductor-placement': 'Speicherdrossel an Rand oder Stecker',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -946,6 +953,15 @@ export const de = {
         avoid: () => ['Nicht alle Massen auf einen Pin am Rand legen.'],
         limits: () => 'Die Pinbelegung auf der Gegenseite und die Kabelart (Twisted Pair, Schirm) kennt die App nicht; ein geschirmtes Kabel mit eigenem Rückleiter kann trotzdem gut sein.',
         refs: ['clemson', 'hubing2003'] as const,
+      },
+      inductorPlacement: {
+        what: () => 'Die Speicherdrossel eines Schaltreglers sitzt nah an einem Kabelstecker oder an der Platinenkante.',
+        why: () => 'Die Drossel hat ein Streufeld (bei offenen Bauformen ein großes) und trägt an einem Ende den Schaltknoten mit seinen steilen Flanken. Nah an einem Stecker koppeln Magnetfeld und elektrisches Feld direkt in das Kabel, das sie als Antenne abstrahlt.',
+        detected: () => 'Spulen (Referenz L), deren eines Pad am Schaltknoten liegt; Abstand der Gehäuseecken zur Platinenkante (gemeldet unter 3 mm) und zu Pins von Kabelsteckern (unter 10 mm). Richtwerte, keine Normwerte.',
+        fixes: () => ['Drossel weg von Steckern und Kanten, nah am Regler.', 'Geschirmte Bauform wählen; bei Drosseln mit markiertem Wicklungsanfang diesen an den Schaltknoten (dann liegt die äußere Wicklung auf ruhigem Potenzial).'],
+        avoid: () => ['Die Drossel nicht neben Ein- oder Ausgangsstecker setzen, auch nicht unter Kabel, die über die Platine geführt werden.'],
+        limits: () => 'Die App kennt weder die Schirmungsart noch den Wicklungsanfang (die Pin-Nummer im Footprint sagt darüber nichts Verlässliches). Eine geschirmte Drossel ist deutlich unkritischer als der Befund klingt.',
+        refs: ['slyt682', 'an1149'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

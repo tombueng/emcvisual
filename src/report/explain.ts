@@ -142,6 +142,9 @@ export function explain(d: Diagnostic): Explanation {
     case 'connector-ground':
       k = 'connectorGround';
       break;
+    case 'inductor-placement':
+      k = 'inductorPlacement';
+      break;
     case 'no-reference':
       k = 'noReference';
       figures.push(E.fig.noReference(p.loopArea));

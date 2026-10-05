@@ -40,6 +40,7 @@ export type DiagnosticKind =
   | 'floating-copper'
   | 'heatsink-floating'
   | 'ferrite-ground'
+  | 'inductor-placement'
   // per source: the reference plane is not on the next layer
   | 'no-adjacent-plane'
   | 'pair-skew'
@@ -60,6 +61,7 @@ export const BOARD_KINDS: DiagnosticKind[] = [
   'heatsink-floating',
   'ferrite-ground',
   'connector-ground',
+  'inductor-placement',
 ];
 
 export interface Diagnostic {
@@ -91,7 +93,7 @@ export interface Diagnostic {
   dims?: { a: Vec2; b: Vec2; text: string }[];
   /** decoupling: the supply pin, the nearest capacitor and its estimated mounting inductance. */
   decoupling?: { pin: string; cap?: string; nh?: number; none?: boolean };
-  /** crystal-placement: distances to the board edge and the nearest cable connector, mm. */
+  /** crystal-placement, inductor-placement: distances to the board edge and the nearest cable connector, mm. */
   crystal?: { edge: number; connector: number };
   /** sw-node: copper area (mm²), layers with copper, distances to edge and connector (mm). */
   sw?: { area: number; layers: number; edge: number; connector: number };

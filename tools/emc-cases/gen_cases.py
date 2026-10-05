@@ -595,6 +595,23 @@ def slot_loop(b, bad):
         b.keepout(b.B, (29, 5, 31, 35))
 
 
+@case('inductor-connector', 4, 60, 40,
+      title='Speicherdrossel direkt neben dem Ausgangsstecker',
+      mistake='Die Drossel des Abwärtswandlers sitzt 3 mm neben dem Stecker, an dem das Ausgangskabel hängt; ihr Streufeld und der Schaltknoten koppeln direkt ins Kabel.',
+      fix='Drossel nah an den Regler, weg vom Stecker.',
+      sources=[],
+      expect={'bad': ['inductor-placement'], 'good_absent': ['inductor-placement']})
+def inductor_connector(b, bad):
+    b.zone('GND', b.In1)
+    b.zone('+12V', b.In2)
+    b.place('Package_TO_SOT_SMD', 'SOT-23-6', 'U1', 'TPS562201', 20, 20, pins={'1': 'GND', '2': 'SW', '3': 'VIN', '4': 'FB', '5': 'EN', '6': 'VBST'})
+    b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x02_P2.54mm_Vertical', 'J1', 'OUT', 56, 20, pins={'1': 'VOUT', '2': 'GND'})
+    lx = 49 if bad else 27
+    b.place('Inductor_SMD', 'L_Taiyo-Yuden_NR-40xx', 'L1', '4.7uH', lx, 20, pins={'1': 'SW', '2': 'VOUT'})
+    b.track('SW', b.F, [b.pad('U1', '2'), (b.pad('U1', '2')[0] - 1, 21.5), (b.pad('L1', '1')[0], 21.5), b.pad('L1', '1')], width=0.8)
+    b.track('VOUT', b.F, [b.pad('L1', '2'), b.pad('J1', '1')], width=0.8)
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

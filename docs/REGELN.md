@@ -45,6 +45,7 @@ Regel fest. Sie ordnet die Arbeit und ist keine Prüfaussage.
 | Quarz an Rand oder Stecker (`crystal-placement`) | näher als 5 mm an der Kante oder 10 mm an einem Kabelstecker | K-17; Infineon AP24026, ST AN2867 | Regel (Richtwerte) | `crystal-edge` |
 | Leitungen unter dem Quarz (`crystal-under`) | fremde Leitungen unter dem Gehäuse, ohne Fläche dazwischen | K-17 | Regel | `crystal-under` |
 | Schaltknoten zu groß (`sw-node`) | SW-Kupfer ab 100 mm², auf mehreren Lagen, oder ab 40 mm² nah an Kante (3 mm) oder Stecker (10 mm) | K-31; LearnEMC, TI | Regel | `sw-node-area` |
+| Speicherdrossel an Rand oder Stecker (`inductor-placement`) | Spule am Schaltknoten näher als 3 mm an der Kante oder 10 mm an einem Kabelstecker; Schirmung und Wicklungsanfang unbekannt | K-33; TI | Regel | `inductor-connector` |
 | Zu wenige Massepins am Stecker (`connector-ground`) | Stecker mit Netzen schneller Quellen (Anstieg bis 5 ns): weniger als ein Massepin je zwei schnelle Pins oder ein schneller Pin mehr als 1,5 Pinabstände vom nächsten Massepin; geschirmt angeschlossene Stecker ausgenommen; ein Befund je Stecker | K-22; Clemson (Z_ant = 80·(N+1) Ω) | Regel | `connector-ground` |
 | Kupfer ohne Anschluss (`floating-copper`) | Zone ohne Netz oder Teilfläche eines Netzes ohne Pad und Via, jeweils ab 25 mm² | K-38 | Regel | `floating-copper` |
 | Kühlkörper ohne Masse (`heatsink-floating`) | Kühlkörper-Footprint, alle Pads ohne Netz | K-37 | Regel | – |

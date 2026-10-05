@@ -68,6 +68,7 @@ const RULE_SCORE = {
   'ferrite-ground': 0.4,
   'pair-skew': 0.4,
   'connector-ground': 0.45,
+  'inductor-placement': 0.4,
 } as const;
 
 /**

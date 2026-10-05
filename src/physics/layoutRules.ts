@@ -40,6 +40,9 @@ export const SW_AREA = 100;
 /** Compact, but at the edge or a connector: still a finding from this size on, mm². */
 export const SW_AREA_COMPACT = 40;
 const SW_EDGE = 3;
+/** Storage inductor closer than this to the board edge / a cable connector, mm. */
+export const INDUCTOR_EDGE = 3;
+export const INDUCTOR_CONN = 10;
 /** Floating copper or unconnected islands from this size, mm². */
 export const FLOAT_AREA = 25;
 const SW_CONN = 10;
@@ -279,6 +282,19 @@ export function layoutRules(ctx: PhysicsContext, sources: Source[] = []): Diagno
         out.push({ ...base('connector-ground', fp.at, Number.isFinite(apart) ? apart : 99, [fp.ref], nets), pins: { connector: fp.ref, ground, fast, apart: Number.isFinite(apart) ? apart : undefined } });
       }
     }
+
+  // --- K-33: storage inductor at the switch node, next to a cable or the edge --------------------
+  const sws = new Set(switchNets(board));
+  for (const fp of board.footprints) {
+    if (!/^L\d/i.test(fp.ref)) continue;
+    const pads = twoPin(board, fp);
+    if (!pads || !pads.some((p) => sws.has(p.net))) continue;
+    const corners = boxCorners(fp.body);
+    const dEdge = Math.min(...corners.map(toEdge));
+    const dConn = connPads.length ? Math.min(...corners.flatMap((c) => connPads.map((q) => dist(c, q)))) : Infinity;
+    if (dEdge < INDUCTOR_EDGE || dConn < INDUCTOR_CONN)
+      out.push({ ...base('inductor-placement', fp.at, Math.min(dEdge, dConn), [fp.ref], pads.map((p) => board.nets[p.net] ?? '')), crystal: { edge: dEdge, connector: dConn } });
+  }
 
   // --- K-38: floating copper ------------------------------------------------------------------------
   for (const z of board.zones) {
