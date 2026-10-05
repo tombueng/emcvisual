@@ -54,6 +54,9 @@ export function marginOf(
  * Board rules (layoutRules.ts): a floating connector shield is a well documented cause of
  * failures (high), the others are worth a look; none of them is quantified.
  */
+/** supply-noise: red from this many dB over the conducted yardstick (same as supplyNoise.ts). */
+const SUPPLY_RED_DB = 20;
+
 const RULE_SCORE = {
   'shield-open': 0.65,
   'shield-weak': 0.45,
@@ -99,6 +102,8 @@ export function findingSeverity(margin: number | null, gain: number | null, kind
   if (kind in RULE_SCORE) score = RULE_SCORE[kind as keyof typeof RULE_SCORE];
   // a filter bypassed already below 100 MHz no longer works in the range where cables radiate most
   if (kind === 'filter-bypass' && value !== undefined && value <= 1e8) score = 0.6;
+  // switching current on the supply cable: computed against a yardstick, red from 20 dB over it
+  if (kind === 'supply-noise') score = value !== undefined && value >= SUPPLY_RED_DB ? 0.6 : 0.45;
   // a gap in the return plane under a source with spectrum in the measured range: the voltage
   // across the gap drives the plane halves and cables against each other (common mode), which
   // the differential-mode figures do not contain. The literature treats it as one of the most

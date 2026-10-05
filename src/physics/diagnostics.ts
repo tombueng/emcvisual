@@ -12,6 +12,7 @@ import { farMoment } from './farfield';
 import type { Source } from './sources';
 import type { Detour } from './returnPaths';
 import { lineAmp } from './spectrum';
+import type { SupplyNoise } from './supplyNoise';
 import type { CmEstimate } from './commonMode';
 import type { IoCouplingEstimate } from './ioCoupling';
 
@@ -42,6 +43,7 @@ export type DiagnosticKind =
   | 'ferrite-ground'
   | 'inductor-placement'
   | 'filter-bypass'
+  | 'supply-noise'
   // per source: the reference plane is not on the next layer
   | 'no-adjacent-plane'
   | 'pair-skew'
@@ -64,6 +66,7 @@ export const BOARD_KINDS: DiagnosticKind[] = [
   'connector-ground',
   'inductor-placement',
   'filter-bypass',
+  'supply-noise',
 ];
 
 export interface Diagnostic {
@@ -119,6 +122,8 @@ export interface Diagnostic {
     henry?: number;
     assumed: boolean;
   };
+  /** supply-noise (value: dB over the conducted yardstick): the estimate (supplyNoise.ts). */
+  supply?: SupplyNoise;
   /** floating-copper: layer, and whether it is an unconnected island of a net (else no net at all). */
   copper?: { layer: string; island: boolean };
   otherNet?: string;

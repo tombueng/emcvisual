@@ -637,6 +637,39 @@ def filter_bypass(b, bad):
     b.via('+12V_F', 30, 20)
 
 
+@case('input-filter', 2, 60, 40,
+      title='Schaltregler ohne Eingangsfilter direkt an der Versorgungsbuchse',
+      mistake='Der Abwärtswandler U1 hängt über eine Bahn direkt an der 12-V-Buchse J1. Sein Eingangskondensator (10 µF) nimmt den pulsförmigen Eingangsstrom nur teilweise auf; der Rest geht auf das Versorgungskabel (rechnerisch rund 80 dBµV bei 500 kHz an einer Netznachbildung).',
+      fix='LC-Filter an der Buchse: 4,7 µF direkt an J1, 10 µH in Reihe, dahinter der Eingangskondensator des Reglers.',
+      sources=[loop_source('buck', 'Buck 500 kHz', ['C1.1', 'U1.3', 'U1.1', 'C1.2'], 'SW')],
+      expect={'bad': ['supply-noise'], 'good_absent': ['supply-noise']})
+def input_filter(b, bad):
+    b.zone('GND', b.B)
+    b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x02_P2.54mm_Vertical', 'J1', 'DC 12V', 4, 20, pins={'1': '+12V_IN', '2': 'GND'})
+    b.place('Package_TO_SOT_SMD', 'SOT-23-6', 'U1', 'TPS562201', 45, 20, pins={'1': 'GND', '2': 'SW', '3': 'VIN' if not bad else '+12V_IN', '4': 'FB', '5': 'EN', '6': 'VBST'})
+    vin_net = '+12V_IN' if bad else 'VIN'
+    vin = b.pad('U1', '3')
+    gnd = b.pad('U1', '1')
+    cap(b, 'C1', vin[0] - 2.4, 20, vin_net, 'GND', rot=90, value='10uF')
+    c1, c2 = b.pad('C1', '1'), b.pad('C1', '2')
+    b.track(vin_net, b.F, [c1, vin], width=0.6)
+    b.track('GND', b.F, [c2, gnd], width=0.6)
+    b.via('GND', gnd[0] - 0.9, gnd[1] - 0.9)
+    j = b.pad('J1', '1')
+    if bad:
+        b.track('+12V_IN', b.F, [j, (j[0] + 3, j[1]), (c1[0], j[1]), c1], width=0.8)
+    else:
+        cap(b, 'C2', 9, 23, '+12V_IN', 'GND', rot=90, value='4.7uF')
+        b.place('Inductor_SMD', 'L_Taiyo-Yuden_NR-40xx', 'L1', '10uH', 14, 20, pins={'1': '+12V_IN', '2': 'VIN'})
+        cp = b.pad('C2', '1')
+        b.track('+12V_IN', b.F, [j, (cp[0], j[1]), b.pad('L1', '1')], width=0.8)
+        b.track('+12V_IN', b.F, [(cp[0], j[1]), cp], width=0.6)
+        b.track('VIN', b.F, [b.pad('L1', '2'), (c1[0], j[1]), c1], width=0.8)
+        g = b.pad('C2', '2')
+        b.via('GND', g[0], g[1] + 1.0)
+        b.track('GND', b.F, [g, (g[0], g[1] + 1.0)], width=0.4)
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

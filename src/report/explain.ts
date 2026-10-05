@@ -145,6 +145,15 @@ export function explain(d: Diagnostic): Explanation {
     case 'inductor-placement':
       k = 'inductorPlacement';
       break;
+    case 'supply-noise': {
+      k = 'supplyNoise';
+      const sn = d.supply;
+      if (sn) {
+        const path = sn.path.length ? sn.path.join(' → ') : E.fig.supplyDirect;
+        figures.push(E.fig.supply(formatEng(sn.cin, 'F', 2), sn.cinParts.join(', ') || '–', path, formatEng(sn.worst.f, 'Hz', 3), formatEng(sn.worst.amps, 'A', 2), fmtNum(sn.worst.db, 0), fmtNum(sn.worst.limit, 0)));
+      }
+      break;
+    }
     case 'filter-bypass': {
       k = 'filterBypass';
       const b = d.bypass;
@@ -241,7 +250,8 @@ export function explain(d: Diagnostic): Explanation {
   const margin = d.kind === 'cable-cm' ? (d.cm?.worst?.margin ?? null) : d.kind === 'io-coupling' ? (d.io?.worst?.margin ?? null) : worst ? worst.db - worst.lim : null;
   const severity = findingSeverity(margin, d.gain?.db ?? null, d.kind, d.value);
   const fAt = d.kind === 'cable-cm' ? d.cm?.worst?.f : d.kind === 'io-coupling' ? d.io?.worst?.f : worst?.f;
-  const reason = BOARD_KINDS.includes(d.kind) ? t.severity.rule : t.severity.reason(margin !== null && fAt !== undefined ? `${t.diag.margin(margin)} (${formatEng(fAt, 'Hz', 3)})` : '–', gain ? gainText(d) : t.severity.noGain);
+  const ruleReason = d.kind === 'supply-noise' ? t.severity.supply(fmtNum(d.value, 0)) : d.kind === 'filter-bypass' ? t.severity.bypass : t.severity.rule;
+  const reason = BOARD_KINDS.includes(d.kind) ? ruleReason : t.severity.reason(margin !== null && fAt !== undefined ? `${t.diag.margin(margin)} (${formatEng(fAt, 'Hz', 3)})` : '–', gain ? gainText(d) : t.severity.noGain);
 
   return {
     what: text.what(p),

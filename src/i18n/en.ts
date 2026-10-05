@@ -261,6 +261,8 @@ export const en: Strings = {
       },
       'filter-bypass': (d, f) =>
         `Filter ${d.parts?.[0] ?? '?'} bypassed: copper of ${d.nets?.[0] ?? '?'} and ${d.nets?.[1] ?? '?'} overlaps on ${(d.bypass?.area ?? 0).toFixed(0)} mm² (≈ ${((d.bypass?.cap ?? 0) * 1e12).toFixed(0)} pF); above about ${f(d.value)} the noise goes around it.`,
+      'supply-noise': (d, f) =>
+        `Switching current of ${d.supply?.regulators.join(', ') || '?'} on the cable at ${d.supply?.connector ?? '?'}${d.supply?.filters.length ? ` (despite ${d.supply.filters.join(', ')})` : ', no filter'}: estimated ${(d.supply?.worst.db ?? 0).toFixed(0)} dBµV at ${f(d.supply?.worst.f ?? 0)} on a LISN, ${d.value.toFixed(0)} dB over the yardstick.`,
       'edge-trace': (d) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
@@ -293,6 +295,7 @@ export const en: Strings = {
       'ferrite-ground': (n: number, who: string) => `Replace ferrite ${who} between the grounds with a direct connection.`,
       'inductor-placement': (n: number, who: string) => `Move inductor ${who} away from connector and edge, close to the regulator.`,
       'filter-bypass': (n: number, who: string) => `Separate the input and output copper of filter ${who}, with a ground plane between them.`,
+      'supply-noise': (n: number, who: string) => `Put an LC filter (inductor of a few µH, capacitor of a few µF) into the supply input at ${who}.`,
     },
     counts: (r: number, y: number, g: number) => `${r} high priority · ${y} check · ${g} low priority`,
     howRanked: 'How order and priority come about',
@@ -507,6 +510,7 @@ export const en: Strings = {
       'connector-ground': 'Too few ground pins at the connector',
       'inductor-placement': 'Storage inductor at edge or connector',
       'filter-bypass': 'Filter bypassed by overlap',
+      'supply-noise': 'Switching current on the supply cable',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -628,6 +632,9 @@ export const en: Strings = {
         `${ref} (${part}): ${area} mm² overlap, most of it between ${layers}; as a plate capacitor ε0·εr·A/h ≈ ${cap} pF. From about ${fx} on this capacitor has a lower impedance than the filter part.`,
       bypassFerrite: (z: string, assumed: boolean) => (assumed ? `ferrite, value not readable, ${z} Ω at 100 MHz assumed` : `ferrite, ${z} Ω at 100 MHz`),
       bypassInductor: (l: string) => `inductor, ${l}`,
+      supply: (cin: string, caps: string, path: string, f: string, ma: string, db: string, lim: string) =>
+        `Capacitance at the regulator input ${cin} (${caps}); path to the connector: ${path}; at the cable end 50 Ω per line (LISN). Strongest line against the yardstick: ${f}, ${ma} on the cable, ${db} dBµV against ${lim} dBµV.`,
+      supplyDirect: 'direct, same net',
       noReference: (mm2: string) => `Signal and return (through the ground copper) enclose about ${mm2} mm².`,
       hotLoop: (mm2: string) => `Area of the loop along the copper: about ${mm2} mm² (compact with SOT-23/0603: 10–20 mm²).`,
       series: (list: string, tr: string, trEff: string) => `Series resistor ${list}: the edge at the load slows from ${tr} to about ${trEff} (RC of the resistor with line plus load capacitance, added in quadrature).`,
@@ -681,6 +688,8 @@ export const en: Strings = {
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
       hubing2022: 'T. Hubing: Common PCB Layout Mistakes that Cause EMC Compliance Failures. AltiumLive 2022, keynote (resources.altium.com).',
       adiFerrite: 'C. Burket: All About Ferrite Beads / Ferrite Beads Demystified. Analog Devices, Analog Dialogue 50-02, 2016.',
+      ti2155: 'Texas Instruments AN-2155 (SNVA638): Layout Tips for EMI Reduction in DC/DC Converters.',
+      wurthDcdc: 'Würth Elektronik: Filtering considerations for DC/DC converters (application note, 2025).',
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (hot loop, input capacitor).',
     },
     kinds: {
@@ -928,6 +937,22 @@ export const en: Strings = {
           'How much attenuation remains depends on the shunt capacitor after the filter: the overlap forms a divider with it. With a good capacitor right at the output part of the effect remains; without one the filter is practically useless above the frequency given. Fringing is not computed (for narrow tracks the capacitance is larger), nor coupling side by side on the same layer or through the magnetic field. Pours of other nets in between count as a shield, since they usually connect to ground through capacitors. Whether the part is meant as a filter and its value come from reference and value field; an unreadable ferrite is taken as 600 Ω.',
         refs: ['hubing2022', 'adiFerrite'] as const,
       },
+      supplyNoise: {
+        what: () => 'Part of the pulsed input current of a switching regulator reaches a cable through the supply, because there is no adequate filter between regulator and connector.',
+        why: () =>
+          'The input capacitor takes only part of the AC current; the rest divides by impedance, and the cable with whatever is connected to it is not high-impedance at these frequencies. On the cable the current is conducted noise (150 kHz to 30 MHz), and its harmonics make the cable radiate up to about 100 MHz. TI reports up to 20 dB less radiation from a buck converter with an LC input filter.',
+        detected: () =>
+          'For every enabled loop source with a switch node (a regulator) the app takes the net of its input, looks for the shortest path through series parts (fuse, diode, inductor, ferrite, resistor up to 1 Ω) to a cable connector and computes the current divider along that path: capacitors per net with ESR and ESL (ceramic 5 mΩ, 1 nH; electrolytic 0.1 Ω, 5 nH; track to the regulator 0.5 nH/mm), inductors with their inductance, ferrites below 100 MHz as an inductance Z/(2π·100 MHz), and at the cable end a LISN with 50 Ω per line. Reported when the voltage at the LISN between 150 kHz and 30 MHz exceeds the yardstick; high priority from 20 dB over it. The yardstick is the average limit for AC mains ports of EN 55032 class B (56 to 46 dBµV up to 500 kHz, 46 dBµV up to 5 MHz, 50 dBµV up to 30 MHz). Regulators on the same input add up.',
+        fixes: () => [
+          'An LC filter in the input: an inductor (a few µH, rated for the current) and a capacitor at the connector; the regulator\'s input capacitor is the other half. A ferrite alone hardly helps at the switching frequency, only above some tens of MHz.',
+          'The filter at the connector, not at the regulator: otherwise the stretch in between stays unfiltered.',
+          'Damp the filter\'s resonance (an electrolytic with some ESR in parallel, or an RC), otherwise it can make the regulator oscillate.',
+        ],
+        avoid: () => ['Do not connect the regulator straight to the input jack, not even "because the input capacitor is there".', 'Do not bypass the filter by overlapping input and output copper (see "Filter bypassed by overlap").'],
+        limits: () =>
+          'An estimate with assumed part values: ESR and ESL of the capacitors, the DC-bias loss of ceramic capacitance (often −50 % and more) and the real impedance of the ferrite and the inductor\'s self-resonance (above it the inductor hardly filters, often from 20–50 MHz on) are not taken into account; the LISN stands in for whatever is really connected to the cable. Only the differential-mode part is computed; the common-mode part through switch-node capacitances is missing and often dominates above a few MHz. Whether and against which limit a DC input is measured depends on the standard and the setup (wall adapter: at the adapter\'s mains port; vehicle: CISPR 25 right at the input); the yardstick shows the order of magnitude. Paths through transistors (reverse-polarity P-FET) are not followed; then there is no finding.',
+        refs: ['ti2155', 'wurthDcdc'] as const,
+      },
       noAdjacentPlane: {
         what: (p: P) => `The line runs on ${p.layer}, but its nearest reference plane (${p.planeNet} on ${p.plane}) is not on the next layer: another copper layer lies in between.`,
         why: () => 'The area enclosed by signal and return is length times distance to the reference plane. With the plane two dielectrics away the loop gets larger, and the field spreads into the layer in between (crosstalk). Ott and Hartley name "every signal layer next to a plane" as the first rule of a stack-up.',
@@ -1062,6 +1087,8 @@ export const en: Strings = {
     scale: 'Priority in the model: red = the source is near or over the limit at 3 m in the model and this finding contributes a lot, or it is a mistake tests are known to fail on (gap under fast lines, large hot loop); yellow = worth a look; green = far below the limit in the model. This orders the work and says nothing about the test result: the app computes common-mode currents on cables and on the board itself only as a rough worst-case estimate, and they often exceed the differential-mode emission by 20 dB or more.',
     reason: (margin: string, gain: string) => `${margin}; ${gain}`,
     noGain: 'effect not quantified',
+    supply: (db: string) => `Estimate against a yardstick (not a test result): ${db} dB over it; high priority from 20 dB.`,
+    bypass: 'Layout rule with the overlap computed: high priority when the filter is bypassed below 100 MHz already, otherwise check.',
     rule: 'Layout rule from the literature, not computed: the priority is fixed per rule.',
   },
   standards: {

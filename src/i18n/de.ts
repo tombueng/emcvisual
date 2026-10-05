@@ -267,6 +267,8 @@ export const de = {
       },
       'filter-bypass': (d: { value: number; parts?: string[]; nets?: string[]; bypass?: { cap: number; area: number } }, f: (v: number) => string) =>
         `Filter ${d.parts?.[0] ?? '?'} umgangen: Kupfer von ${d.nets?.[0] ?? '?'} und ${d.nets?.[1] ?? '?'} liegt auf ${(d.bypass?.area ?? 0).toFixed(0)} mm² übereinander (≈ ${((d.bypass?.cap ?? 0) * 1e12).toFixed(0)} pF); oberhalb von etwa ${f(d.value)} geht die Störung daran vorbei.`,
+      'supply-noise': (d: { value: number; supply?: { connector: string; regulators: string[]; filters: string[]; worst: { f: number; db: number } } }, f: (v: number) => string) =>
+        `Schaltstrom von ${d.supply?.regulators.join(', ') || '?'} auf dem Kabel an ${d.supply?.connector ?? '?'}${d.supply?.filters.length ? ` (trotz ${d.supply.filters.join(', ')})` : ', ohne Filter'}: rechnerisch ${(d.supply?.worst.db ?? 0).toFixed(0)} dBµV bei ${f(d.supply?.worst.f ?? 0)} an einer Netznachbildung, ${d.value.toFixed(0)} dB über dem Maßstab.`,
       'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
@@ -299,6 +301,7 @@ export const de = {
       'ferrite-ground': (n: number, who: string) => `Ferrit ${who} zwischen den Massen durch eine direkte Verbindung ersetzen.`,
       'inductor-placement': (n: number, who: string) => `Drossel ${who} weg von Stecker und Rand, nah an den Regler.`,
       'filter-bypass': (n: number, who: string) => `Ein- und Ausgangskupfer von Filter ${who} auseinanderlegen, Massefläche dazwischen.`,
+      'supply-noise': (n: number, who: string) => `LC-Filter (Spule einige µH, Kondensator einige µF) in den Versorgungseingang an ${who}.`,
     },
     counts: (r: number, y: number, g: number) => `${r} hohe Priorität · ${y} ansehen · ${g} nachrangig`,
     howRanked: 'Wie Reihenfolge und Priorität entstehen',
@@ -513,6 +516,7 @@ export const de = {
       'connector-ground': 'Zu wenige Massepins am Stecker',
       'inductor-placement': 'Speicherdrossel an Rand oder Stecker',
       'filter-bypass': 'Filter durch Überlappung umgangen',
+      'supply-noise': 'Schaltstrom auf dem Versorgungskabel',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -634,6 +638,9 @@ export const de = {
         `${ref} (${part}): ${area} mm² Überlappung, größter Anteil zwischen ${layers}; als Plattenkondensator ε0·εr·A/h ≈ ${cap} pF. Ab etwa ${fx} ist dieser Kondensator niederohmiger als das Filterbauteil.`,
       bypassFerrite: (z: string, assumed: boolean) => (assumed ? `Ferrit, Wert nicht lesbar, ${z} Ω bei 100 MHz angenommen` : `Ferrit, ${z} Ω bei 100 MHz`),
       bypassInductor: (l: string) => `Spule, ${l}`,
+      supply: (cin: string, caps: string, path: string, f: string, ma: string, db: string, lim: string) =>
+        `Kapazität am Reglereingang ${cin} (${caps}); Weg zum Stecker: ${path}; am Kabelende je Leitung 50 Ω (Netznachbildung). Stärkste Linie gegen den Maßstab: ${f}, ${ma} auf dem Kabel, ${db} dBµV gegen ${lim} dBµV.`,
+      supplyDirect: 'direkt, gleiches Netz',
       noReference: (mm2: string) => `Hin- und Rückweg (durch das Massekupfer) umschließen etwa ${mm2} mm².`,
       hotLoop: (mm2: string) => `Fläche der Schleife entlang des Kupfers: etwa ${mm2} mm² (kompakt mit SOT-23/0603: 10–20 mm²).`,
       series: (list: string, tr: string, trEff: string) => `Serienwiderstand ${list}: Die Flanke an der Last wird von ${tr} auf etwa ${trEff} langsamer (RC aus Widerstand und Leitungs- plus Lastkapazität, quadratisch addiert).`,
@@ -688,6 +695,8 @@ export const de = {
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
       hubing2022: 'T. Hubing: Common PCB Layout Mistakes that Cause EMC Compliance Failures. AltiumLive 2022, Keynote (resources.altium.com).',
       adiFerrite: 'C. Burket: All About Ferrite Beads / Ferrite Beads Demystified. Analog Devices, Analog Dialogue 50-02, 2016.',
+      ti2155: 'Texas Instruments AN-2155 (SNVA638): Layout Tips for EMI Reduction in DC/DC Converters.',
+      wurthDcdc: 'Würth Elektronik: Filtering considerations for DC/DC converters (Application Note, 2025).',
     },
     kinds: {
       gapDetour: {
@@ -934,6 +943,22 @@ export const de = {
           'Wie viel Dämpfung bleibt, hängt vom Querkondensator hinter dem Filter ab: Die Überlappung bildet mit ihm einen Teiler. Mit einem guten Kondensator direkt am Ausgang bleibt ein Teil der Wirkung, ohne ihn ist der Filter oberhalb der genannten Frequenz praktisch wirkungslos. Randfelder sind nicht gerechnet (bei schmalen Bahnen ist die Kapazität größer), Kopplung nebeneinander auf derselben Lage und über das Magnetfeld auch nicht. Flächen anderer Netze dazwischen zählen als Schirm, weil sie meist über Kondensatoren an Masse hängen. Ob das Bauteil als Filter gemeint ist und welchen Wert es hat, liest die App aus Referenz und Wertfeld; ein nicht lesbarer Ferrit wird mit 600 Ω angesetzt.',
         refs: ['hubing2022', 'adiFerrite'] as const,
       },
+      supplyNoise: {
+        what: () => 'Der pulsförmige Eingangsstrom eines Schaltreglers gelangt zu einem Teil über die Versorgung auf ein Kabel, weil zwischen Regler und Stecker kein ausreichendes Filter liegt.',
+        why: () =>
+          'Der Eingangskondensator übernimmt den Wechselanteil nur teilweise; der Rest teilt sich nach den Impedanzen auf, und das Kabel mit dem, was daran hängt, ist für diese Frequenzen nicht hochohmig. Auf dem Kabel ist der Strom eine leitungsgebundene Störung (150 kHz bis 30 MHz), und seine Oberwellen strahlen das Kabel bis etwa 100 MHz ab. TI berichtet bis zu 20 dB weniger Abstrahlung eines Abwärtswandlers mit einem LC-Eingangsfilter.',
+        detected: () =>
+          'Für jede aktive Schleifenquelle mit Schaltknoten (ein Regler) nimmt die App das Netz ihres Eingangs, sucht den kürzesten Weg über Reihenbauteile (Sicherung, Diode, Spule, Ferrit, Widerstand bis 1 Ω) zu einem Kabelstecker und rechnet den Stromteiler entlang dieses Wegs: Kondensatoren je Netz mit ESR und ESL (Keramik 5 mΩ, 1 nH; Elko 0,1 Ω, 5 nH; Leitung zum Regler 0,5 nH/mm), Spulen mit ihrer Induktivität, Ferrite unterhalb 100 MHz als Induktivität Z/(2π·100 MHz), am Kabelende eine Netznachbildung mit 50 Ω je Leitung. Gemeldet, wenn die Spannung an der Netznachbildung zwischen 150 kHz und 30 MHz über dem Maßstab liegt; hohe Priorität ab 20 dB darüber. Maßstab ist der Mittelwert-Grenzwert für Netzanschlüsse nach EN 55032 Klasse B (56 bis 46 dBµV bis 500 kHz, 46 dBµV bis 5 MHz, 50 dBµV bis 30 MHz). Regler am selben Eingang werden addiert.',
+        fixes: () => [
+          'Ein LC-Filter in den Eingang: Spule (einige µH, für den Strom ausgelegt) und Kondensator am Stecker, der Eingangskondensator des Reglers ist die zweite Hälfte. Ein Ferrit allein hilft bei der Schaltfrequenz kaum, erst oberhalb einiger zehn MHz.',
+          'Das Filter an den Stecker, nicht an den Regler: Die Strecke dazwischen bleibt sonst ungefiltert.',
+          'Die Resonanz des Filters dämpfen (Elko mit etwas ESR parallel oder ein RC-Glied), sonst kann es den Regler zum Schwingen bringen.',
+        ],
+        avoid: () => ['Den Regler nicht direkt an die Eingangsbuchse hängen, auch nicht „weil der Eingangskondensator ja da ist“.', 'Das Filter nicht durch Überlappung von Ein- und Ausgangskupfer umgehen (siehe „Filter durch Überlappung umgangen“).'],
+        limits: () =>
+          'Eine Abschätzung mit angenommenen Bauteilwerten: ESR und ESL der Kondensatoren, die Gleichspannungsabsenkung der Keramikkapazität (oft −50 % und mehr) und die echte Impedanz des Ferrits und die Eigenresonanz der Spule (oberhalb davon filtert sie kaum noch, oft schon ab 20–50 MHz) sind nicht berücksichtigt; die Netznachbildung ersetzt das, was wirklich am Kabel hängt. Gerechnet ist nur der Gegentaktanteil; der Gleichtaktanteil über Schaltknoten-Kapazitäten fehlt, er überwiegt oft oberhalb einiger MHz. Ob und mit welchem Grenzwert ein Gleichspannungseingang gemessen wird, hängt von Norm und Aufbau ab (Steckernetzteil: am Netzanschluss des Netzteils; Fahrzeug: CISPR 25 direkt am Eingang); der Maßstab zeigt die Größenordnung. Wege über Transistoren (Verpolschutz mit P-FET) verfolgt die App nicht; dann gibt es keinen Befund.',
+        refs: ['ti2155', 'wurthDcdc'] as const,
+      },
       noAdjacentPlane: {
         what: (p: P) => `Die Leitung läuft auf ${p.layer}, ihre nächste Bezugsfläche (${p.planeNet} auf ${p.plane}) liegt aber nicht auf der Nachbarlage: Dazwischen ist eine weitere Kupferlage.`,
         why: () => 'Die Fläche, die Hin- und Rückstrom umschließen, ist Länge mal Abstand zur Bezugsfläche. Liegt die Fläche zwei Dielektrika entfernt, wird die Schleife größer, und das Feld verteilt sich in die Lage dazwischen (Übersprechen). Ott und Hartley nennen „jede Signallage grenzt an eine Fläche“ als erste Regel für den Lagenaufbau.',
@@ -1071,6 +1096,8 @@ export const de = {
     scale: 'Priorität im Modell: rot = die Quelle liegt im Modell nahe am oder über dem Grenzwert (3 m) und dieser Hinweis trägt viel dazu bei, oder es ist ein Fehler, an dem Prüfungen erfahrungsgemäß scheitern (Lücke unter schnellen Leitungen, große heiße Schleife); gelb = ansehen; grün = im Modell weit unter dem Grenzwert. Das ordnet die Arbeit und sagt nichts über das Prüfergebnis: Gleichtaktströme auf Kabeln und auf der Platine selbst rechnet die App nur als grobe Abschätzung im ungünstigsten Fall, und sie übertreffen die Gegentaktabstrahlung oft um 20 dB und mehr.',
     reason: (margin: string, gain: string) => `${margin}; ${gain}`,
     noGain: 'Wirkung nicht beziffert',
+    supply: (db: string) => `Abschätzung gegen einen Maßstab (keine Prüfaussage): ${db} dB darüber; hohe Priorität ab 20 dB.`,
+    bypass: 'Layoutregel mit Rechnung der Überlappung: hohe Priorität, wenn der Filter schon unter 100 MHz umgangen ist, sonst ansehen.',
     rule: 'Layoutregel aus der Literatur, nicht berechnet: Die Priorität ist fest je Regel.',
   },
   standards: {

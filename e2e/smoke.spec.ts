@@ -411,3 +411,20 @@ test('board rules: a filter bypassed by overlapping copper, with the capacitance
   await page.screenshot({ path: 'e2e/output/filter-bypass.png' });
   expect(errors).toEqual([]);
 });
+
+test('demo: the regulators switching current on the 12 V cable, with the divider in the explanation', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demo-Platine laden' }).click();
+  await page.getByRole('tab', { name: /Diagnose/ }).click();
+  const item = page.locator('ol.ranked li').filter({ hasText: 'Schaltstrom von U1, U3 auf dem Kabel an J1, ohne Filter' });
+  await expect(item).toBeVisible({ timeout: 30_000 });
+  await item.getByRole('button').click();
+  const card = page.locator('aside.card');
+  await expect(card.locator('.severity .chip')).toHaveText('hohe Priorität');
+  await expect(card).toContainText('Kapazität am Reglereingang 20 µF');
+  await expect(card).toContainText('EN 55032');
+  await page.screenshot({ path: 'e2e/output/supply-noise.png' });
+  expect(errors).toEqual([]);
+});

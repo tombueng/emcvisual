@@ -587,6 +587,47 @@
    ]
   }
  },
+ "input-filter": {
+  "layers": 2,
+  "w": 60,
+  "h": 40,
+  "title": "Schaltregler ohne Eingangsfilter direkt an der Versorgungsbuchse",
+  "mistake": "Der Abwärtswandler U1 hängt über eine Bahn direkt an der 12-V-Buchse J1. Sein Eingangskondensator (10 µF) nimmt den pulsförmigen Eingangsstrom nur teilweise auf; der Rest geht auf das Versorgungskabel (rechnerisch rund 80 dBµV bei 500 kHz an einer Netznachbildung).",
+  "fix": "LC-Filter an der Buchse: 4,7 µF direkt an J1, 10 µH in Reihe, dahinter der Eingangskondensator des Reglers.",
+  "sources": [
+   {
+    "id": "buck",
+    "type": "loop",
+    "name": "Buck 500 kHz",
+    "enabled": true,
+    "color": "#f472b6",
+    "pads": [
+     "C1.1",
+     "U1.3",
+     "U1.1",
+     "C1.2"
+    ],
+    "waveform": {
+     "f0": 500000.0,
+     "duty": 0.28,
+     "tr": 5e-09,
+     "amplitude": 2.0
+    },
+    "node": {
+     "net": "SW",
+     "voltage": 12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "supply-noise"
+   ],
+   "good_absent": [
+    "supply-noise"
+   ]
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

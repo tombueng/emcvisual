@@ -26,6 +26,8 @@ export function diagnosticText(d: Diagnostic): string {
         return k['long-line'](d, (v) => formatEng(v, 'Hz', 2));
       case 'filter-bypass':
         return k['filter-bypass'](d, (v) => formatEng(v, 'Hz', 2));
+      case 'supply-noise':
+        return k['supply-noise'](d, (v) => formatEng(v, 'Hz', 2));
       default:
         // every other kind takes the diagnostic alone
         return (k[d.kind] as (x: Diagnostic) => string)(d);

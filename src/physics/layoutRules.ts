@@ -21,6 +21,10 @@ import { dielectricBetween, lineParams } from './currents';
 import { cableConnectors, SUPPLY_NET } from './commonMode';
 import type { Diagnostic } from './diagnostics';
 import type { Source } from './sources';
+import { FERRITE_DEFAULT, filterPart, type FilterPart } from './filterParts';
+import { supplyNoiseFindings } from './supplyNoise';
+
+export { filterPart, type FilterPart };
 
 const GROUND = /^(\/)?(gnd|vss|0v|agnd|dgnd|pgnd|gndd|gnda|gndpwr|earth|ground|masse|chassis|shield)([_\-.]?\w*)?$/i;
 const SUPPLY = /^(\/)?(\+?\d+(\.\d+)?v\d*|\+?\d+v\d+|v\d+v\d+|vcc\w*|vdd\w*|avdd\w*|dvdd\w*|vio\w*|vbat\w*|vbus\w*|vin\w*|p\d+v\d+|v_?\d+v\d*)$/i;
@@ -56,7 +60,6 @@ export const BYPASS_MIN_C = 3e-12;
 /** Reported when the capacitance takes over below this frequency (the usual limit range ends at 1 GHz), Hz. */
 export const BYPASS_MAX_F = 1e9;
 /** A ferrite bead without a readable value: the common 600 Ω at 100 MHz. */
-const FERRITE_DEFAULT = 600;
 /** Package and vias of a decoupling capacitor, nH (Clemson power-bus decoupling: about 1 nH). */
 const MOUNT_NH = 1;
 
@@ -359,6 +362,9 @@ export function layoutRules(ctx: PhysicsContext, sources: Source[] = []): Diagno
     });
   }
 
+  // --- K-34: switching current of the regulators on the supply cable -----------------------------
+  out.push(...supplyNoiseFindings(ctx, sources));
+
   // --- K-26: ferrite between two grounds ---------------------------------------------------------
   for (const fp of board.footprints) {
     if (!/^(FB|L)\d/i.test(fp.ref)) continue;
@@ -368,41 +374,6 @@ export function layoutRules(ctx: PhysicsContext, sources: Source[] = []): Diagno
       out.push(base('ferrite-ground', fp.at, 0, [fp.ref], pads.map((p) => board.nets[p.net] ?? '')));
   }
   return out;
-}
-
-export interface FilterPart {
-  /** Ferrite: impedance at 100 MHz, Ω. Inductor: inductance, H. */
-  ohms?: number;
-  henry?: number;
-  /** The value could not be read; a typical one is assumed. */
-  assumed: boolean;
-}
-
-const SI: Record<string, number> = { p: 1e-12, n: 1e-9, u: 1e-6, µ: 1e-6, μ: 1e-6, m: 1e-3, '': 1 };
-
-/**
- * A series filter part from reference, library and value: ferrite beads ("600R@100MHz",
- * "BLM18PG221SN1" = 220 Ω, or FB without a value: 600 Ω assumed) and inductors ("10uH").
- * Parts whose value says nothing are left out unless they are named as ferrites.
- */
-export function filterPart(fp: Footprint): FilterPart | null {
-  const v = fp.value.replace(',', '.');
-  const isFb = /^FB\d/i.test(fp.ref) || /ferrite|bead/i.test(fp.lib) || /ferrite|ferret|bead|^FB|BLM\d|MPZ\d/i.test(v);
-  if (!isFb && !/^L\d/i.test(fp.ref)) return null;
-  // "600R", "600R@100MHz", "600 Ω": an impedance (not "2R2", which is 2.2 µH on inductors)
-  const ohm = /(\d+(?:\.\d+)?)\s*(?:R|Ω|ohms?)(?![a-z0-9])/i.exec(v);
-  if (ohm) return { ohms: Number(ohm[1]), assumed: false };
-  const murata = /BLM\d{2}[A-Z]{2}(\d)(\d)(\d)/i.exec(v);
-  if (murata) return { ohms: Number(murata[1]! + murata[2]!) * 10 ** Number(murata[3]!), assumed: false };
-  if (!isFb) {
-    // "10uH", "4.7 µH", "10u" and "4u7"
-    const h = /(\d+(?:\.\d+)?)\s*([pnuµμm]?)H(?![a-z])/i.exec(v) ?? /^(\d+(?:\.\d+)?)\s*([pnuµμ])$/i.exec(v.trim());
-    if (h) return { henry: Number(h[1]) * (SI[h[2]!.toLowerCase()] ?? 1), assumed: false };
-    const mid = /^(\d+)([pnuµμ])(\d+)$/i.exec(v.trim());
-    if (mid) return { henry: Number(`${mid[1]}.${mid[3]}`) * (SI[mid[2]!.toLowerCase()] ?? 1), assumed: false };
-    return null;
-  }
-  return { ohms: FERRITE_DEFAULT, assumed: true };
 }
 
 /**

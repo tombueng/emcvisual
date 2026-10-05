@@ -206,7 +206,7 @@ Einträge sind die, die ein layoutbasiertes Werkzeug unbedingt finden sollte.
 | 15 | K-31 | Schaltknoten zu groß oder exponiert / Oversized or exposed switch node | Konsens | mittel | teilweise | |
 | 16 | K-32 | Massefläche unter dem Wandler aufgetrennt / Ground cut under the converter | gesichert | mittel | ja | |
 | 17 | K-36 | Isolationsbarriere ohne HF-Rückweg / Isolation barrier without HF return | gesichert | mittel | nein | |
-| 18 | K-34 | Eingangsfilter des Wandlers fehlt oder sitzt falsch / Missing converter input filter | gesichert | hoch | nein | |
+| 18 | K-34 | Eingangsfilter des Wandlers fehlt oder sitzt falsch / Missing converter input filter | gesichert | hoch | ja (Abschätzung Gegentakt) | |
 | 19 | K-03 | Signal über Inselgrenze der Versorgungsfläche / Trace over split power plane | Konsens | mittel | teilweise | |
 | 20 | K-14 | Differenzielles Paar unsymmetrisch / Asymmetric differential pair | gesichert | mittel | teilweise | |
 | 21 | K-17 | Quarz an Rand oder Stecker, Leitungen darunter / Crystal near edge or connector | Konsens | mittel | teilweise | |
@@ -1632,8 +1632,11 @@ verfolgen; Längselement (Drossel, Ferrit) und Querkondensatoren suchen; Lage am
 Regler; Kopplung zwischen Filter-Ein- und -Ausgang. *Daten:* Netzliste, Bauteilklassen, Positionen.
 *Falsch-positiv:* Wandler hinter einem bereits gefilterten Zwischenkreis. *Falsch-negativ:* keine.
 
-**Engine heute.** Nein. Leitungsgebundene Störungen sind nicht modelliert; der Wechselstromanteil auf
-der Eingangsleitung wird nicht aus dem Impedanzteiler bestimmt.
+**Engine heute.** Ja (`supply-noise`, Testplatine `input-filter`): Stromteiler vom Reglereingang über
+die Kondensatoren und Längsglieder des Versorgungswegs bis zu einer Netznachbildung 2 × 50 Ω, Pegel
+150 kHz bis 30 MHz gegen den Mittelwert-Grenzwert für Netzanschlüsse nach EN 55032 B als Maßstab.
+Ohne Filter rund 80 dBµV bei 500 kHz, mit 10 µH und 4,7 µF am Stecker rund 25 dBµV. Gleichtakt und
+Lage des Filters zum Stecker nicht.
 
 **Testboard.** Basis TB-4L mit BUCK-Block bei x = 50 bis 70; J1 (`+12V_IN`, GND) bei (3, 30).
 *Schlecht:* J1 → 45 mm Bahn → CIN am Regler, kein Filter.
