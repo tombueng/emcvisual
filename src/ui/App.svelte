@@ -525,6 +525,10 @@
           <button class="btn primary" onclick={loadDemo}>{t.empty.demo}</button>
           <button class="btn" onclick={openDialog}>{t.empty.open}</button>
         </div>
+        <ol class="steps">
+          {#each t.empty.steps as st, i (i)}<li>{st}</li>{/each}
+        </ol>
+        <p class="hint">{t.empty.checks} <a href="https://github.com/tombueng/emcvisual/blob/main/docs/REGELN.md" target="_blank" rel="noopener">{t.empty.checksLink}</a></p>
         <p class="hint">{t.empty.demoHint}</p>
         <p class="hint">{t.empty.examples}</p>
         <ul class="examples-list">
@@ -564,6 +568,18 @@
 </div>
 
 <style>
+  .steps {
+    margin: 4px auto 10px;
+    padding-left: 22px;
+    max-width: 460px;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text);
+  }
+  .steps li {
+    margin-bottom: 3px;
+  }
   .app {
     display: grid;
     height: 100%;

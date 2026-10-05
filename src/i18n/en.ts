@@ -34,6 +34,13 @@ export const en: Strings = {
     demoHint: 'The demo has a good and a bad buck converter, two clocks (one across a slot in the ground plane) and a USB pair.',
     loading: 'Reading board …',
     drop: 'Drop to open',
+    steps: [
+      'Load a board (or the demo).',
+      'On the left, accept the detected clocks, data lines and switching regulators and check their values (frequency, rise time).',
+      'On the right under "Diagnostics" you find what to do first; a click on a hint shows the spot with an explanation.',
+    ],
+    checks: 'About 25 known EMC layout mistakes are checked, each with its reason, the fix and the limits of the statement:',
+    checksLink: 'all rules',
     examples: 'Or open a public board from GitHub (loaded straight from there):',
   },
   sources: {

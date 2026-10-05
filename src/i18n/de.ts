@@ -33,6 +33,13 @@ export const de = {
     loading: 'Platine wird gelesen …',
     drop: 'Loslassen zum Öffnen',
     examples: 'Oder eine öffentliche Platine von GitHub öffnen (wird direkt von dort geladen):',
+    steps: [
+      'Platine laden (oder die Demo).',
+      'Links die erkannten Takte, Datenleitungen und Schaltregler übernehmen und ihre Werte prüfen (Frequenz, Anstiegszeit).',
+      'Rechts unter „Diagnose“ steht, was zuerst zu tun ist; ein Klick auf einen Hinweis zeigt die Stelle mit Erklärung.',
+    ],
+    checks: 'Geprüft werden rund 25 bekannte EMV-Layoutfehler, jeweils mit Grund, Abhilfe und Grenzen der Aussage:',
+    checksLink: 'alle Regeln',
   },
   sources: {
     title: 'Quellen',
