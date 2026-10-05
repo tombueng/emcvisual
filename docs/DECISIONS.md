@@ -145,3 +145,10 @@ ones, but mark them as "replaced by no. X".
     outline or (Eagle) no computed pours, the Diagnostics tab says so under "Notes on the file",
     with what was assumed instead; a default stack-up silently changes every height above a plane
     and therefore the field.
+44. **2026-10-06 · The problem view shows all copper, in copper.** It used to draw only the
+    source's traces (in the source's colour) and the reference planes (as blue or purple sheets),
+    so the surroundings of a finding were missing and nothing looked like a board. Now every
+    trace, pad, pour and via of the region is drawn in copper, and the finding is marked by a rim
+    in the source's colour around its copper rather than by recolouring it. The added-field map
+    is scaled to the top 15 dB of the case and fades where the source's field is weak, so it no
+    longer covers the copper.

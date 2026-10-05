@@ -598,7 +598,7 @@ export const en: Strings = {
     fieldAdded: (db: string, h: string) => `+${db} dB field from this problem, ${h} mm above the board`,
     fieldSource: (h: string) => `strongest field of the source, ${h} mm above the board`,
     fieldMap: 'Field map',
-    fieldMapAdded: (h: string) => `The coloured area shows where this problem adds magnetic field: computed ${h} mm above the board, once as built and once fixed; shown is the difference (transparent = no difference, red = much).`,
+    fieldMapAdded: (h: string) => `The coloured area shows where this problem adds magnetic field: computed ${h} mm above the board, once as built and once fixed; shown is the difference (transparent = no difference, red = the most in this case). Where the source's field is weak the map fades out: many dB of almost nothing do not matter.`,
     fieldMapSource: (h: string) => `The coloured area shows the source's magnetic field ${h} mm above the board (this hint has no computable fix to compare with).`,
     fields: {
       f0: 'Frequency',

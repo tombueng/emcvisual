@@ -1,9 +1,10 @@
 /**
- * Geometry of the problem view (ui/focusData.ts): only what matters for one finding, with the
- * layers pulled apart vertically so it reads which plane lies under which track. Planes are
- * translucent sheets with their outlines (gaps show as holes), the source's copper is in its
- * colour, other parts and vias are grey, and the detour, the extra loop area, dimensions and
- * circles are drawn on top. Returns the label anchors for the HTML labels.
+ * Geometry of the problem view (ui/focusData.ts): the copper around one finding, with the layers
+ * pulled apart vertically so it reads which plane lies under which track. All copper of the region
+ * is drawn in copper: zones as translucent sheets (reference planes with their outlines, so gaps
+ * show as holes), tracks, pads and vias solid. The source's current path is polished copper with
+ * a rim in its colour, and the detour, the extra loop area, dimensions and circles are drawn on
+ * top. Returns the label anchors for the HTML labels.
  */
 import * as THREE from 'three';
 import { circlePoints, padOutline, rotateKicad } from '../model/geometry';
@@ -11,6 +12,8 @@ import type { BoardModel, Vec2 } from '../model/types';
 import type { WorldFrame } from '../model/world';
 import type { FocusSpec } from '../ui/focusData';
 import { colormapLut } from './colormaps';
+import { CopperBuilder } from './boardMesh';
+import { rasterize } from '../model/planes';
 import { t, fmtNum } from '../i18n';
 
 export interface FocusAnchor {
@@ -32,8 +35,9 @@ export interface FocusScene {
 /** Cables drawn at connectors in the problem view: colour and length, mm. */
 const CABLE = new THREE.Color('#f2a33a');
 export const CABLE_LEN = 22;
-const GREY = new THREE.Color('#8a97a6');
-const PLANE_COLORS = ['#5aa0d6', '#b97ad1', '#7cc28a', '#c9b458', '#d07a7a'];
+/** Copper as it looks: the region's copper in this tone, the source's path a polished shade of it. */
+const COPPER = new THREE.Color('#c8844a');
+const COPPER_BRIGHT = new THREE.Color('#e8a466');
 
 export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: FocusSpec, modelFor?: (ref: string) => THREE.Object3D | undefined): FocusScene {
   const group = new THREE.Group();
@@ -83,54 +87,205 @@ export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: Focu
     group.add(l);
   };
 
-  // --- reference planes: translucent sheets, outlines show the gaps ----------------------------------
-  spec.planes.forEach((p, k) => {
-    const color = new THREE.Color(PLANE_COLORS[k % PLANE_COLORS.length]!);
-    const sheet = mat(new THREE.MeshStandardMaterial({ color, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false, roughness: 0.8 }));
-    const edge = mat(new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 }));
-    for (const z of board.zones) {
-      if (z.layer !== p.layer || z.net !== p.net) continue;
-      for (const ring of z.polygons) {
-        flat(ring, yOf(p.layer), sheet, 1);
-        line(ring.map((q) => w(q, yOf(p.layer))), edge, 2, true);
+  // --- all copper of the region, in copper -----------------------------------------------------------
+  // zones as region-sized textures (robust for any outline), tracks, pads and via rings as flat
+  // copper, vias as barrels through the spread stack; reference planes a little stronger and with
+  // their outlines, so their gaps read as holes
+  const box = { x0: reg.x0 - 2, y0: reg.y0 - 2, x1: reg.x1 + 2, y1: reg.y1 + 2 };
+  const near = (x0: number, y0: number, x1: number, y1: number) => x1 >= box.x0 && x0 <= box.x1 && y1 >= box.y0 && y0 <= box.y1;
+  const nearPt = (p: Vec2, r: number) => near(p.x - r, p.y - r, p.x + r, p.y + r);
+  const ringNear = (ring: Vec2[]) => {
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    for (const q of ring) {
+      x0 = Math.min(x0, q.x);
+      y0 = Math.min(y0, q.y);
+      x1 = Math.max(x1, q.x);
+      y1 = Math.max(y1, q.y);
+    }
+    return near(x0, y0, x1, y1);
+  };
+  const ribbonH = Math.max(0.035, thick * E * 0.012);
+  // the top layer brightest, deeper layers a little darker, so the stack reads from above
+  const toneOf = (layer: number) => COPPER.clone().multiplyScalar(1 - (0.3 * layer) / Math.max(1, L.length - 1));
+  const copperMat = (c: THREE.Color) => mat(new THREE.MeshStandardMaterial({ color: c, metalness: 0.3, roughness: 0.5, emissive: c, emissiveIntensity: 0.22, side: THREE.DoubleSide }));
+  const sheet = (rings: Vec2[][], y: number, color: THREE.Color, opacity: number) => {
+    if (!rings.length) return;
+    // 0.1 mm cells for the usual region, coarser (up to 0.25 mm) so a board-wide one stays near
+    // a million texels
+    const r = rasterize(rings, box, 2 * (box.x1 - box.x0) * (box.y1 - box.y0));
+    const rgba = new Uint8Array(r.nx * r.ny * 4).fill(255);
+    for (let k = 0; k < r.data.length; k++) rgba[k * 4 + 3] = r.data[k] ? 255 : 0;
+    const tex = new THREE.DataTexture(rgba, r.nx, r.ny, THREE.RGBAFormat);
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    const wR = r.nx * r.cell;
+    const hR = r.ny * r.cell;
+    const geo = new THREE.PlaneGeometry(wR, hR);
+    geo.rotateX(-Math.PI / 2);
+    // after the rotation v = 1 lies at -Z, raster row 0 is the smallest board y: flip v
+    const uv = geo.getAttribute('uv') as THREE.BufferAttribute;
+    for (let k = 0; k < uv.count; k++) uv.setY(k, 1 - uv.getY(k));
+    const m = mat(
+      new THREE.MeshStandardMaterial({ color, map: tex, transparent: true, opacity, alphaTest: 0.02, depthWrite: false, side: THREE.DoubleSide, metalness: 0.35, roughness: 0.5, emissive: color, emissiveIntensity: 0.12 }),
+    );
+    const quad = new THREE.Mesh(geo, m);
+    quad.position.set(r.x0 + wR / 2 - frame.ox, y, r.y0 + hR / 2 - frame.oy);
+    quad.renderOrder = 1;
+    group.add(quad);
+  };
+  // the outlines of keyholed rings without their cuts: a cut runs once in each direction
+  const outline = (rings: Vec2[][], y: number, material: THREE.LineBasicMaterial) => {
+    const pts: THREE.Vector3[] = [];
+    const key = (a: Vec2, b: Vec2) => `${a.x.toFixed(4)},${a.y.toFixed(4)},${b.x.toFixed(4)},${b.y.toFixed(4)}`;
+    for (const ring of rings) {
+      const n = ring.length;
+      const edges = new Set<string>();
+      for (let i = 0; i < n; i++) edges.add(key(ring[i]!, ring[(i + 1) % n]!));
+      for (let i = 0; i < n; i++) {
+        const a = ring[i]!;
+        const b = ring[(i + 1) % n]!;
+        if (!edges.has(key(b, a))) pts.push(w(a, y), w(b, y));
       }
     }
-  });
-
-  // --- the source's tracks, pads of the parts, vias ---------------------------------------------------
-  const own = new THREE.Color(spec.color);
-  const netSet = new Set(spec.nets);
-  const ownMat = mat(new THREE.MeshStandardMaterial({ color: own, emissive: own, emissiveIntensity: 0.45, roughness: 0.5 }));
-  const greyMat = mat(new THREE.MeshStandardMaterial({ color: GREY, roughness: 0.7, transparent: true, opacity: 0.85 }));
-  const ribbonH = Math.max(0.035, thick * E * 0.012);
-  // the current path of the model (for a loop only the loop); whole nets when there is none
-  const pieces = spec.path.length ? spec.path : board.tracks.filter((tr) => netSet.has(tr.net)).map((tr) => ({ a: tr.a, b: tr.b, layer: tr.layer, width: tr.width }));
-  for (const tr of pieces) {
-    const a = w(tr.a, yOf(tr.layer) + ribbonH / 2);
-    const b = w(tr.b, yOf(tr.layer) + ribbonH / 2);
-    const lenAB = a.distanceTo(b);
-    if (lenAB < 1e-6) continue;
-    const box = new THREE.Mesh(new THREE.BoxGeometry(lenAB + tr.width, ribbonH, tr.width), ownMat);
-    box.position.copy(a).add(b).multiplyScalar(0.5);
-    box.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
-    box.renderOrder = 3;
-    group.add(box);
+    if (!pts.length) return;
+    const segs = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), material);
+    segs.renderOrder = 2;
+    group.add(segs);
+  };
+  const planeKey = new Set(spec.planes.map((p) => `${p.layer}:${p.net}`));
+  const nL = L.length;
+  for (let li = 0; li < nL; li++) {
+    const tone = toneOf(li);
+    const y = yOf(li);
+    const planeRings: Vec2[][] = [];
+    const otherRings: Vec2[][] = [];
+    for (const z of board.zones) {
+      if (z.layer !== li) continue;
+      const isPlane = planeKey.has(`${li}:${z.net}`);
+      for (const ring of z.polygons) if (ringNear(ring)) (isPlane ? planeRings : otherRings).push(ring);
+    }
+    sheet(planeRings, y, tone, 0.6);
+    sheet(otherRings, y, tone, 0.42);
+    const bright = tone.clone().lerp(new THREE.Color('#ffd9a8'), 0.45);
+    const planeEdge = mat(new THREE.LineBasicMaterial({ color: bright, transparent: true, opacity: 0.9 }));
+    const otherEdge = mat(new THREE.LineBasicMaterial({ color: bright, transparent: true, opacity: 0.35 }));
+    outline(planeRings, y, planeEdge);
+    outline(otherRings, y, otherEdge);
+    const cb = new CopperBuilder(y + ribbonH * 0.3, frame, tone);
+    for (const tr of board.tracks) {
+      if (tr.layer !== li) continue;
+      const r = tr.width / 2;
+      if (near(Math.min(tr.a.x, tr.b.x) - r, Math.min(tr.a.y, tr.b.y) - r, Math.max(tr.a.x, tr.b.x) + r, Math.max(tr.a.y, tr.b.y) + r)) cb.segment(tr.a, tr.b, tr.width, tr.net);
+    }
+    for (const p of board.pads) {
+      if (!p.layers.includes(li)) continue;
+      // through-hole pads on the outer layers only, as the board view draws them
+      if (p.kind !== 'smd' && li !== 0 && li !== nL - 1) continue;
+      if (!nearPt(p.at, Math.max(p.size.x, p.size.y))) continue;
+      const hole = p.drill > 0 && p.drill < Math.min(p.size.x, p.size.y) - 0.02 ? [circlePoints(p.at, p.drill / 2, 16)] : [];
+      cb.polygon(padOutline(p), p.net, hole);
+    }
+    for (const v of board.vias) {
+      if ((li !== 0 && li !== nL - 1) || v.fromLayer > li || v.toLayer < li || !nearPt(v.at, v.diameter)) continue;
+      cb.polygon(circlePoints(v.at, v.diameter / 2, 18), v.net, [circlePoints(v.at, v.drill / 2, 12)]);
+    }
+    if (cb.idx.length) {
+      const { mesh } = cb.mesh(copperMat(tone));
+      mesh.renderOrder = 2;
+      group.add(mesh);
+    }
   }
-  // further nets in their own colour (the I/O line a clock couples into)
-  for (const o of spec.others ?? []) {
-    const c = new THREE.Color(o.color);
-    const m = mat(new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.5, roughness: 0.5 }));
-    for (const tr of o.pieces) {
+  const nearVias = board.vias.flatMap((v, k) => (nearPt(v.at, v.diameter) ? [k] : []));
+  if (nearVias.length) {
+    const barrels = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 14, 1, true), copperMat(toneOf(Math.floor(nL / 2))), nearVias.length);
+    const m4 = new THREE.Matrix4();
+    const q0 = new THREE.Quaternion();
+    nearVias.forEach((vi, k) => {
+      const v = board.vias[vi]!;
+      const y0 = yOf(v.toLayer);
+      const y1 = yOf(v.fromLayer) + ribbonH * 0.3;
+      m4.compose(w(v.at, (y0 + y1) / 2), q0, new THREE.Vector3(v.drill + 0.05, Math.max(0.05, y1 - y0), v.drill + 0.05));
+      barrels.setMatrixAt(k, m4);
+    });
+    barrels.renderOrder = 2;
+    group.add(barrels);
+  }
+
+  // --- the source's current path: polished copper with a rim in its colour ---------------------------
+  // the rim is drawn after the planes and tested only against solid copper, so it shows through the
+  // translucent planes; it writes depth with a strict test, so overlapping pieces do not blend twice
+  const netSet = new Set(spec.nets);
+  const rimW = Math.max(0.12, size / 160);
+  const highlight = (c: THREE.Color) => ({
+    color: c,
+    body: mat(new THREE.MeshStandardMaterial({ color: COPPER_BRIGHT, metalness: 0.4, roughness: 0.36, emissive: COPPER_BRIGHT, emissiveIntensity: 0.25 })),
+    rim: mat(new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.75, depthFunc: THREE.LessDepth, side: THREE.DoubleSide })),
+    rims: new Map<number, CopperBuilder>(),
+  });
+  type Highlight = ReturnType<typeof highlight>;
+  const rimOf = (h: Highlight, layer: number) => {
+    let rb = h.rims.get(layer);
+    if (!rb) h.rims.set(layer, (rb = new CopperBuilder(yOf(layer) + ribbonH * 0.6, frame, h.color)));
+    return rb;
+  };
+  const ribbons = (pieces: { a: Vec2; b: Vec2; layer: number; width: number }[], h: Highlight) => {
+    for (const tr of pieces) {
       const a = w(tr.a, yOf(tr.layer) + ribbonH / 2);
       const b = w(tr.b, yOf(tr.layer) + ribbonH / 2);
       const lenAB = a.distanceTo(b);
       if (lenAB < 1e-6) continue;
-      const box = new THREE.Mesh(new THREE.BoxGeometry(lenAB + tr.width, ribbonH, tr.width), m);
-      box.position.copy(a).add(b).multiplyScalar(0.5);
-      box.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
-      box.renderOrder = 3;
-      group.add(box);
+      const ribbon = new THREE.Mesh(new THREE.BoxGeometry(lenAB + tr.width, ribbonH, tr.width), h.body);
+      ribbon.position.copy(a).add(b).multiplyScalar(0.5);
+      ribbon.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
+      ribbon.renderOrder = 3;
+      group.add(ribbon);
+      rimOf(h, tr.layer).segment(tr.a, tr.b, tr.width + 2 * rimW, 0);
     }
+  };
+  const finish = (h: Highlight) => {
+    for (const rb of h.rims.values()) {
+      if (!rb.idx.length) continue;
+      const { mesh } = rb.mesh(h.rim);
+      mesh.renderOrder = 5;
+      group.add(mesh);
+    }
+  };
+  const ownHl = highlight(new THREE.Color(spec.color));
+  // the current path of the model (for a loop only the loop); whole nets when there is none
+  ribbons(spec.path.length ? spec.path : board.tracks.filter((tr) => netSet.has(tr.net)).map((tr) => ({ a: tr.a, b: tr.b, layer: tr.layer, width: tr.width })), ownHl);
+  // the net's pads in the region, raised a little, with the rim around them
+  const ownPads = new Map<number, CopperBuilder>();
+  for (const p of board.pads) {
+    if (!netSet.has(p.net) || !nearPt(p.at, Math.max(p.size.x, p.size.y))) continue;
+    for (const li of p.layers) {
+      if (p.kind !== 'smd' && li !== 0 && li !== nL - 1) continue;
+      let pb = ownPads.get(li);
+      if (!pb) ownPads.set(li, (pb = new CopperBuilder(yOf(li) + ribbonH, frame, ownHl.color)));
+      const hole = p.drill > 0 && p.drill < Math.min(p.size.x, p.size.y) - 0.02 ? [circlePoints(p.at, p.drill / 2, 16)] : [];
+      pb.polygon(padOutline(p), p.net, hole);
+      rimOf(ownHl, li).polygon(padOutline({ ...p, size: { x: p.size.x + 2 * rimW, y: p.size.y + 2 * rimW } }), p.net);
+    }
+  }
+  for (const pb of ownPads.values()) {
+    const { mesh } = pb.mesh(ownHl.body);
+    mesh.renderOrder = 3;
+    group.add(mesh);
+  }
+  // the vias the current changes layers through: a rim at both ends
+  for (const vi of spec.vias) {
+    const v = board.vias[vi]!;
+    for (const li of [v.fromLayer, v.toLayer]) rimOf(ownHl, li).polygon(circlePoints(v.at, v.diameter / 2 + rimW, 18), v.net, [circlePoints(v.at, v.diameter / 2, 18)]);
+  }
+  finish(ownHl);
+  // further nets with a rim in their own colour (the I/O line a clock couples into)
+  for (const o of spec.others ?? []) {
+    const h = highlight(new THREE.Color(o.color));
+    ribbons(o.pieces, h);
+    finish(h);
   }
   // cables leaving at the connectors: the antenna of common mode
   const cableMat = mat(new THREE.MeshStandardMaterial({ color: CABLE, emissive: CABLE, emissiveIntensity: 0.25, roughness: 0.6, transparent: true, opacity: 0.9 }));
@@ -144,25 +299,6 @@ export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: Focu
     tube.renderOrder = 3;
     group.add(tube);
   }
-  const partSet = new Set(spec.parts);
-  board.pads.forEach((p) => {
-    if (!partSet.has(p.footprint)) return;
-    for (const li of p.layers) flat(padOutline(p), yOf(li) + ribbonH, netSet.has(p.net) ? ownMat : greyMat, 3);
-  });
-  const faintMat = mat(new THREE.MeshStandardMaterial({ color: GREY, roughness: 0.7, transparent: true, opacity: 0.45, depthWrite: false }));
-  const via = (vi: number, material: THREE.Material, scale: number) => {
-    const v = board.vias[vi]!;
-    const y0 = yOf(v.toLayer);
-    const y1 = yOf(v.fromLayer);
-    const r = (v.diameter / 2) * scale;
-    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r, r, Math.max(0.05, y1 - y0), 14), material);
-    cyl.position.copy(w(v.at, (y0 + y1) / 2));
-    cyl.renderOrder = 3;
-    group.add(cyl);
-  };
-  for (const vi of spec.vias) via(vi, ownMat, 1);
-  // stitching vias near the finding: where the return current can change planes
-  for (const vi of spec.stitchVias) via(vi, faintMat, 0.7);
 
   // --- part bodies: real models where loaded, else boxes ----------------------------------------------
   const top = yOf(0) + ribbonH;
@@ -252,20 +388,25 @@ export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: Focu
       let a = 0;
       if (Number.isFinite(v)) {
         if (fm.mode === 'added') {
-          // transparent where nothing is added, amber → red where much is
-          // scaled to this case: at least 15 dB, else up to the strongest addition
-          const x = Math.max(0, Math.min(1, v / Math.max(15, fm.max.value)));
+          // transparent where nothing is added, amber → red where much is; scaled to the top
+          // 15 dB of this case (full scale at least 15 dB), so a problem that adds field
+          // everywhere still shows where it adds most, and faded out where the source's field
+          // is weak, since many dB of almost nothing do not matter
+          const hi = Math.max(15, fm.max.value);
+          const x = Math.max(0, Math.min(1, (v - (hi - 15)) / 15));
+          const lv = fm.level[k]!;
+          const weight = Number.isFinite(lv) ? Math.max(0, Math.min(1, (lv - fm.floor + 10) / 10)) : 0;
           r = 242 + (255 - 242) * x;
           g = 163 - 100 * x;
           b = 58 - 20 * x;
-          a = x < 0.03 ? 0 : 40 + 190 * x;
+          a = x < 0.03 ? 0 : (20 + 140 * x * x) * weight;
         } else {
           const x = Math.max(0, Math.min(1, (v + 30) / 30));
           const i4 = Math.round(x * 255) * 4;
           r = lut[i4]!;
           g = lut[i4 + 1]!;
           b = lut[i4 + 2]!;
-          a = x < 0.05 ? 0 : 30 + 170 * x;
+          a = x < 0.05 ? 0 : 12 + 105 * x * x;
         }
       }
       data.set([r, g, b, a], k * 4);
@@ -277,7 +418,8 @@ export function buildFocusScene(board: BoardModel, frame: WorldFrame, spec: Focu
     tex.needsUpdate = true;
     const wR = fm.region.x1 - fm.region.x0;
     const hR = fm.region.y1 - fm.region.y0;
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(wR, hR), onTop(new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })));
+    // translucent, so the copper under it stays readable; part bodies in front of it hide it
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(wR, hR), mat(new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide })));
     // texture row 0 is region.y0 (KiCad y down = world +z); the plane's v runs along -z after rotation
     plane.rotation.x = Math.PI / 2;
     plane.position.copy(w({ x: (fm.region.x0 + fm.region.x1) / 2, y: (fm.region.y0 + fm.region.y1) / 2 }, top + ribbonH * 2));

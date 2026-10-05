@@ -3,7 +3,8 @@
  * near field is computed on a grid over the region at a fixed height above the board, once as
  * it is and once with the finding fixed (the detour replaced by the ideal return, or the
  * planes solid for gaps without a way around). The difference in dB is what this problem adds,
- * spot by spot. Without a fix to compare with, the map shows the source's own field.
+ * spot by spot, shown only where the source's field matters (a gap adds many dB far out, where
+ * there is next to nothing). Without a fix to compare with, the map shows the source's own field.
  */
 import { app } from '../state/app.svelte';
 import { selectionFromView } from '../state/engine.svelte';
@@ -25,13 +26,20 @@ export interface FieldMap {
   ny: number;
   /** Row-major values (dB; NaN = nothing). */
   values: Float32Array;
-  /** Strongest value and where (board mm). */
+  /** Row-major field as it is, dB below its strongest spot (NaN = nothing). */
+  level: Float32Array;
+  /** Spots weaker than this (dB below the strongest) do not count for the added field. */
+  floor: number;
+  /** Strongest value and where (board mm); for 'added' among the spots above the floor. */
   max: { value: number; x: number; y: number };
   /** Height above the top copper, mm. */
   height: number;
   /** Field at the strongest spot as it is, dBµA/m (selected frequencies). */
   peakDb: number;
 }
+
+/** Spots more than this below the source's strongest field do not count for the added field, dB. */
+const LEVEL_FLOOR = -20;
 
 function grid(elements: CurrentElement[], planes: PlaneLayer[], frame: WorldFrame, region: BBox2, nx: number, ny: number, y: number): Float64Array {
   const pack = packWithImages(elements, planes, frame);
@@ -72,16 +80,24 @@ export function computeFieldMap(sourceId: string, detour: Detour | null, solidCo
   else if (solidCompare) fixed = grid(model.elements, solidPlanes(app.planes), frame, region, nx, ny, y);
 
   const values = new Float32Array(nx * ny).fill(NaN);
-  let best = { value: -Infinity, x: 0, y: 0 };
+  const level = new Float32Array(nx * ny).fill(NaN);
   let peak = 0;
   for (let k = 0; k < now.length; k++) peak = Math.max(peak, now[k]!);
   for (let k = 0; k < now.length; k++) {
-    let v: number;
-    if (fixed) v = fixed[k]! > 0 && now[k]! > 0 ? 10 * Math.log10(now[k]! / fixed[k]!) : NaN;
-    else v = now[k]! > 0 && peak > 0 ? 10 * Math.log10(now[k]! / peak) : NaN;
-    values[k] = v;
-    if (Number.isFinite(v) && v > best.value) best = { value: v, x: region.x0 + (k % nx) * ((region.x1 - region.x0) / (nx - 1)), y: region.y0 + Math.floor(k / nx) * ((region.y1 - region.y0) / (ny - 1)) };
+    if (now[k]! > 0 && peak > 0) level[k] = 10 * Math.log10(now[k]! / peak);
+    values[k] = fixed ? (fixed[k]! > 0 && now[k]! > 0 ? 10 * Math.log10(now[k]! / fixed[k]!) : NaN) : level[k]!;
   }
+  const strongest = (floor: number) => {
+    let b = { value: -Infinity, x: 0, y: 0 };
+    for (let k = 0; k < values.length; k++) {
+      const v = values[k]!;
+      if (Number.isFinite(v) && v > b.value && level[k]! >= floor)
+        b = { value: v, x: region.x0 + (k % nx) * ((region.x1 - region.x0) / (nx - 1)), y: region.y0 + Math.floor(k / nx) * ((region.y1 - region.y0) / (ny - 1)) };
+    }
+    return b;
+  };
+  let best = strongest(fixed ? LEVEL_FLOOR : -Infinity);
+  if (!Number.isFinite(best.value)) best = strongest(-Infinity);
   const peakDb = w * peak > 0 ? 10 * Math.log10(w * peak) + 120 : -200;
-  return { mode: fixed ? 'added' : 'source', region, nx, ny, values, max: best, height, peakDb };
+  return { mode: fixed ? 'added' : 'source', region, nx, ny, values, level, floor: LEVEL_FLOOR, max: best, height, peakDb };
 }

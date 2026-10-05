@@ -605,7 +605,7 @@ export const de = {
     fieldAdded: (db: string, h: string) => `+${db} dB Feld durch dieses Problem, ${h} mm über der Platine`,
     fieldSource: (h: string) => `stärkstes Feld der Quelle, ${h} mm über der Platine`,
     fieldMap: 'Feldkarte',
-    fieldMapAdded: (h: string) => `Die farbige Fläche zeigt, wo dieses Problem zusätzliches Magnetfeld erzeugt: gerechnet ${h} mm über der Platine, einmal wie gebaut und einmal behoben, angezeigt ist der Unterschied (durchsichtig = kein Unterschied, rot = viel).`,
+    fieldMapAdded: (h: string) => `Die farbige Fläche zeigt, wo dieses Problem zusätzliches Magnetfeld erzeugt: gerechnet ${h} mm über der Platine, einmal wie gebaut und einmal behoben, angezeigt ist der Unterschied (durchsichtig = kein Unterschied, rot = am meisten in diesem Fall). Wo das Feld der Quelle schwach ist, blendet die Karte aus: viele dB von fast nichts zählen nicht.`,
     fieldMapSource: (h: string) => `Die farbige Fläche zeigt das Magnetfeld der Quelle ${h} mm über der Platine (für diesen Hinweis gibt es keine berechenbare Behebung zum Vergleichen).`,
     fields: {
       f0: 'Frequenz',

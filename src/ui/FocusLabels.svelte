@@ -113,7 +113,8 @@
   .text {
     font-weight: 600;
     color: var(--c);
-    white-space: nowrap;
+    /* long texts wrap inside the label's max-width instead of running out of it */
+    text-wrap: balance;
   }
   .sub {
     color: var(--muted);
@@ -139,9 +140,5 @@
     border-color: var(--ok);
     border-style: dashed;
     background: color-mix(in srgb, #0b0f14 88%, var(--ok));
-    white-space: normal;
-  }
-  .label.fix .text {
-    white-space: normal;
   }
 </style>

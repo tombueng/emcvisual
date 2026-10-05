@@ -29,7 +29,8 @@ function layerColor(index: number, count: number): THREE.Color {
   return new THREE.Color(LAYER_COLORS[(index % (LAYER_COLORS.length - 1)) + 1]!);
 }
 
-class Builder {
+/** Flat copper of one layer (zones, tracks, pads), merged into one mesh with per-vertex colour and net. */
+export class CopperBuilder {
   pos: number[] = [];
   col: number[] = [];
   net: number[] = [];
@@ -83,6 +84,19 @@ class Builder {
     const g = new THREE.BufferGeometry();
     const colors = new Float32Array(this.col);
     const nets = new Float32Array(this.net);
+    // every triangle facing up: a double-sided material flips the normal of a back face, which
+    // would light it from below and leave it dark (fans keep their outline's winding, earcut has its own)
+    const P = this.pos;
+    for (let t = 0; t + 2 < this.idx.length; t += 3) {
+      const a = this.idx[t]! * 3;
+      const b = this.idx[t + 1]! * 3;
+      const c = this.idx[t + 2]! * 3;
+      const ny = (P[b + 2]! - P[a + 2]!) * (P[c]! - P[a]!) - (P[b]! - P[a]!) * (P[c + 2]! - P[a + 2]!);
+      if (ny < 0) {
+        this.idx[t + 1] = c / 3;
+        this.idx[t + 2] = b / 3;
+      }
+    }
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(colors.slice(), 3));
     g.setIndex(this.idx);
@@ -136,7 +150,7 @@ export function buildBoardMeshes(board: BoardModel, frame: WorldFrame): BoardMes
   for (const layer of board.layers) {
     const i = layer.index;
     const y = i === 0 ? topY + 0.005 : i === nL - 1 ? bottomY - 0.005 : layer.y;
-    const b = new Builder(y, frame, layerColor(i, nL));
+    const b = new CopperBuilder(y, frame, layerColor(i, nL));
     const bigZones: typeof board.zones = [];
     for (const z of board.zones) {
       if (z.layer !== i) continue;

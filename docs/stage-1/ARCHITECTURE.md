@@ -858,8 +858,12 @@ makes TypeScript report missing keys.
   (`focusData.ts`) collects a `FocusSpec`: the source's nets and current path, the planes
   concerned, parts, vias, the detour, dimensions, areas, circles, cables at connectors, the
   suggested fix and a field map (`computeFieldMap` in `focusField.ts`: the source's H field on a
-  plane above the region, as it is and with the finding fixed, as a dB difference).
-  `buildFocusScene` (render/focusScene.ts) draws it with the layers pulled apart; `FocusLabels`
+  plane above the region, as it is and with the finding fixed, as a dB difference, plus the
+  field's own level so weak spots fade out).
+  `buildFocusScene` (render/focusScene.ts) draws it with the layers pulled apart: all copper of
+  the region in copper (zones as region-sized coverage textures from `rasterize`, so any outline
+  complexity works; tracks, pads and via rings through `CopperBuilder`, which also orients every
+  triangle upwards), the source's path raised with a rim in its colour; `FocusLabels`
   places the HTML labels, `FocusPanel` shows the explanation (`explain`, §11), the 3 m spectrum
   now and with the fix, and the inputs with their provenance; editing an input reruns the source.
 

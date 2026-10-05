@@ -753,16 +753,20 @@ about the test result.** How the score comes about:
 ### 5.5 The problem view
 
 Click a finding (in **What to do first**, in the list, or on its bubble) to open the problem view.
-The camera flies to the spot and the 3D view shows only what matters for this finding, with the
-layers pulled apart vertically so you can see which plane lies under which trace.
+The camera flies to the spot and the 3D view shows the copper around this finding, with the
+layers pulled apart vertically so you can see which plane lies under which trace. All copper in
+the region is drawn in copper (the top layer brightest, deeper layers a little darker), so the
+surroundings of the problem stay visible; what the finding is about is marked on top of it.
 
 What the drawings mean:
 
 | Drawing | Meaning |
 |---|---|
-| copper in the source's colour | the current path the calculation uses (for a hot loop only the loop, not all of GND) |
-| translucent coloured sheets with outlines | the reference planes concerned; gaps show as holes. Labels name net and layer and their role, e.g. "reference plane of F.Cu" or "reference plane after the layer change" |
-| grey parts and vias; faint grey vias | other parts on the nets; stitching vias of the plane nets near the finding |
+| raised, polished copper with a rim in the source's colour | the current path the calculation uses (for a hot loop only the loop, not all of GND), the net's pads, and the vias where the current changes layers |
+| translucent copper sheets with bright outlines | the reference planes concerned; gaps show as holes. Labels name net and layer and their role, e.g. "reference plane of F.Cu" or "reference plane after the layer change" |
+| fainter copper sheets | other pours in the region |
+| flat copper, copper barrels | all other traces and pads in the region; the vias through the pulled-apart stack |
+| dark boxes or 3D models | the parts on the nets concerned |
 | red ring | the spot of the finding |
 | white dimension line with end ticks | a measured length, e.g. "… mm over the gap", "l = … mm (line ends)", "d1 + d2 = … mm (board width across the line)" |
 | dashed amber line | the return current's detour, "return detour … mm" |
@@ -770,8 +774,8 @@ What the drawings mean:
 | dashed red circle | a search radius, e.g. "no GND via within 3 mm", "nearest ground … mm" |
 | green ghost part, via or dashed area | the suggested fix at its place, labelled "Suggestion: …" (e.g. a 100 nF capacitor between the planes, a stitching via, a series resistor, closing the plane) |
 | orange cables at connectors | the cables as antennas for common mode |
-| magenta line | a victim line, e.g. the I/O line a clock couples into; for a bypassed filter the output side (input side amber), with the overlap area marked |
-| coloured map above the board | **Field map**: where this problem adds magnetic field (difference between as built and fixed; transparent = no difference, red = much), or the source's own field when no fix can be computed |
+| magenta rim | a victim line, e.g. the I/O line a clock couples into; for a bypassed filter the output side (input side amber), with the overlap area marked |
+| coloured map above the board | **Field map**: where this problem adds magnetic field (difference between as built and fixed; transparent = no difference, red = much). The colours span the top 15 dB of the case, so a problem that adds field everywhere still shows where it adds most, and spots where the source's field is more than 20 dB below its strongest fade out, because many dB of almost nothing do not matter; the label marks the largest addition among the spots that count. When no fix can be computed, the map shows the source's own field |
 | labels on nets and parts | net names with the source's values (frequency, rise time, amplitude), part references with values; "carries the return current between the planes" marks the part the return jumps through |
 
 The card on the left explains the finding:
