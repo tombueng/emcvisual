@@ -1,5 +1,5 @@
 /**
- * Layout warnings (docs/stufe-1/PLAN.md M6, docs/research/EMV-FEHLERKATALOG.md): gaps in the
+ * Layout warnings (docs/stage-1/PLAN.md M6, docs/research/EMC-MISTAKES-CATALOGUE.md): gaps in the
  * reference plane under a current path, reference changes at vias without a nearby stitching
  * via, unterminated lines whose resonance falls into the measured range, and hot loops of
  * switching stages that are larger than the parts need.
@@ -89,7 +89,7 @@ export interface Diagnostic {
    */
   value: number;
   /** edge-trace: length of the line within the distance, and the distance recommended, mm. */
-  run?: { length: number; min: number };
+  run?: { length: number; min: number; h?: number };
   /** return-gap: the line crosses from one net's copper to another's on a split plane layer. */
   split?: boolean;
   /** cable-cm: the common-mode estimate with cables (commonMode.ts). */
@@ -359,7 +359,7 @@ export function diagnoseSource(
           plane: board.layers[ref.layer]!.name,
           planeNet: board.nets[ref.net] ?? '',
           value: hit.distance,
-          run: { length: hit.length, min: limit },
+          run: { length: hit.length, min: limit, h },
         });
       }
     }

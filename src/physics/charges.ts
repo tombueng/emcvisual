@@ -1,5 +1,5 @@
 /**
- * Stage 2b: quasi-static charges for the electric field (docs/zukunft/STUFE-2-FLAECHENSTROEME.md).
+ * Stage 2b: quasi-static charges for the electric field (docs/future/STAGE-2-PLANE-CURRENTS.md).
  *
  * A source at 1 V carries charge on its copper: tracks as line charges q = C'·L, pads as
  * point charges q = ε0·εr·A/h over their reference plane. Mirror charges with opposite sign

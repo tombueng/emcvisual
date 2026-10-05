@@ -63,7 +63,7 @@ function llmsTxt(): string {
 > ${seo.description}
 
 ${branding.displayName} is a free, open-source (0BSD) web app for electronics and PCB designers. It reads
-a KiCad board file (.kicad_pcb, KiCad 6 to 10), lets you mark the noisy parts of the circuit (clock
+a board file (KiCad 6 to 10, IPC-2581 from Altium, Allegro/OrCAD or PADS, ODB++, Eagle/Fusion 360), lets you mark the noisy parts of the circuit (clock
 and data lines, differential pairs such as USB, the hot loop of a switching regulator / buck
 converter, storage inductors) and computes the magnetic and electric near field around the board.
 The result is a 3D scene: the field glows above the copper or shows as isosurfaces, field lines
@@ -79,7 +79,7 @@ the detours are drawn in 3D.
 How it works: quasi-static Biot-Savart field of straight current filaments, return currents as
 mirror images in the reference planes plus geodesic detours through plane copper, shielding by
 planes, line and point charges for the electric field, trapezoid line spectra, and a far-field
-estimate from the magnetic dipole moment against CISPR 32 class B. For resonances it exports an
+estimate from the magnetic dipole moment against the selected standard (CISPR 32, CISPR 11, CISPR 14-1, FCC Part 15). For resonances it exports an
 openEMS (FDTD) job; the full-wave result loads back as a second field source, and both agree
 within about 1 dB in the quasi-static range. It does not predict whether a product passes an EMC
 test (no cables or enclosures). Everything runs in the browser; the board file is not uploaded.
@@ -89,8 +89,8 @@ virtual rig for trying it without hardware) with fitting of the source amplitude
 HTML EMC report, live reload when KiCad saves the board, a command-line field check for CI that
 flags pull requests making the near field or far-field margin worse, and an experimental VR view.
 
-German: EMV-Simulation für Leiterplatten im Browser. KiCad-Platine laden, Störquellen festlegen,
-magnetisches Nahfeld in 3D sehen und hören, Rückstrompfade und CISPR 32 prüfen.
+German: EMV-Simulation für Leiterplatten im Browser. Platine laden (KiCad, IPC-2581, ODB++, Eagle),
+Störquellen festlegen, magnetisches Nahfeld in 3D sehen und hören, Rückstrompfade und Grenzwerte prüfen.
 
 Keywords: ${seo.keywords.join(', ')}
 
@@ -99,14 +99,18 @@ Keywords: ${seo.keywords.join(', ')}
 
 ## Docs
 - [README](${docs('README.md')}): overview, features, how to run it locally
-- [Stage 1 plan](${docs('docs/stufe-1/PLAN.md')}): goals, milestones, measured numbers (German)
-- [Physics model](${docs('docs/stufe-1/PHYSIK.md')}): formulas, assumptions, validity limits, literature (German)
-- [Architecture](${docs('docs/stufe-1/ARCHITEKTUR.md')}): modules, compute and render pipeline (German)
+- [Stage 1 plan](${docs('docs/stage-1/PLAN.md')}): goals, milestones, measured numbers
+- [Physics model](${docs('docs/stage-1/PHYSICS.md')}): formulas, assumptions, validity limits, literature, full-wave comparison
+- [Architecture](${docs('docs/stage-1/ARCHITECTURE.md')}): modules, compute and render pipeline
+- [User guide](${docs('docs/USER-GUIDE.md')}): every panel step by step, FAQ, glossary
+- [Rule set](${docs('docs/RULES.md')}): every finding with threshold, origin, confidence and test board
+- [Import of other CAD formats](${docs('docs/IMPORT.md')}): IPC-2581, ODB++, Eagle/Fusion 360
+- [EMC mistakes catalogue](${docs('docs/research/EMC-MISTAKES-CATALOGUE.md')}): 40 layout mistakes with sources
 
 ## Optional
-- [Roadmap](${docs('docs/ROADMAP.md')}): stages, measurement hardware, openEMS (German)
-- [Field check for CI](${docs('docs/CI-FELDCHECK.md')}): command line, GitHub Actions example (German)
-- [openEMS workflow](${docs('tools/openems/README.md')}): full-wave export, run, import (German)
+- [Roadmap](${docs('docs/ROADMAP.md')}): stages, measurement hardware, openEMS
+- [Field check for CI](${docs('docs/CI-FIELD-CHECK.md')}): command line, GitHub Actions example
+- [openEMS workflow](${docs('tools/openems/README.md')}): full-wave export, run, import
 - [Parts manual for AI agents](${branding.siteUrl}ai-parts-manual.md): how to fill in source values from datasheets and report missing data
 - [License: 0BSD](${docs('LICENSE')})
 - [Source code](${repoUrl})

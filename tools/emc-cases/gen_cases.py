@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Small test boards for known EMC layout mistakes, each as a bad board and a good twin.
 
-Every case is one mistake from practice (docs/research/EMV-FEHLERKATALOG.md): the bad board has
+Every case is one mistake from practice (docs/research/EMC-MISTAKES-CATALOGUE.md): the bad board has
 it, the good twin is the same board with the usual fix. tests/emcCases.test.ts runs the field
 check on both and asserts that the engine reports the mistake on the bad board, not (or much
 weaker) on the good one, and that the fix makes the far field quieter where it should.

@@ -1,5 +1,5 @@
 /**
- * Biot-Savart field of straight current filaments (docs/stufe-1/PHYSIK.md §7).
+ * Biot-Savart field of straight current filaments (docs/stage-1/PHYSICS.md §7).
  * Geometry in mm, result in A/m per ampere of reference current.
  */
 import { STRIDE, slotOf, type ElementPack } from './images';

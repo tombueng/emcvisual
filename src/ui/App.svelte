@@ -21,6 +21,8 @@
   import { showMeasurement } from '../state/scanner.svelte';
   import { canWatch, dropHandles, follow, live, pickWithHandle, stopFollowing, type FileHandle } from '../state/liveFile.svelte';
   import { EXAMPLE_BOARDS } from '../examples';
+  import { BOARD_EXTENSIONS, boardBaseName, ImportError, isBoardFileName } from '../import';
+  import { ArchiveError } from '../import/archive';
 
   let viewEl: HTMLDivElement;
   let viewer = $state.raw<Viewer | null>(null);
@@ -37,10 +39,12 @@
     void viewer.enableXR();
     viewer.controls.addEventListener('change', () => scheduleAudio());
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        app.pickMode = null;
-        app.focusKey = null;
-      }
+      if (e.key !== 'Escape') return;
+      // in a value field Esc belongs to the field, not to the view
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+      app.pickMode = null;
+      app.focusKey = null;
     };
     window.addEventListener('keydown', onKey);
     void openFromQuery();
@@ -85,23 +89,24 @@
     }
     try {
       engine.library.projectBase = null;
-      await engine.loadBoard(await file.text(), file.name);
-      // follow the file when the browser lets us: saving in KiCad reloads the board
+      // KiCad as text (the scenario key is the text's hash); other formats as bytes
+      await engine.loadBoard(/\.kicad_pcb$/i.test(file.name) ? await file.text() : await file.arrayBuffer(), file.name);
+      // follow the file when the browser lets us: saving in the CAD program reloads the board
       if (handle) {
         follow(handle, file);
         app.toast = t.live.started;
       } else stopFollowing();
-    } catch {
-      app.toast = t.errors.parse;
+    } catch (e) {
+      app.toast = e instanceof ImportError || e instanceof ArchiveError ? t.errors.importFailed(e.message) : t.errors.parse;
     }
   }
 
   async function openDialog() {
     const picked = await pickWithHandle();
     if (picked === 'fallback') {
-      const f = await pickFile('.kicad_pcb,.json,.glb');
+      const f = await pickFile(`${BOARD_EXTENSIONS.join(',')},.json,.glb`);
       if (f) await openBoardFile(f);
-    } else if (picked) await openBoardFile(picked.file, picked.file.name.endsWith('.kicad_pcb') ? picked.handle : null);
+    } else if (picked) await openBoardFile(picked.file, isBoardFileName(picked.file.name) ? picked.handle : null);
   }
 
   async function loadDemo() {
@@ -144,7 +149,7 @@
       const glbUrl = models && /^https?:\/\//i.test(models) ? models : null;
       const glb = glbUrl ? await fetch(glbUrl).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null) : null;
       if (glbUrl && !glb) app.toast = t.errors.fetch(glbUrl);
-      await engine.loadBoard(await res.text(), name, null, false, glb);
+      await engine.loadBoard(/\.kicad_pcb$/i.test(name) ? await res.text() : await res.arrayBuffer(), name, null, false, glb);
     } catch {
       app.loading = false;
       app.toast = t.errors.fetch(url);
@@ -172,12 +177,12 @@
   }
 
   function saveScenario() {
-    const name = (app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+    const name = boardBaseName(app.board?.source.fileName ?? 'board');
     downloadText(`${name}.scenario.json`, JSON.stringify(engine.scenario(), null, 2));
   }
 
   function snapshot() {
-    if (viewer) downloadDataUrl(`${(app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '')}.png`, viewer.snapshot());
+    if (viewer) downloadDataUrl(`${boardBaseName(app.board?.source.fileName ?? 'board')}.png`, viewer.snapshot());
   }
 
   let ant = $state(false);
@@ -190,7 +195,7 @@
     if (ant) viewer.overview();
     else {
       const h = app.hotspots[0];
-      viewer.antView(h ? h.x : 0, 2, h ? h.z : 0);
+      viewer.antView(h ? h.x : 0, h ? h.z : 0, 2);
     }
     ant = !ant;
   }
@@ -199,13 +204,13 @@
     e.preventDefault();
     dragging = false;
     // board first, then models and scenarios, so several files can be dropped at once
-    const rank = (f: File) => (f.name.endsWith('.kicad_pcb') ? 0 : /\.(glb|gltf)$/i.test(f.name) ? 1 : 2);
+    const rank = (f: File) => (isBoardFileName(f.name) ? 0 : /\.(glb|gltf)$/i.test(f.name) ? 1 : 2);
     // handles have to be requested before the first await, while the drop data is readable
     const handlesP = canWatch ? dropHandles(e) : Promise.resolve([]);
     const files = [...(e.dataTransfer?.files ?? [])].sort((a, b) => rank(a) - rank(b));
     const handles = await handlesP;
     for (const f of files) {
-      const h = f.name.endsWith('.kicad_pcb') ? (handles.find((x) => x?.name === f.name) ?? null) : null;
+      const h = isBoardFileName(f.name) ? (handles.find((x) => x?.name === f.name) ?? null) : null;
       await openBoardFile(f, h);
     }
   }
@@ -528,7 +533,7 @@
         <ol class="steps">
           {#each t.empty.steps as st, i (i)}<li>{st}</li>{/each}
         </ol>
-        <p class="hint">{t.empty.checks} <a href="https://github.com/tombueng/emcvisual/blob/main/docs/REGELN.md" target="_blank" rel="noopener">{t.empty.checksLink}</a></p>
+        <p class="hint">{t.empty.checks} <a href={`https://github.com/${branding.repo}/blob/main/docs/RULES.md`} target="_blank" rel="noopener">{t.empty.checksLink}</a></p>
         <p class="hint">{t.empty.demoHint}</p>
         <p class="hint">{t.empty.examples}</p>
         <ul class="examples-list">

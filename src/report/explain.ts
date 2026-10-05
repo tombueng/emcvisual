@@ -8,7 +8,7 @@ import { t, fmtNum } from '../i18n';
 import { app } from '../state/app.svelte';
 import { formatEng } from '../physics/units';
 import { MAX_GAIN_DB } from '../physics/attribution';
-import { BOARD_KINDS, type Diagnostic } from '../physics/diagnostics';
+import { BOARD_KINDS, EDGE_H, type Diagnostic } from '../physics/diagnostics';
 import { engine } from '../state/engine.svelte';
 import { limitAt } from '../physics/farfield';
 import { limitsFor } from '../physics/standards';
@@ -84,7 +84,7 @@ export function explain(d: Diagnostic): Explanation {
       break;
     case 'edge-trace':
       k = 'edgeTrace';
-      figures.push(E.fig.edgeTrace(p.run, p.gap, p.radius, fmtNum((d.run?.min ?? 0) / 5, 2)));
+      figures.push(E.fig.edgeTrace(p.run, p.gap, p.radius, fmtNum(d.run?.h ?? (d.run?.min ?? 0) / EDGE_H, 2)));
       break;
     case 'cable-cm': {
       k = 'cableCm';
@@ -210,7 +210,8 @@ export function explain(d: Diagnostic): Explanation {
   const mm2 = (m: number) => fmtNum(m * 1e6, m * 1e6 < 10 ? 2 : 1);
   if (m) calc.push(C.path(fmtNum(m.info.lengthMm, 0), d.plane || '–'));
   if (att) calc.push(C.moment(mm2(att.momentNow)));
-  calc.push(C.formula);
+  // the dipole formula belongs to findings with a field source, not to the board rules
+  if (d.sourceId) calc.push(C.formula);
   if (worst) calc.push(C.worst(standardShort(), formatEng(worst.f, 'Hz', 3), fmtNum(worst.db, 1), fmtNum(worst.lim, 0), t.diag.margin(worst.db - worst.lim)));
   if (d.gain && att && worst) {
     // what fixing this spot alone changes (for all gaps of a source: all of them together)

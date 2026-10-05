@@ -1,11 +1,12 @@
 /**
- * Field check for continuous integration (W6, docs/CI-FELDCHECK.md): the same physics as the
+ * Field check for continuous integration (W6, docs/CI-FIELD-CHECK.md): the same physics as the
  * app, without a browser. For every source of a scenario: the strongest near field in a plane
  * above the board per frequency band, the far-field margin against CISPR 32 B at 3 m and the
  * layout hints. Two reports can be compared, so a pull request that makes a hotspot louder or
  * adds a return-path problem is flagged.
  */
 import { parseBoard } from '../kicad/parseBoard';
+import type { BoardModel } from '../model/types';
 import { covered, detectPlanes } from '../model/planes';
 import { worldFrame } from '../model/world';
 import { buildSource, SourceError, type PhysicsContext } from '../physics/currents';
@@ -86,9 +87,10 @@ export interface CheckReport {
 
 const round = (v: number, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
 
-export function runCheck(boardText: string, fileName: string, scenarioRaw: unknown, opts: CheckOptions = DEFAULT_CHECK): CheckReport {
+/** The check for a board given as KiCad text or as an already imported BoardModel (other formats). */
+export function runCheck(boardText: string | BoardModel, fileName: string, scenarioRaw: unknown, opts: CheckOptions = DEFAULT_CHECK): CheckReport {
   const scenario: Scenario = migrateScenario(scenarioRaw);
-  const board = parseBoard(boardText, fileName);
+  const board = typeof boardText === 'string' ? parseBoard(boardText, fileName) : boardText;
   const frame = worldFrame(board);
   const planes = detectPlanes(board, { ...scenario.settings.planeOverrides });
   const ctx: PhysicsContext = { board, frame, planes, fMax: scenario.settings.fMax };
@@ -217,6 +219,8 @@ export interface Finding {
 export function compareChecks(base: CheckReport, now: CheckReport, threshold = 3): { worse: Finding[]; better: Finding[] } {
   const worse: Finding[] = [];
   const better: Finding[] = [];
+  // findings are matched by kind within 2 mm, so a moved via does not count as new
+  const near2 = (p: { kind: string; x: number; y: number }, q: { kind: string; x: number; y: number }) => p.kind === q.kind && Math.hypot(p.x - q.x, p.y - q.y) <= 2;
   for (const s of now.sources) {
     const b = base.sources.find((x) => x.id === s.id);
     if (!b) continue;
@@ -231,10 +235,13 @@ export function compareChecks(base: CheckReport, now: CheckReport, threshold = 3
       if (s.far.margin - b.far.margin > threshold) worse.push({ sourceId: s.id, what: 'far', before: b.far.margin, after: s.far.margin });
       else if (b.far.margin - s.far.margin > threshold) better.push({ sourceId: s.id, what: 'far', before: b.far.margin, after: s.far.margin });
     }
-    // hints are matched by kind within 2 mm, so a moved via does not count as new
-    const near2 = (p: { kind: string; x: number; y: number }, q: { kind: string; x: number; y: number }) => p.kind === q.kind && Math.hypot(p.x - q.x, p.y - q.y) <= 2;
     for (const h of s.hints) if (!b.hints.some((o) => near2(h, o))) worse.push({ sourceId: s.id, what: `hint:${h.kind}@${h.x},${h.y}` });
     for (const h of b.hints) if (!s.hints.some((o) => near2(h, o))) better.push({ sourceId: s.id, what: `hint:${h.kind}@${h.x},${h.y}` });
   }
+  // board rules (filters, shields, ESD, decoupling, …): a new one is a regression too
+  const nr = now.rules ?? [];
+  const br = base.rules ?? [];
+  for (const r of nr) if (!br.some((o) => near2(r, o))) worse.push({ sourceId: '', what: `rule:${r.kind}@${r.x},${r.y}` });
+  for (const r of br) if (!nr.some((o) => near2(r, o))) better.push({ sourceId: '', what: `rule:${r.kind}@${r.x},${r.y}` });
   return { worse, better };
 }

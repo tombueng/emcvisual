@@ -1,5 +1,6 @@
 /**
- * Command line: field check of a KiCad board with a scenario (docs/CI-FELDCHECK.md).
+ * Command line: field check of a board (KiCad, IPC-2581, Eagle, ODB++) with a scenario
+ * (docs/CI-FIELD-CHECK.md).
  *
  *   node field-check.mjs board.kicad_pcb --scenario board.scenario.json [--out report.json]
  *        [--baseline base.json] [--threshold 3] [--height 2] [--step 1]
@@ -9,6 +10,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { CHECK_BANDS, compareChecks, DEFAULT_CHECK, runCheck, type CheckReport } from './fieldCheck';
+import { importBoard } from '../import';
 import { MAX_GAIN_DB } from '../physics/attribution';
 
 function arg(name: string): string | undefined {
@@ -18,7 +20,7 @@ function arg(name: string): string | undefined {
 
 function usage(): never {
   console.error(
-    'usage: field-check <board.kicad_pcb> --scenario <scenario.json> [--out report.json] [--baseline base.json] [--threshold dB] [--height mm] [--step mm]',
+    'usage: field-check <board: .kicad_pcb | IPC-2581 .xml | Eagle .brd | ODB++ .tgz/.zip> --scenario <scenario.json> [--out report.json] [--baseline base.json] [--threshold dB] [--height mm] [--step mm]',
   );
   process.exit(2);
 }
@@ -48,7 +50,7 @@ function table(r: CheckReport): string {
   return [head, ...rows, ...(hints.length ? ['', 'layout hints, in the order to work on them:', ...hints] : [])].join('\n');
 }
 
-function main() {
+async function main() {
   const boardPath = process.argv[2];
   const scenarioPath = arg('scenario');
   if (!boardPath || boardPath.startsWith('--') || !scenarioPath) usage();
@@ -56,7 +58,9 @@ function main() {
     height: Number(arg('height') ?? DEFAULT_CHECK.height),
     step: Number(arg('step') ?? DEFAULT_CHECK.step),
   };
-  const report = runCheck(readFileSync(boardPath, 'utf8'), basename(boardPath), JSON.parse(readFileSync(scenarioPath, 'utf8')), opts);
+  // KiCad boards as text (as before); other formats through the importers
+  const board = /\.kicad_pcb$/i.test(boardPath) ? readFileSync(boardPath, 'utf8') : await importBoard(basename(boardPath), new Uint8Array(readFileSync(boardPath)).buffer);
+  const report = runCheck(board, basename(boardPath), JSON.parse(readFileSync(scenarioPath, 'utf8')), opts);
   console.log(table(report));
   const out = arg('out');
   if (out) writeFileSync(out, JSON.stringify(report, null, 2));
@@ -66,7 +70,7 @@ function main() {
   const base = JSON.parse(readFileSync(basePath, 'utf8')) as CheckReport;
   const threshold = Number(arg('threshold') ?? 3);
   const { worse, better } = compareChecks(base, report, threshold);
-  const name = (id: string) => report.sources.find((s) => s.id === id)?.name ?? id;
+  const name = (id: string) => (id ? (report.sources.find((s) => s.id === id)?.name ?? id) : 'board');
   const fmt = (f: { sourceId: string; what: string; before?: number; after?: number }) =>
     `  ${name(f.sourceId)}: ${f.what}${f.before !== undefined ? ` ${f.before.toFixed(1)} -> ${f.after!.toFixed(1)}` : ''}`;
   if (better.length) console.log(`\nbetter than the baseline:\n${better.map(fmt).join('\n')}`);
@@ -76,4 +80,7 @@ function main() {
   } else console.log(`\nno regression against the baseline (threshold ${threshold} dB)`);
 }
 
-main();
+main().catch((e: Error) => {
+  console.error(e.message || String(e));
+  process.exit(2);
+});

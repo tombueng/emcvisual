@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the demo board with deliberate EMC mistakes (docs/stufe-1/PLAN.md section 9).
+"""Generate the demo board with deliberate EMC mistakes (docs/stage-1/PLAN.md section 9).
 
 Run with the system python (KiCad's pcbnew module):
     /usr/bin/python3 tools/demo-board/gen_demo_board.py

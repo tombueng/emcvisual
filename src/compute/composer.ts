@@ -1,5 +1,5 @@
 /**
- * Combine per-source |h|² volumes with spectral weights (docs/stufe-1/PHYSIK.md §6) and
+ * Combine per-source |h|² volumes with spectral weights (docs/stage-1/PHYSICS.md §6) and
  * convert to an 8-bit volume of normalised dBµA/m for the 3D texture.
  */
 import { lineAmp } from '../physics/spectrum';

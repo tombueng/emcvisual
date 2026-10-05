@@ -1,5 +1,5 @@
 /**
- * Far-field orientation from the magnetic dipole moment (docs/stufe-1/PHYSIK.md §11).
+ * Far-field orientation from the magnetic dipole moment (docs/stage-1/PHYSICS.md §11).
  * E = 2 · η0 k² |m| / (4π r): free-space broadside field doubled for a reflecting test-site
  * floor (Ott, eq. 12-2). Differential mode of the board only; cables are not modelled.
  */

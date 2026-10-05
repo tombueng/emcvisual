@@ -1,6 +1,6 @@
 /**
  * From a source definition to straight current elements plus a line spectrum
- * (docs/stufe-1/PHYSIK.md §5). Element weights are relative to the reference current of
+ * (docs/stage-1/PHYSICS.md §5). Element weights are relative to the reference current of
  * the spectrum, so the field pattern does not depend on frequency (§6).
  */
 import { buildNetGraph, pathTo, shortestTree, type NetGraph, type Step } from '../model/connectivity';

@@ -27,8 +27,8 @@ export const en: Strings = {
     panel: 'Settings',
   },
   empty: {
-    title: 'Drop a KiCad board here',
-    body: 'A .kicad_pcb from KiCad 6 to 10. The file stays in your browser.',
+    title: 'Drop a board here',
+    body: 'KiCad 6 to 10 (.kicad_pcb), IPC-2581 (.xml from Altium, Allegro/OrCAD, PADS, Zuken), Eagle/Fusion 360 (.brd) or ODB++ (.tgz/.zip). The file stays in your browser.',
     open: 'Choose file',
     demo: 'Load demo board',
     demoHint: 'The demo has a good and a bad buck converter, two clocks (one across a slot in the ground plane) and a USB pair.',
@@ -39,7 +39,7 @@ export const en: Strings = {
       'On the left, accept the detected clocks, data lines and switching regulators and check their values (frequency, rise time).',
       'On the right under "Diagnostics" you find what to do first; a click on a hint shows the spot with an explanation.',
     ],
-    checks: 'About 25 known EMC layout mistakes are checked, each with its reason, the fix and the limits of the statement:',
+    checks: 'About 30 known EMC layout mistakes are checked, each with its reason, the fix and the limits of the statement:',
     checksLink: 'all rules',
     examples: 'Or open a public board from GitHub (loaded straight from there):',
   },
@@ -142,6 +142,7 @@ export const en: Strings = {
     },
   },
   view: {
+    sliceFile: 'slice',
     title: 'View',
     fieldKind: 'Field',
     fieldKinds: { H: 'Magnetic (H)', E: 'Electric (E)' },
@@ -368,6 +369,17 @@ export const en: Strings = {
     hint: 'Clocks sound like tones, switchers buzz. Loud where the field is strong.',
   },
   scan: {
+    apiKey: 'API key',
+    statusText: {
+      'registration-missing': 'Register the board position first (two reference points).',
+      'not-connected': 'Printer and receiver are not connected.',
+      'virtual-receiver-needs-virtual-printer': 'The virtual receiver works only with the virtual printer.',
+      'tinysa-no-data': 'The tinySA returned no readings.',
+      'need-two-points': 'Registering the board position needs at least two reference points.',
+      'web-serial-unavailable': 'This browser cannot talk to serial devices (Web Serial: Chrome or Edge).',
+      'serial-timeout': 'The device did not answer in time.',
+      'wrong-kind': 'The file is not a measurement of this app.',
+    },
     tab: 'Measure',
     intro: 'Stage 4: near-field scan with a 3D printer. In virtual mode the chain measures what the simulation predicts; real devices are experimental.',
     devices: 'Devices',
@@ -483,7 +495,7 @@ export const en: Strings = {
   },
   callouts: {
     title: 'Speech bubbles in 3D',
-    hints: 'Hints (numbered as in Diagnose)',
+    hints: 'Hints (numbered as in Diagnostics)',
     sources: 'Sources with far-field margin',
     hotspots: 'Hotspots',
     spectrum: '3 m spectrum in the bubbles',
@@ -634,7 +646,7 @@ export const en: Strings = {
       nearestVia: 'the nearest via',
       radius: (mm: string, net: string) => `No ${net} via within ${mm} mm of the signal via.`,
       longLine: (mm: string, eeff: string, f: string) => `Longest path ${mm} mm, effective permittivity ${eeff}: quarter-wave resonance (open end) at ${f}.`,
-      edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm of the line run ${d} mm beside the edge of the reference plane; height above the plane ${h} mm, guide value ${min} mm (5 × height, at least 1 mm).`,
+      edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm of the line run ${d} mm beside the edge of the reference plane; height above the plane ${h} mm, guide value ${min} mm (3 × height, at least 1 mm).`,
       cm: (lp: string, f: string, v: string, mech: string) =>
         `Partial inductance of the plane for this line: L_p ≈ ${lp} nH. At ${f} the return current produces about ${v} across it between the two plane halves (${mech}).`,
       io: (net: string, conn: string, m: string, c: string, z: string, kind: string) =>
@@ -713,7 +725,7 @@ export const en: Strings = {
         why: () =>
           'Above a few MHz the return current flows in the plane right under the line, because that loop has the lowest inductance. Over a gap it has to go around. Forward and return current then enclose an area, and a small loop radiates in proportion to area × current × frequency² (after Ott: E ≈ 263·10⁻¹⁶·f²·A·I/r). The current also drives a voltage across the gap: the slot can radiate itself, and the split plane drives common-mode current onto attached cables, which usually radiate even more.',
         detected: () =>
-          'The app rasterises every reference plane (0.25 mm) and checks under every piece of line whether there is copper. It reports gaps of 1 mm or more with copper on both sides; small clearances (up to 3 mm², e.g. around vias) count as copper. The return model (stage 2) finds the shortest way through the plane copper around the gap and computes it as a real current path.',
+          'The app rasterises every reference plane (0.1 to 0.25 mm per cell, depending on the board size) and checks every 0.1 mm under every piece of line whether there is copper. Gaps from 0.2 mm with copper on both sides are reported when the return current has to go at least 2 mm further than straight across, or when it cannot get round at all; holes up to 2.5 mm across (anti-pads of vias, thermal gaps) count as copper, slots count by their length. The return model (stage 2) finds the shortest way through the plane copper around the gap and computes it as a real current path.',
         fixes: () => [
           'Reroute the line so it stays over continuous plane.',
           'Close the gap, or make the plane continuous under the line. Do not split the return plane (usually GND) at all; separate analog and digital by placement, not by slots. Split supply islands only on layers that fast signals do not use as reference.',
@@ -738,7 +750,7 @@ export const en: Strings = {
         why: () =>
           'Over a continuous plane the current has its mirror image flowing the other way beneath it; from afar the two nearly cancel and only a very flat loop remains. Without the plane the loop radiates with its full area. In switching regulators the hot loop (input capacitor → switch → ground) with amperes and nanosecond edges is often one of the strongest sources on the board, along with the electric field of the switch node and noise conducted out on the input lines.',
         detected: () =>
-          'As for gaps under lines: rasterised reference planes, gaps of 1 mm or more. Without a way around, the app computes the loop there without the mirror image. The effect covers all gaps under this source together: the comparison is the same source over continuous planes.',
+          'As for gaps under lines: rasterised reference planes, gaps from 0.2 mm. Without a way around, the app computes the loop there without the mirror image. The effect covers all gaps under this source together: the comparison is the same source over continuous planes.',
         fixes: (p: P) =>
           p.loop
             ? [
@@ -1069,7 +1081,7 @@ export const en: Strings = {
         why: () =>
           'The return current spreads under the line over a width of a few heights h above the plane (current density roughly ∝ 1/(1 + (x/h)²)). If the edge is closer, part of it is pushed aside, the field reaches around the edge, and signal and return cancel less. At the board edge the line also couples into the gap between the planes, which radiates there like a slot antenna.',
         detected: (p: P) =>
-          `For each piece of line the app looks in the plane raster for the nearest spot without copper, sideways to the line (a line heading straight for the edge, e.g. into a connector, does not count). Reported when over at least 3 mm the distance is less than 5 × h, at least 1 mm (here ${p.radius} mm).`,
+          `For each piece of line the app looks in the plane raster for the nearest spot without copper, sideways to the line (a line heading straight for the edge, e.g. into a connector, does not count). Reported when over at least 3 mm the distance is less than 3 × h, at least 1 mm (here ${p.radius} mm).`,
         fixes: () => [
           'Move fast lines a few millimetres inwards, at least by the guide value from the plane edge.',
           'If the line has to stay at the edge: put it on an inner layer between two planes (stripline), where the field hardly reaches beyond the edge.',
@@ -1126,6 +1138,15 @@ export const en: Strings = {
         refs: ['slyt682', 'an1149', 'ott'] as const,
       },
     },
+  },
+  fileNotes: {
+    title: 'Notes on the file',
+    'stackup-default': 'The file gives no stack-up; the usual one is assumed (2 layers: 1.6 mm FR4; 4 layers: 0.21 mm prepreg outside). Distances to the reference plane, and with them field and far field, depend on it: check under View → Layers, or export the file with its stack-up.',
+    'outline-missing': 'The file has no board outline; the rectangle around the copper is assumed.',
+    'outline-open': (n: string) => `The board outline is not closed (${n} open pieces); edge rules are uncertain there.`,
+    'eagle-pour-computed': 'Eagle stores only the outline of copper pours. The fill is computed here (clearances to other copper, board edge, restrict areas, islands without a connection removed) to 0.1 mm; thermal spokes are missing.',
+    'eagle-package-missing': (refs: string) => `The package of ${refs} is missing from the file's library; these parts are left out.`,
+    'ipc2581-no-copper': 'The IPC-2581 file holds no copper data (only assembly or BOM content); export it with copper and layer data.',
   },
   severity: {
     critical: 'high priority',
@@ -1202,9 +1223,9 @@ export const en: Strings = {
   },
   live: {
     badge: 'live',
-    title: 'Following the file: saving in KiCad reloads the board, sources and view stay. Click to stop.',
-    started: 'Following the file: saving in KiCad reloads the board.',
-    reloaded: 'Board reloaded (saved in KiCad)',
+    title: 'Following the file: saving it in the CAD program reloads the board, sources and view stay. Click to stop.',
+    started: 'Following the file: saving it in the CAD program reloads the board.',
+    reloaded: 'Board reloaded (file saved again)',
     failed: 'Could not read the new version of the file; waiting for the next save.',
     lost: 'The file is no longer reachable; stopped following.',
     stopped: 'Stopped following the file',
@@ -1217,7 +1238,8 @@ export const en: Strings = {
     failed: 'Could not read the GLB file.',
   },
   errors: {
-    parse: 'The file is not a readable KiCad board.',
+    parse: 'The file is not a readable board (KiCad, IPC-2581, Eagle or ODB++).',
+    importFailed: (why: string) => `The board could not be read: ${why}.`,
     scenario: 'The scenario does not match this format.',
     scenarioOtherBoard: 'The scenario belongs to another board; nets and pads may be missing.',
     fetch: (url: string) => `Could not load the board: ${url}`,

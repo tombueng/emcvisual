@@ -1,5 +1,5 @@
 /**
- * Fitting the sources to a measurement (stage 5, docs/zukunft/STUFE-5-MESSUNG-ERWEITERT.md):
+ * Fitting the sources to a measurement (stage 5, docs/future/STAGE-5-ADVANCED-MEASUREMENT.md):
  * a scan measures magnitudes only, but sources add up in power (incoherently, as in the
  * simulation). So the measured power at every point is a non-negative mix of the simulated
  * per-source powers: M_i ≈ Σ_s a_s·P_si. The factors a_s (in dB: how much louder a source is

@@ -9,7 +9,7 @@ test('demo board: load, compute, probe, diagnostics', async ({ page }) => {
   });
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Ziehe eine KiCad-Platine hierher' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ziehe eine Platine hierher' })).toBeVisible();
   // public example boards are offered on the start page (loaded from GitHub when chosen)
   await expect(page.getByRole('button', { name: 'Glasgow revC3' })).toBeVisible();
 
@@ -113,7 +113,7 @@ test.describe('without JavaScript (crawlers)', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('see and hear the EMI of your PCB');
     await expect(page.getByText(/KiCad 6 to 10 boards/)).toBeVisible();
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /KiCad PCB/);
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /KiCad, IPC-2581/);
     await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
   });
 });
@@ -181,7 +181,7 @@ test('live coupling: saving the board file again reloads it and keeps the source
   await page.evaluate((t) => {
     (window as unknown as { __file: File }).__file = new File([t.replace('(at 140 125)', '(at 141 125)')], 'demo-board.kicad_pcb', { lastModified: 2 });
   }, text);
-  await expect(page.getByText('Platine neu geladen (in KiCad gespeichert)')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText('Platine neu geladen (Datei neu gespeichert)')).toBeVisible({ timeout: 10_000 });
   await expect(page.locator('.list li')).toHaveCount(count);
 
   await page.getByRole('button', { name: 'live' }).click();
@@ -426,5 +426,27 @@ test('demo: the regulators switching current on the 12 V cable, with the divider
   await expect(card).toContainText('Kapazität am Reglereingang 20 µF');
   await expect(card).toContainText('EN 55032');
   await page.screenshot({ path: 'e2e/output/supply-noise.png' });
+  expect(errors).toEqual([]);
+});
+
+test('other CAD formats: an ODB++ archive and an Eagle board open like a KiCad board', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const odb = readFileSync('tests/fixtures/import/slot-clock.bad.odb.tgz');
+  await page.route('**/slot-clock.odb.tgz', (r) => r.fulfill({ body: odb, contentType: 'application/gzip', headers: { 'access-control-allow-origin': '*' } }));
+  await page.goto('/?board=' + encodeURIComponent('http://localhost:5175/slot-clock.odb.tgz'));
+  await expect(page.getByText('slot-clock.odb.tgz')).toBeVisible({ timeout: 30_000 });
+  await page.getByText(/Vorschläge aus der Platine/).click();
+  await page.getByRole('button', { name: 'Alle übernehmen' }).click();
+  await expect(page.locator('.list li').first()).toBeVisible({ timeout: 30_000 });
+  // the suggested clock source runs and the slot under it is found, as for the KiCad file
+  await page.getByRole('tab', { name: /Diagnose/ }).click();
+  await expect(page.locator('ol.ranked li').filter({ hasText: 'Rückstrompfad unterbrochen' }).first()).toBeVisible({ timeout: 30_000 });
+  await page.screenshot({ path: 'e2e/output/import-odb.png' });
+
+  const eagle = readFileSync('tests/fixtures/import/eagle-test.brd', 'utf8');
+  await page.route('**/eagle-test.brd', (r) => r.fulfill({ body: eagle, contentType: 'text/plain', headers: { 'access-control-allow-origin': '*' } }));
+  await page.goto('/?board=' + encodeURIComponent('http://localhost:5175/eagle-test.brd'));
+  await expect(page.getByText('eagle-test.brd')).toBeVisible({ timeout: 30_000 });
   expect(errors).toEqual([]);
 });

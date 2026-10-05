@@ -70,7 +70,7 @@
       <h1>%APP_NAME%: see and hear the EMI of your PCB</h1>
       <p>
         A free EMC / EMI simulator for printed circuit boards that runs in the browser. Load a
-        KiCad board, mark the noisy parts of the circuit (clocks, data lines, differential pairs,
+        board (KiCad, IPC-2581 from Altium, Allegro or PADS, ODB++, Eagle), mark the noisy parts of the circuit (clocks, data lines, differential pairs,
         the hot loop of a switching regulator) and explore the magnetic near field as a glowing 3D
         world, with a virtual near-field probe, a spectrum-analyzer view and sound.
       </p>
@@ -78,7 +78,7 @@
 
       <h2>What it does</h2>
       <ul>
-        <li>Imports KiCad 6 to 10 boards (.kicad_pcb) and detects the ground and power reference planes.</li>
+        <li>Imports KiCad 6 to 10 boards (.kicad_pcb), IPC-2581 (.xml from Altium, Allegro/OrCAD, PADS, Zuken), ODB++ archives and Eagle/Fusion 360 boards (.brd), and detects the ground and power reference planes.</li>
         <li>Simulates the quasi-static magnetic near field (H-field): Biot-Savart with return currents as image currents in the reference planes, including slots and cut-outs.</li>
         <li>Sources: clock and data lines (also through series resistors), differential pairs such as USB, buck converter and switching-regulator hot loops.</li>
         <li>Shows the field as a 3D glow, a slice plane like a near-field scan, animated field lines and an ant's-eye view across the board.</li>

@@ -1,5 +1,5 @@
 /**
- * Stage 3: export of a full-wave job for openEMS (docs/zukunft/STUFE-3-VOLLWELLE.md).
+ * Stage 3: export of a full-wave job for openEMS (docs/future/STAGE-3-FULL-WAVE.md).
  *
  * The browser cannot run openEMS, so it writes a self-contained job (JSON): stack-up, copper
  * per layer as polygons, via and hole barrels, one port per source with the lumped parts it

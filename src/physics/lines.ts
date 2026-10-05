@@ -1,4 +1,4 @@
-/** Transmission line parameters (docs/stufe-1/PHYSIK.md §4). Lengths in mm. */
+/** Transmission line parameters (docs/stage-1/PHYSICS.md §4). Lengths in mm. */
 import { C0 } from './units';
 
 export interface LineParams {

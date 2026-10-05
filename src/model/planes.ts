@@ -1,5 +1,5 @@
 /**
- * Reference planes: detection and coverage rasters (docs/stufe-1/PHYSIK.md §8.1).
+ * Reference planes: detection and coverage rasters (docs/stage-1/PHYSICS.md §8.1).
  *
  * A copper layer is a plane when one net's filled zones cover at least 15 % of the board
  * area on that layer (that net names the plane). Copper of other nets with large pours on the

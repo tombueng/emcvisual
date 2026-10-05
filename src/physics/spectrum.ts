@@ -1,5 +1,5 @@
 /**
- * Line spectra of periodic trapezoid signals (docs/stufe-1/PHYSIK.md §3).
+ * Line spectra of periodic trapezoid signals (docs/stage-1/PHYSICS.md §3).
  * Amplitudes are RMS values of the sinusoidal components.
  */
 

@@ -96,9 +96,10 @@ async function poll() {
   try {
     const f = await handle.getFile();
     if (f.lastModified === lastModified) return;
-    const text = await f.text();
+    // KiCad as text (as on the first load), other formats as bytes
+    const data = /\.kicad_pcb$/i.test(f.name) ? await f.text() : await f.arrayBuffer();
     try {
-      await engine.loadBoard(text, f.name, null, true);
+      await engine.loadBoard(data, f.name, null, true);
       lastModified = f.lastModified;
       failures = 0;
       app.toast = t.live.reloaded;

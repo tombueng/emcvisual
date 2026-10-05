@@ -4,6 +4,7 @@
  */
 import { lineAmp } from '../physics/spectrum';
 import { parseBoard } from '../kicad/parseBoard';
+import { importBoard } from '../import';
 import { detectPlanes, covered, type PlaneLayer } from '../model/planes';
 import { worldFrame, toBoard, type WorldFrame } from '../model/world';
 import { coverColumns, makeGrid, type Grid } from '../compute/grid';
@@ -38,7 +39,7 @@ import { limitsFor } from '../physics/standards';
 import { distPointSegment } from '../model/geometry';
 import { PickIndex } from '../model/pickIndex';
 import { app, type Hotspot, type LineInfo } from './app.svelte';
-import { DEFAULT_VIEW, EMPTY_PARTS_INFO, partsInfoOf, migrateScenario, hashText, SCENARIO_KIND, SCENARIO_VERSION, type Scenario } from './scenario';
+import { DEFAULT_VIEW, EMPTY_PARTS_INFO, partsInfoOf, migrateScenario, hashText, hashBytes, SCENARIO_KIND, SCENARIO_VERSION, type Scenario } from './scenario';
 import { loadLocal, saveLocal } from './persist';
 
 interface VolumeEntry {
@@ -135,8 +136,10 @@ class Engine {
    * Load a board. With keep=true (the same file saved again in KiCad) the sources, settings,
    * view, camera and component models stay; only the geometry is new. `models` is a KiCad GLB
    * export that comes with the board (the demo); it is placed before the library is asked.
+   * `source` is the file's text (KiCad, IPC-2581, Eagle) or its bytes (any format, ODB++
+   * archives); other formats than KiCad go through the importers in src/import.
    */
-  async loadBoard(text: string, fileName: string, scenario?: Scenario | null, keep = false, models: ArrayBuffer | null = null) {
+  async loadBoard(source: string | ArrayBuffer, fileName: string, scenario?: Scenario | null, keep = false, models: ArrayBuffer | null = null) {
     if (keep && app.board) scenario = this.scenario();
     const selected = app.selectedId;
     const layerVisible = app.layerVisible;
@@ -147,14 +150,15 @@ class Engine {
     const yieldToUi = () => new Promise<void>((r) => setTimeout(r, 0));
     await yieldToUi();
     try {
-      const board = parseBoard(text, fileName);
-      const hash = await hashText(text);
+      const kicadText = typeof source === 'string' && source.trimStart().startsWith('(kicad_pcb');
+      const board = kicadText ? parseBoard(source as string, fileName) : await importBoard(fileName, source);
+      const hash = typeof source === 'string' ? await hashText(source) : await hashBytes(source);
       this.cancelAll();
       this.volumes.clear();
       this.packs.clear();
       this.ePacks.clear();
       this.composite = null;
-      this.boardText = text;
+      this.boardText = typeof source === 'string' ? source : fileName;
       this.boardName = fileName;
       app.board = board;
       app.boardHash = hash;

@@ -1,5 +1,5 @@
 /**
- * Sonification (docs/stufe-1/ARCHITEKTUR.md §6): one oscillator per source whose waveform is
+ * Sonification (docs/stage-1/ARCHITECTURE.md §6): one oscillator per source whose waveform is
  * built from the source's harmonic amplitudes, pitched down linearly so harmonics stay
  * harmonic (clocks sound like tones, switchers buzz). Loudness follows the field at the
  * probe; direction comes from an HRTF panner at the source's centre.

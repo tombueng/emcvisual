@@ -1,5 +1,5 @@
 /**
- * Stage 4: near-field scanning with a 3D printer (docs/zukunft/STUFE-4-MESSUNG-SCANNER.md).
+ * Stage 4: near-field scanning with a 3D printer (docs/future/STAGE-4-SCANNER.md).
  * Interfaces for the moving part (positioner) and the instrument (receiver), plus the
  * measurement format. Printer coordinates are mm in the printer's own frame.
  */

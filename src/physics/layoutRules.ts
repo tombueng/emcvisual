@@ -1,5 +1,5 @@
 /**
- * Layout rules that need no field source (docs/research/EMV-FEHLERKATALOG.md):
+ * Layout rules that need no field source (docs/research/EMC-MISTAKES-CATALOGUE.md):
  *
  * - K-18 filter at the connector: a series part (R, L, ferrite) or a shunt capacitor on a cable
  *   line far from the connector protects nothing in between; a filter capacitor with a long way

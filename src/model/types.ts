@@ -3,7 +3,7 @@
  *
  * 2D coordinates are KiCad board coordinates in mm (x right, y down). Heights are world
  * heights in mm with the centre of the F.Cu copper at y = 0 and positive upwards; see
- * docs/stufe-1/PHYSIK.md for the world frame.
+ * docs/stage-1/PHYSICS.md for the world frame.
  */
 export interface Vec2 {
   x: number;

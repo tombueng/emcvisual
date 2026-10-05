@@ -1,5 +1,5 @@
 /**
- * Mirror images in reference planes and shielding slots (docs/stufe-1/PHYSIK.md §8).
+ * Mirror images in reference planes and shielding slots (docs/stage-1/PHYSICS.md §8).
  *
  * Output is a packed element list for the field kernel: 8 numbers per element
  * (ax, ay, az, bx, by, bz, weight, core radius), grouped by slot. Planes split the height

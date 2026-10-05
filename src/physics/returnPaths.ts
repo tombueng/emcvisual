@@ -1,5 +1,5 @@
 /**
- * Stage 2a return-current model (docs/zukunft/STUFE-2-FLAECHENSTROEME.md):
+ * Stage 2a return-current model (docs/future/STAGE-2-PLANE-CURRENTS.md):
  * where the reference plane has a gap under a current path, the return current no longer
  * jumps to another plane (stage 1 mirror model) but detours through the copper of the same
  * plane around the gap; where a signal changes to a layer with another reference plane, the

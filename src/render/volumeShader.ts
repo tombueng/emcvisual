@@ -1,6 +1,6 @@
 /**
  * Full-screen composite pass: reads the opaque scene (colour + depth) and ray-marches the
- * field volume up to the scene depth (docs/stufe-1/ARCHITEKTUR.md §5).
+ * field volume up to the scene depth (docs/stage-1/ARCHITECTURE.md §5).
  */
 export const volumeVertex = /* glsl */ `
 out vec2 vUv;

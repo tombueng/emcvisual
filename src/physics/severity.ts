@@ -5,6 +5,7 @@
  * causes (its far-field gain when fixed). A small cause on a failing source is still worth a
  * look; a big cause on a quiet source is not urgent.
  */
+import { SUPPLY_RED_DB } from './supplyNoise';
 import type { DiagnosticKind } from './diagnostics';
 
 export type SeverityLevel = 'critical' | 'check' | 'minor';
@@ -54,9 +55,6 @@ export function marginOf(
  * Board rules (layoutRules.ts): a floating connector shield is a well documented cause of
  * failures (high), the others are worth a look; none of them is quantified.
  */
-/** supply-noise: red from this many dB over the conducted yardstick (same as supplyNoise.ts). */
-const SUPPLY_RED_DB = 20;
-
 const RULE_SCORE = {
   'shield-open': 0.65,
   'shield-weak': 0.45,
@@ -120,7 +118,13 @@ export function sourceSeverity(margin: number | null): Severity {
   return { score, level: level(score) };
 }
 
-/** Green (0) → yellow (0.5) → red (1). */
+/**
+ * Colour of a priority, in bands that match the levels so colour and label always agree:
+ * green below 0.3 (low priority), yellow to amber from 0.3 (check), red from 0.6 (high
+ * priority); within a band the hue still shows the score.
+ */
 export function severityColor(score: number): string {
-  return `hsl(${Math.round(120 * (1 - clamp(score, 0, 1)))} 78% 52%)`;
+  const s = clamp(score, 0, 1);
+  const hue = s < 0.3 ? 120 - (s / 0.3) * 25 : s < 0.6 ? 55 - ((s - 0.3) / 0.3) * 20 : 12 - ((s - 0.6) / 0.4) * 12;
+  return `hsl(${Math.round(hue)} 78% 52%)`;
 }

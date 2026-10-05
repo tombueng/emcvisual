@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { boardBaseName } from '../import';
   import { app } from '../state/app.svelte';
   import { t, fmtNum } from '../i18n';
   import { formatEng } from '../physics/units';
@@ -63,7 +64,7 @@
 
   function save(index: number) {
     const m = scanner.measurements[index];
-    if (m) downloadText(`${m.board.fileName.replace(/\.kicad_pcb$/, '')}-${m.createdAt.slice(0, 16).replace(/[:T]/g, '-')}.measurement.json`, measurementToJson(m));
+    if (m) downloadText(`${boardBaseName(m.board.fileName)}-${m.createdAt.slice(0, 16).replace(/[:T]/g, '-')}.measurement.json`, measurementToJson(m));
   }
 
   async function load() {
@@ -104,7 +105,7 @@
       <input id="sc-url" type="text" bind:value={scanner.octoUrl} disabled={scanner.connected} />
     </div>
     <div class="field">
-      <label for="sc-key">API-Key</label>
+      <label for="sc-key">{t.scan.apiKey}</label>
       <input id="sc-key" type="password" autocomplete="off" bind:value={scanner.octoKey} disabled={scanner.connected} />
     </div>
     <p class="hint">{t.scan.octoHint}</p>
@@ -132,7 +133,7 @@
     {:else}
       <button class="btn small primary" onclick={connect} disabled={!app.board}>{t.scan.connect}</button>
     {/if}
-    {#if scanner.status}<span class="warn-text">{scanner.status}</span>{/if}
+    {#if scanner.status}<span class="warn-text">{(t.scan.statusText as Record<string, string>)[scanner.status] ?? scanner.status}</span>{/if}
   </div>
 
   {#if scanner.positionerKind !== 'virtual'}
@@ -148,7 +149,7 @@
       <select bind:value={scanner.jogStep} aria-label={t.scan.jogStep}>
         <option value={10}>10 mm</option>
         <option value={1}>1 mm</option>
-        <option value={0.1}>0,1 mm</option>
+        <option value={0.1}>{fmtNum(0.1, 1)} mm</option>
       </select>
       <button class="btn small" onclick={home} disabled={!scanner.connected}>{t.scan.home}</button>
     </div>

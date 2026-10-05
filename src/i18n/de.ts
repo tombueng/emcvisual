@@ -25,8 +25,8 @@ export const de = {
     panel: 'Einstellungen',
   },
   empty: {
-    title: 'Ziehe eine KiCad-Platine hierher',
-    body: 'Eine .kicad_pcb aus KiCad 6 bis 10. Die Datei bleibt in deinem Browser.',
+    title: 'Ziehe eine Platine hierher',
+    body: 'KiCad 6 bis 10 (.kicad_pcb), IPC-2581 (.xml aus Altium, Allegro/OrCAD, PADS, Zuken), Eagle/Fusion 360 (.brd) oder ODB++ (.tgz/.zip). Die Datei bleibt in deinem Browser.',
     open: 'Datei auswählen',
     demo: 'Demo-Platine laden',
     demoHint: 'Die Demo zeigt einen guten und einen schlechten Schaltregler, zwei Takte (einer über einem Schlitz in der GND-Fläche) und ein USB-Paar.',
@@ -38,7 +38,7 @@ export const de = {
       'Links die erkannten Takte, Datenleitungen und Schaltregler übernehmen und ihre Werte prüfen (Frequenz, Anstiegszeit).',
       'Rechts unter „Diagnose“ steht, was zuerst zu tun ist; ein Klick auf einen Hinweis zeigt die Stelle mit Erklärung.',
     ],
-    checks: 'Geprüft werden rund 25 bekannte EMV-Layoutfehler, jeweils mit Grund, Abhilfe und Grenzen der Aussage:',
+    checks: 'Geprüft werden rund 30 bekannte EMV-Layoutfehler, jeweils mit Grund, Abhilfe und Grenzen der Aussage:',
     checksLink: 'alle Regeln',
   },
   sources: {
@@ -140,6 +140,7 @@ export const de = {
     } as Record<string, string>,
   },
   view: {
+    sliceFile: 'schnitt',
     title: 'Ansicht',
     fieldKind: 'Feldgröße',
     fieldKinds: { H: 'Magnetisch (H)', E: 'Elektrisch (E)' },
@@ -375,6 +376,17 @@ export const de = {
     hint: 'Takte klingen als Ton, Schaltregler schnarren. Laut, wo das Feld stark ist.',
   },
   scan: {
+    apiKey: 'API-Key',
+    statusText: {
+      'registration-missing': 'Erst die Lage der Platine einmessen (zwei Referenzpunkte).',
+      'not-connected': 'Drucker und Empfänger sind nicht verbunden.',
+      'virtual-receiver-needs-virtual-printer': 'Der virtuelle Empfänger arbeitet nur mit dem virtuellen Drucker.',
+      'tinysa-no-data': 'Der tinySA hat keine Messwerte geliefert.',
+      'need-two-points': 'Für die Lage der Platine braucht es mindestens zwei Referenzpunkte.',
+      'web-serial-unavailable': 'Dieser Browser kann keine seriellen Geräte ansprechen (Web Serial: Chrome oder Edge).',
+      'serial-timeout': 'Das Gerät hat nicht rechtzeitig geantwortet.',
+      'wrong-kind': 'Die Datei ist keine Messung dieser App.',
+    },
     tab: 'Messung',
     intro: 'Stufe 4: Nahfeld-Scan mit einem 3D-Drucker. Virtuell misst die Kette, was die Simulation vorhersagt; echte Geräte sind experimentell.',
     devices: 'Geräte',
@@ -641,7 +653,7 @@ export const de = {
       nearestVia: 'die nächste Via',
       radius: (mm: string, net: string) => `Keine ${net}-Via im Umkreis von ${mm} mm um die Signal-Via.`,
       longLine: (mm: string, eeff: string, f: string) => `Längster Weg ${mm} mm, effektive Permittivität ${eeff}: Viertelwellen-Resonanz (offenes Ende) bei ${f}.`,
-      edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm der Leitung laufen ${d} mm neben dem Rand der Bezugsfläche; Abstand zur Fläche ${h} mm, Richtwert ${min} mm (5 × Abstand, mindestens 1 mm).`,
+      edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm der Leitung laufen ${d} mm neben dem Rand der Bezugsfläche; Abstand zur Fläche ${h} mm, Richtwert ${min} mm (3 × Abstand, mindestens 1 mm).`,
       cm: (lp: string, f: string, v: string, mech: string) =>
         `Teilinduktivität der Fläche für diese Leitung: L_p ≈ ${lp} nH. Bei ${f} ergibt der Rückstrom darüber eine Spannung von etwa ${v} zwischen den beiden Flächenhälften (${mech}).`,
       io: (net: string, conn: string, m: string, c: string, z: string, kind: string) =>
@@ -720,7 +732,7 @@ export const de = {
         why: () =>
           'Oberhalb einiger MHz fließt der Rückstrom in der Fläche direkt unter der Leitung, weil diese Schleife die kleinste Induktivität hat. Über einer Lücke muss er außen herum. Hin- und Rückstrom spannen dann eine Fläche auf, und eine kleine Schleife strahlt proportional zu Fläche × Strom × Frequenz² (nach Ott: E ≈ 263·10⁻¹⁶·f²·A·I/r). Dazu treibt der Strom eine Spannung über die Lücke: Der Schlitz kann selbst als Antenne wirken, und die geteilte Fläche wird zur Quelle für Gleichtaktströme auf angeschlossenen Kabeln, die meist noch stärker abstrahlen.',
         detected: () =>
-          'Die App rastert jede Bezugsfläche (0,25 mm) und prüft unter jedem Leitungsstück, ob Kupfer darunter liegt. Gemeldet werden Lücken ab 1 mm Länge mit Kupfer auf beiden Seiten; kleine Freistellungen (bis 3 mm², z. B. um Vias) zählen als Kupfer. Das Rückstrommodell (Stufe 2) sucht den kürzesten Weg durchs Flächenkupfer um die Lücke herum und rechnet ihn als echten Strompfad.',
+          'Die App rastert jede Bezugsfläche (0,1 bis 0,25 mm je Zelle, nach Plattengröße) und prüft unter jedem Leitungsstück alle 0,1 mm, ob Kupfer darunter liegt. Gemeldet werden Lücken ab 0,2 mm mit Kupfer auf beiden Seiten, wenn der Rückstrom mindestens 2 mm weiter muss als geradeaus oder gar nicht herum kommt; Löcher bis 2,5 mm Ausdehnung (Freistellungen um Vias, Wärmefallen) zählen als Kupfer, Schlitze zählen nach ihrer Länge. Das Rückstrommodell (Stufe 2) sucht den kürzesten Weg durchs Flächenkupfer um die Lücke herum und rechnet ihn als echten Strompfad.',
         fixes: () => [
           'Leitung umlegen, sodass sie über durchgehender Fläche bleibt.',
           'Lücke schließen oder die Fläche unter der Leitung durchgehend machen. Die Bezugsfläche (meist GND) grundsätzlich nicht teilen; Analog- und Digitalteil durch Platzierung trennen, nicht durch Schlitze. Getrennte Versorgungsinseln nur auf Lagen, die schnellen Signalen nicht als Bezug dienen.',
@@ -745,7 +757,7 @@ export const de = {
         why: () =>
           'Über einer durchgehenden Fläche fließt unter dem Strom sein Spiegelbild in Gegenrichtung; aus der Ferne heben sich beide fast auf, übrig bleibt eine sehr flache Schleife. Fehlt die Fläche, strahlt die Schleife mit ihrer vollen Fläche. Bei Schaltreglern ist die „heiße Schleife“ (Eingangskondensator → Schalter → Masse) mit Strömen von Ampere und Flanken von Nanosekunden oft eine der stärksten Quellen der Platine; dazu kommen das elektrische Feld des Schaltknotens und Störungen, die über die Eingangsleitungen abfließen.',
         detected: () =>
-          'Wie bei Lücken unter Leitungen: Rasterung der Bezugsfläche, Lücken ab 1 mm. Gibt es keinen Weg um die Lücke, rechnet die App die Schleife an dieser Stelle ohne Spiegel. Die Wirkung gilt für alle Lücken unter dieser Quelle zusammen: verglichen wird mit derselben Quelle über lückenloser Fläche.',
+          'Wie bei Lücken unter Leitungen: Rasterung der Bezugsfläche, Lücken ab 0,2 mm. Gibt es keinen Weg um die Lücke, rechnet die App die Schleife an dieser Stelle ohne Spiegel. Die Wirkung gilt für alle Lücken unter dieser Quelle zusammen: verglichen wird mit derselben Quelle über lückenloser Fläche.',
         fixes: (p: P) =>
           p.loop
             ? [
@@ -1076,7 +1088,7 @@ export const de = {
         why: () =>
           'Der Rückstrom verteilt sich unter der Leitung über eine Breite von einigen Abständen h zur Fläche (Stromdichte etwa ∝ 1/(1 + (x/h)²)). Liegt der Rand näher, wird ein Teil davon zur Seite gedrängt, das Feld greift um den Rand herum, und Hin- und Rückstrom heben sich weniger auf. An der Platinenkante koppelt die Leitung außerdem in den Spalt zwischen den Flächen, der dort wie eine Schlitzantenne abstrahlt.',
         detected: (p: P) =>
-          `Für jedes Leitungsstück sucht die App im Raster der Bezugsfläche die nächste Stelle ohne Kupfer, seitlich zur Leitung (eine Leitung, die geradewegs auf die Kante zuläuft, etwa in einen Stecker, zählt nicht). Gemeldet wird, wenn auf mindestens 3 mm der Abstand kleiner ist als 5 × h, mindestens 1 mm (hier ${p.radius} mm).`,
+          `Für jedes Leitungsstück sucht die App im Raster der Bezugsfläche die nächste Stelle ohne Kupfer, seitlich zur Leitung (eine Leitung, die geradewegs auf die Kante zuläuft, etwa in einen Stecker, zählt nicht). Gemeldet wird, wenn auf mindestens 3 mm der Abstand kleiner ist als 3 × h, mindestens 1 mm (hier ${p.radius} mm).`,
         fixes: () => [
           'Schnelle Leitungen einige Millimeter nach innen legen, mindestens um den Richtwert vom Flächenrand weg.',
           'Wenn die Leitung am Rand bleiben muss: auf eine innere Lage zwischen zwei Flächen (Stripline) legen, dort reicht das Feld kaum über den Rand.',
@@ -1136,6 +1148,15 @@ export const de = {
         refs: ['slyt682', 'an1149', 'ott'] as const,
       },
     },
+  },
+  fileNotes: {
+    title: 'Hinweise zur Datei',
+    'stackup-default': 'Die Datei nennt keinen Lagenaufbau; angenommen ist der übliche (2 Lagen: 1,6 mm FR4; 4 Lagen: 0,21 mm Prepreg außen). Abstände zur Bezugsfläche und damit Feld und Fernfeld hängen davon ab: unter Ansicht → Lagen prüfen oder die Datei mit Lagenaufbau exportieren.',
+    'outline-missing': 'Die Datei hat keinen Platinenumriss; angenommen ist das Rechteck um das Kupfer.',
+    'outline-open': (n: string) => `Der Platinenumriss ist nicht geschlossen (${n} offene Stücke); Rand- und Kantenregeln sind dort unsicher.`,
+    'eagle-pour-computed': 'Eagle speichert nur den Umriss von Kupferflächen. Die Füllung ist hier nachgerechnet (Abstände zu fremdem Kupfer, Rand, Sperrflächen, Inseln ohne Anschluss entfernt), auf 0,1 mm genau; Wärmefallen fehlen.',
+    'eagle-package-missing': (refs: string) => `Für ${refs} fehlt das Gehäuse in der Bibliothek der Datei; diese Bauteile fehlen.`,
+    'ipc2581-no-copper': 'Die IPC-2581-Datei enthält keine Kupferdaten (nur Montage- oder Stücklisteninhalt); exportiere sie mit Kupfer- und Lagendaten.',
   },
   severity: {
     critical: 'hohe Priorität',
@@ -1212,9 +1233,9 @@ export const de = {
   },
   live: {
     badge: 'live',
-    title: 'Folgt der Datei: Speichern in KiCad lädt die Platine neu, Quellen und Ansicht bleiben. Klick beendet das.',
-    started: 'Folgt der Datei: Speichern in KiCad lädt die Platine neu.',
-    reloaded: 'Platine neu geladen (in KiCad gespeichert)',
+    title: 'Folgt der Datei: Speichern im CAD-Programm lädt die Platine neu, Quellen und Ansicht bleiben. Klick beendet das.',
+    started: 'Folgt der Datei: Speichern im CAD-Programm lädt die Platine neu.',
+    reloaded: 'Platine neu geladen (Datei neu gespeichert)',
     failed: 'Die neue Fassung der Datei ließ sich nicht lesen; warte auf das nächste Speichern.',
     lost: 'Die Datei ist nicht mehr erreichbar; Folgen beendet.',
     stopped: 'Folgen beendet',
@@ -1227,7 +1248,8 @@ export const de = {
     failed: 'Die GLB-Datei konnte nicht gelesen werden.',
   },
   errors: {
-    parse: 'Die Datei ist keine lesbare KiCad-Platine.',
+    parse: 'Die Datei ist keine lesbare Platine (KiCad, IPC-2581, Eagle oder ODB++).',
+    importFailed: (why: string) => `Die Platine ließ sich nicht lesen: ${why}.`,
     scenario: 'Das Szenario passt nicht zu diesem Format.',
     scenarioOtherBoard: 'Das Szenario gehört zu einer anderen Platine; Netze und Pads können fehlen.',
     fetch: (url: string) => `Die Platine konnte nicht geladen werden: ${url}`,

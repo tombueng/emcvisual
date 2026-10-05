@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { boardBaseName } from '../import';
   import { app } from '../state/app.svelte';
   import { engine } from '../state/engine.svelte';
   import { t, fmtNum } from '../i18n';
@@ -20,7 +21,7 @@
 
   function exportSlice() {
     const csv = engine.sliceCsv(app.view.sliceHeight);
-    if (csv) downloadText(`${(app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '')}-schnitt-${app.view.sliceHeight}mm.csv`, csv, 'text/csv');
+    if (csv) downloadText(`${boardBaseName(app.board?.source.fileName ?? 'board')}-${t.view.sliceFile}-${app.view.sliceHeight}mm.csv`, csv, 'text/csv');
   }
 
   const modes: ViewMode[] = ['all', 'band', 'line'];
@@ -59,7 +60,7 @@
   }
 
   // --- stage 3: openEMS -------------------------------------------------------------------------
-  const baseName = () => (app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+  const baseName = () => boardBaseName(app.board?.source.fileName ?? 'board');
   function exportJob() {
     const json = engine.exportFullwaveJob();
     if (!json) return;
@@ -85,7 +86,7 @@
     engine.scheduleSave();
   };
 
-  // quasi-static validity for the grid size (PHYSIK.md §2): k·r <= 0.3
+  // quasi-static validity for the grid size (PHYSICS.md §2): k·r <= 0.3
   const fQs = $derived.by(() => {
     const g = engine.grid;
     if (!g || !app.board) return 0;

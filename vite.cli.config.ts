@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
-// The field check as one self-contained Node script (docs/CI-FELDCHECK.md). Built next to
+// The field check as one self-contained Node script (docs/CI-FIELD-CHECK.md). Built next to
 // the app (dist/cli/) so projects can fetch it from the Pages site.
 export default defineConfig({
   publicDir: false,

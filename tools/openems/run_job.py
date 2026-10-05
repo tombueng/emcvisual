@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run a full-wave job exported by the app (Stage 3, docs/zukunft/STUFE-3-VOLLWELLE.md) with
+Run a full-wave job exported by the app (Stage 3, docs/future/STAGE-3-FULL-WAVE.md) with
 openEMS and write the result file the app loads (<job>.fullwave.bin).
 
     python tools/openems/run_job.py board.openems-job.json [--res 0.8] [--sources id1,id2]

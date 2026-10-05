@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { boardBaseName } from '../import';
   import { standardShort } from '../report/texts';
   import { app } from '../state/app.svelte';
   import { engine } from '../state/engine.svelte';
@@ -8,7 +9,7 @@
 
   function exportCsv() {
     if (!data) return;
-    const name = (app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+    const name = boardBaseName(app.board?.source.fileName ?? 'board');
     downloadText(`${name}-${app.spectrumMode}.csv`, engine.spectrumCsv(data), 'text/csv');
   }
 

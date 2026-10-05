@@ -1,4 +1,4 @@
-/** Source definitions as stored in a scenario (docs/stufe-1/PHYSIK.md §5). */
+/** Source definitions as stored in a scenario (docs/stage-1/PHYSICS.md §5). */
 import type { Waveform } from './spectrum';
 
 export type LoadModel =
@@ -58,7 +58,7 @@ export interface InductorSource extends SourceBase {
   waveform: Waveform;
 }
 
-/** Effective turns of the stray loop per shielding class (rough, see PHYSIK/Stufe-2 doc). */
+/** Effective turns of the stray loop per shielding class (rough, see docs/future/STAGE-2-PLANE-CURRENTS.md). */
 export const STRAY_TURNS: Record<InductorSource['shielding'], number> = { open: 12, semi: 4, shielded: 0.8 };
 
 export type Source = SignalSource | DiffPairSource | LoopSource | InductorSource;

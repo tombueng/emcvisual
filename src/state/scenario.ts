@@ -171,6 +171,12 @@ export function migrateScenario(raw: unknown): Scenario {
   };
 }
 
+/** Hash of a binary board file (archives): same form as hashText. */
+export async function hashBytes(data: ArrayBuffer): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(buf)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 export async function hashText(text: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');

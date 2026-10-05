@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { boardBaseName } from '../import';
   import { app } from '../state/app.svelte';
   import { engine } from '../state/engine.svelte';
   import { t } from '../i18n';
@@ -27,7 +28,7 @@
       suggestSources(app.board).map((x) => ({ reason: x.reason, source: x.source as Source })),
       manualUrl,
     );
-    const name = (app.board.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+    const name = boardBaseName(app.board.source.fileName ?? 'board');
     downloadText(`${name}.ai-request.json`, JSON.stringify(req, null, 1));
   }
 
@@ -40,12 +41,13 @@
 
   function saveReport() {
     const html = buildReport(engine.viewer?.snapshot() ?? null);
-    const name = (app.board?.source.fileName ?? 'board').replace(/\.kicad_pcb$/, '');
+    const name = boardBaseName(app.board?.source.fileName ?? 'board');
     downloadText(`${name}-${t.report.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.html`, html, 'text/html');
   }
 
   const colorOf = (id: string) => app.sources.find((s) => s.id === id)?.color ?? 'var(--muted)';
-  const nameOf = (id: string) => app.sources.find((s) => s.id === id)?.name ?? '';
+  // board rules have no source: they belong to the board
+  const nameOf = (id: string) => (id ? (app.sources.find((s) => s.id === id)?.name ?? '') : t.diag.board);
 
   function goToBoard(x: number, y: number) {
     const w = toWorld(engine.frame, { x, y }, app.probe.height);
@@ -122,14 +124,36 @@
     void app.fieldOrigin;
     return engine.farReadout(3)?.sources.filter((s) => s.compensated) ?? [];
   });
+  /** What the file did not provide and was assumed or computed (stack-up, outline, pours). */
+  const fileNotes = $derived.by(() => {
+    const w = app.board?.warnings ?? [];
+    const notes: string[] = [];
+    const N = t.fileNotes as Record<string, string | ((x: string) => string)>;
+    const missing = w.filter((x) => x.startsWith('eagle-package-missing:')).map((x) => x.slice(x.indexOf(':') + 1));
+    for (const x of w) {
+      const key = x.split(':')[0]!;
+      if (key === 'eagle-package-missing') continue;
+      const v = N[key];
+      if (typeof v === 'string') notes.push(v);
+      else if (typeof v === 'function') notes.push(v(x.slice(x.indexOf(':') + 1)));
+    }
+    if (missing.length) notes.push((N['eagle-package-missing'] as (x: string) => string)(missing.join(', ')));
+    return [...new Set(notes)];
+  });
 </script>
 
 <div class="diag">
+  {#if fileNotes.length}
+    <div class="section-title">{t.fileNotes.title}</div>
+    <ul class="file-notes">
+      {#each fileNotes as n (n)}<li class="hint">{n}</li>{/each}
+    </ul>
+  {/if}
   {#if plan.length}
     <div class="section-title">{t.diag.planTitle}</div>
     <ol class="plan">
       {#each plan as st, i (i)}
-        <li style:--s={st.level === 'critical' ? 'var(--bad, #f05a5a)' : 'var(--warn)'}>
+        <li style:--s={st.level === 'critical' ? 'var(--bad)' : 'var(--caution)'}>
           <button onclick={() => (app.focusKey = diagKey(st.first))} title={t.focus.open}>
             <span class="n">{i + 1}.</span>
             <span class="what">{(t.diag.plan as Record<string, (n: number, who: string) => string>)[st.kind]?.(st.count, st.who.slice(0, 3).join(', ') + (st.who.length > 3 ? ' …' : '')) ?? t.diag.planGeneric(t.callouts.kinds[st.kind], st.count)}</span>
@@ -218,6 +242,8 @@
     value={app.standard}
     onchange={(e) => {
       app.standard = (e.currentTarget as HTMLSelectElement).value;
+      // the cable estimates and the supply-noise check compare with the limits: recompute them
+      engine.updateDiagnostics();
       engine.scheduleSave();
     }}
   >
@@ -429,5 +455,12 @@
   }
   .hint {
     margin: 0;
+  }
+  .file-notes {
+    margin: 0 0 10px;
+    padding-left: 16px;
+  }
+  .file-notes li {
+    margin: 2px 0;
   }
 </style>

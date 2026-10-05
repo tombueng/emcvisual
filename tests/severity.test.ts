@@ -23,7 +23,9 @@ describe('severity of findings', () => {
 
   it('goes from green over yellow to red', () => {
     expect(severityColor(0)).toBe('hsl(120 78% 52%)');
-    expect(severityColor(0.5)).toBe('hsl(60 78% 52%)');
+    expect(severityColor(0.5)).toBe('hsl(42 78% 52%)');
+    // the colour band follows the level: high priority from 0.6 is red, not amber
+    expect(severityColor(0.6)).toBe('hsl(12 78% 52%)');
     expect(severityColor(1)).toBe('hsl(0 78% 52%)');
   });
 });

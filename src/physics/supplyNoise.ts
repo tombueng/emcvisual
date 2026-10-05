@@ -1,5 +1,5 @@
 /**
- * K-34: the switching current of a regulator on the supply cable (docs/research/EMV-FEHLERKATALOG.md).
+ * K-34: the switching current of a regulator on the supply cable (docs/research/EMC-MISTAKES-CATALOGUE.md).
  *
  * The hot loop of a regulator draws its current in pulses from the supply node. The capacitors
  * there take most of the AC part, but not all: the rest goes through the supply path (fuse,
