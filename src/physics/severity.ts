@@ -34,15 +34,20 @@ export function marginScore(margin: number | null): number {
  * others by the source's differential-mode margin.
  */
 export function severityOf(
-  d: { kind: DiagnosticKind; value: number; gain?: { db: number }; cm?: { worst: { margin: number } | null } },
+  d: { kind: DiagnosticKind; value: number; gain?: { db: number }; cm?: { worst: { margin: number } | null }; io?: { worst: { margin: number } | null } },
   sourceMargin: number | null,
 ): Severity {
   return findingSeverity(marginOf(d, sourceMargin), d.gain?.db ?? null, d.kind, d.value);
 }
 
 /** The margin that counts for a diagnostic (see severityOf). */
-export function marginOf(d: { kind: DiagnosticKind; cm?: { worst: { margin: number } | null } }, sourceMargin: number | null): number | null {
-  return d.kind === 'cable-cm' ? (d.cm?.worst?.margin ?? null) : sourceMargin;
+export function marginOf(
+  d: { kind: DiagnosticKind; cm?: { worst: { margin: number } | null }; io?: { worst: { margin: number } | null } },
+  sourceMargin: number | null,
+): number | null {
+  if (d.kind === 'cable-cm') return d.cm?.worst?.margin ?? null;
+  if (d.kind === 'io-coupling') return d.io?.worst?.margin ?? null;
+  return sourceMargin;
 }
 
 /** Below this far-field margin (dB) a gap under the source is left to the normal rating. */

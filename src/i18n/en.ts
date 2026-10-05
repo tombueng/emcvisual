@@ -202,6 +202,12 @@ export const en: Strings = {
               : 'against an assumed supply cable (no connector found)';
         return `Voltage across the plane ${where}: with cables estimated up to ${db} dBµV/m at 3 m (${m}, worst case).`;
       },
+      'io-coupling': (d) => {
+        const e = d.io;
+        if (!e?.worst) return 'Crosstalk into an I/O line.';
+        const m = e.worst.margin >= 0 ? `${e.worst.margin.toFixed(0)} dB over the limit` : `${(-e.worst.margin).toFixed(0)} dB below`;
+        return `Crosstalk into ${d.otherNet ?? '?'} (leaves on the cable at ${e.connector}): ${e.length.toFixed(0)} mm parallel at ${e.spacing.toFixed(1)} mm spacing, with the cable estimated up to ${e.worst.db.toFixed(0)} dBµV/m at 3 m (${m}, worst case).`;
+      },
       'edge-trace': (d) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
@@ -394,6 +400,7 @@ export const en: Strings = {
       'no-reference': 'Line without a reference plane',
       'edge-trace': 'Line at the edge of its plane',
       'cable-cm': 'Cables driven against each other',
+      'io-coupling': 'Crosstalk into a cable line',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -495,6 +502,9 @@ export const en: Strings = {
       edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm of the line run ${d} mm beside the edge of the reference plane; height above the plane ${h} mm, guide value ${min} mm (5 × height, at least 1 mm).`,
       cm: (lp: string, f: string, v: string, mech: string) =>
         `Partial inductance of the plane for this line: L_p ≈ ${lp} nH. At ${f} the return current produces about ${v} across it between the two plane halves (${mech}).`,
+      io: (net: string, conn: string, m: string, c: string, z: string, kind: string) =>
+        `Mutual inductance along the parallel run ≈ ${m} nH, coupling capacitance ≈ ${c} pF; ${net} leaves the board at ${conn}, whose cable is taken as an antenna of ${z} Ω (${kind} dominates).`,
+      ioKind: { mag: 'inductive coupling', elec: 'capacitive coupling' },
       cmMech: { 'cable-cable': 'connectors on both sides: cable against cable', 'cable-board': 'connectors on one side only: cable against the board', 'assumed-cable': 'no connector found: one supply cable assumed' },
       noReference: (mm2: string) => `Signal and return (through the ground copper) enclose about ${mm2} mm².`,
       hotLoop: (mm2: string) => `Area of the loop along the copper: about ${mm2} mm² (compact with SOT-23/0603: 10–20 mm²).`,
@@ -679,6 +689,29 @@ export const en: Strings = {
         limits: () =>
           'A worst-case estimate, not a measured value: cable resonance assumed at every frequency, 100 Ω radiation resistance, isotropic radiation, ground reflection. The source calls the result "rather too high" itself. Not included: gaps in the plane (they raise the voltage a lot), voltage-driven coupling to heat sinks and enclosure, differential pairs, switching-regulator loops and the sum of several sources. Which parts really carry cables, the app guesses from library and reference.',
         refs: ['clemson', 'hockanson1996', 'hubing2003'] as const,
+      },
+      ioCoupling: {
+        what: () =>
+          'A line that leaves the board through a connector (an "I/O line", often a slow signal such as a button, LED or UART) runs alongside this fast line for a while. Through crosstalk it picks up its harmonics and carries them onto the cable.',
+        why: () =>
+          'The I/O line\'s function does not matter: whatever high frequency sits on it flows onto the cable as common-mode current, and cables are good antennas. A few microamperes on 1 m of cable reach the limit. Crosstalk of a few percent of a clock signal easily does that; Hubing points this path out because it is so common.',
+        detected: () =>
+          'Method of the Clemson EMC expert system (Radiation by I/O Coupling): nets with a pin on a connector are I/O nets (also behind a series resistor or ferrite). For every piece running parallel to the fast line on the same layer or without a plane in between: mutual inductance M = µ0/(4π)·ln(1 + 4h²/s²) and coupling capacitance C_m = M·C/L; noise voltage inductive ω·M·I·l, capacitive ω·C_m·V·l·100 Ω, the larger counts. Radiation E = 40·V/Z_ant at 3 m with Z_ant = 80·(N+1) Ω (N ground pins in the connector, at most 800 Ω; shielded connector 800 Ω). Reported from 6 dB below the limit.',
+        fixes: () => [
+          'Route the I/O line away from the fast line: coupling falls quickly with spacing (for s ≫ h roughly with 1/s²).',
+          'Filter at the connector: an RC or a ferrite with a capacitor right at the connector, the capacitor with its own ground via. Then what couples in before it is harmless.',
+          'Keep the area at the connector free of fast lines; keep I/O lines short and direct to the connector.',
+          'If the lines have to stay close: put them on different layers with a ground plane in between, or a ground trace with vias between them.',
+          'More ground pins in the connector next to fast or sensitive signals lower the common-mode current on the cable.',
+        ],
+        avoid: () => [
+          'Do not route I/O lines across the digital area "because they are slow".',
+          'Do not put the filter next to the IC instead of at the connector: the line in between stays unprotected.',
+          'No fast lines under connectors or I/O parts.',
+        ],
+        limits: () =>
+          'A worst-case estimate: weak coupling, resonant cable, phases of the contributions added (the source says itself this can be high). The load on the I/O line (100 Ω assumed), filters at the connector and the actual cable length are not taken into account; a filter right at the connector can make the coupling practically harmless. Which footprints carry cables, the app guesses from library and reference.',
+        refs: ['clemson', 'hubing2003'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

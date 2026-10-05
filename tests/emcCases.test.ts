@@ -20,7 +20,8 @@ const DIR = 'tests/fixtures/emc-cases';
 const cases = JSON.parse(readFileSync(`${DIR}/cases.json`, 'utf8')) as Record<string, CaseMeta>;
 const opts = { height: 2, step: 1 };
 const matrix: Record<string, unknown>[] = [];
-const sevMargin = (s: CheckReport['sources'][number], kind: string) => (kind === 'cable-cm' ? (s.cm?.margin ?? null) : (s.far?.margin ?? null));
+const sevMargin = (s: CheckReport['sources'][number], kind: string) =>
+  kind === 'cable-cm' ? (s.cm?.margin ?? null) : kind === 'io-coupling' ? (s.io?.margin ?? null) : (s.far?.margin ?? null);
 
 function check(id: string, variant: 'bad' | 'good', meta: CaseMeta): CheckReport {
   const file = `${id}.${variant}.kicad_pcb`;
@@ -62,6 +63,7 @@ describe('known EMC mistakes: bad board vs. good twin', () => {
       const cmBad = Math.max(...bad.sources.map((s) => s.cm?.margin ?? -200));
       const cmGood = Math.max(...good.sources.map((s) => s.cm?.margin ?? -200));
       matrix[matrix.length - 1]!.cm = `${cmBad} → ${cmGood}`;
+      matrix[matrix.length - 1]!.io = `${Math.max(...bad.sources.map((s) => s.io?.margin ?? -200))} → ${Math.max(...good.sources.map((s) => s.io?.margin ?? -200))}`;
       if (meta.expect.cm_gain_min !== undefined) expect(cmBad - cmGood, `${id}: cable common mode bad ${cmBad} vs good ${cmGood}`).toBeGreaterThanOrEqual(meta.expect.cm_gain_min);
       if (meta.expect.bad_split) expect(bad.sources.some((s) => s.hints.some((h) => h.split)), `${id}: the split should be named`).toBe(true);
       if (meta.expect.near_gain_min !== undefined) expect(nearBad - nearGood, `${id}: near field bad ${nearBad} vs good ${nearGood}`).toBeGreaterThanOrEqual(meta.expect.near_gain_min);

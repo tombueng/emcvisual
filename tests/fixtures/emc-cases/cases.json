@@ -159,6 +159,46 @@
    "cm_gain_min": 6
   }
  },
+ "io-crosstalk": {
+  "layers": 4,
+  "w": 80,
+  "h": 60,
+  "title": "Langsame Kabelleitung läuft neben dem Takt",
+  "mistake": "Eine Tasterleitung (IO_BTN) vom Stecker J2 läuft 20 mm direkt neben der 25-MHz-Taktleitung (0,4 mm Kante zu Kante). Über Übersprechen nimmt sie die Taktoberwellen auf und trägt sie aufs Kabel.",
+  "fix": "I/O-Leitung mit Abstand führen (hier ≥ 5 mm) und am Stecker filtern.",
+  "sources": [
+   {
+    "id": "clk",
+    "type": "signal",
+    "kind": "clock",
+    "name": "Takt 25 MHz",
+    "enabled": true,
+    "color": "#f59e0b",
+    "nets": [
+     "CLK"
+    ],
+    "driver": "Y1.3",
+    "waveform": {
+     "f0": 25000000.0,
+     "duty": 0.5,
+     "tr": 1e-09,
+     "amplitude": 3.3
+    },
+    "load": {
+     "model": "capacitive",
+     "cLoad": 5e-12
+    }
+   }
+  ],
+  "expect": {
+   "bad": [
+    "io-coupling"
+   ],
+   "good_absent": [
+    "io-coupling"
+   ]
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

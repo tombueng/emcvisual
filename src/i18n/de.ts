@@ -204,6 +204,12 @@ export const de = {
               : 'gegen ein angenommenes Versorgungskabel (kein Stecker erkannt)';
         return `Spannung über der Fläche ${where}: mit Kabeln geschätzt bis ${db} dBµV/m in 3 m (${m}, ungünstigster Fall).`;
       },
+      'io-coupling': (d: { otherNet?: string; io?: { connector: string; length: number; spacing: number; worst: { db: number; margin: number } | null } }) => {
+        const e = d.io;
+        if (!e?.worst) return 'Übersprechen auf eine I/O-Leitung.';
+        const m = e.worst.margin >= 0 ? `${e.worst.margin.toFixed(0)} dB über Grenzwert` : `${(-e.worst.margin).toFixed(0)} dB darunter`;
+        return `Übersprechen auf ${d.otherNet ?? '?'} (geht über ${e.connector} aufs Kabel): ${e.length.toFixed(0)} mm parallel im Abstand ${e.spacing.toFixed(1).replace('.', ',')} mm, mit Kabel geschätzt bis ${e.worst.db.toFixed(0)} dBµV/m in 3 m (${m}, ungünstigster Fall).`;
+      },
       'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
@@ -396,6 +402,7 @@ export const de = {
       'no-reference': 'Leitung ohne Bezugsfläche',
       'edge-trace': 'Leitung am Rand der Bezugsfläche',
       'cable-cm': 'Kabel werden gegeneinander getrieben',
+      'io-coupling': 'Übersprechen auf eine Kabelleitung',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -497,6 +504,9 @@ export const de = {
       edgeTrace: (run: string, d: string, min: string, h: string) => `${run} mm der Leitung laufen ${d} mm neben dem Rand der Bezugsfläche; Abstand zur Fläche ${h} mm, Richtwert ${min} mm (5 × Abstand, mindestens 1 mm).`,
       cm: (lp: string, f: string, v: string, mech: string) =>
         `Teilinduktivität der Fläche für diese Leitung: L_p ≈ ${lp} nH. Bei ${f} ergibt der Rückstrom darüber eine Spannung von etwa ${v} zwischen den beiden Flächenhälften (${mech}).`,
+      io: (net: string, conn: string, m: string, c: string, z: string, kind: string) =>
+        `Gegeninduktivität entlang der Parallelführung ≈ ${m} nH, Koppelkapazität ≈ ${c} pF; ${net} verlässt die Platine über ${conn}, dessen Kabel als Antenne mit ${z} Ω angesetzt ist (${kind} überwiegt).`,
+      ioKind: { mag: 'induktive Kopplung', elec: 'kapazitive Kopplung' },
       cmMech: { 'cable-cable': 'Stecker auf beiden Seiten: Kabel gegen Kabel', 'cable-board': 'Stecker nur auf einer Seite: Kabel gegen die Platine', 'assumed-cable': 'kein Stecker erkannt: ein Versorgungskabel angenommen' },
       noReference: (mm2: string) => `Hin- und Rückweg (durch das Massekupfer) umschließen etwa ${mm2} mm².`,
       hotLoop: (mm2: string) => `Fläche der Schleife entlang des Kupfers: etwa ${mm2} mm² (kompakt mit SOT-23/0603: 10–20 mm²).`,
@@ -681,6 +691,29 @@ export const de = {
         limits: () =>
           'Eine Abschätzung für den ungünstigsten Fall, kein Messwert: Resonanz des Kabels bei jeder Frequenz angenommen, 100 Ω Strahlungswiderstand, Abstrahlung in alle Richtungen gleich, Bodenreflexion. Die Quelle nennt das Ergebnis selbst „eher zu hoch“. Nicht enthalten: Lücken in der Fläche (sie erhöhen die Spannung deutlich), spannungsgetriebene Kopplung an Kühlkörper und Gehäuse, Differenzpaare, Schaltregler-Schleifen und die Summe mehrerer Quellen. Welche Bauteile wirklich Kabel tragen, rät die App aus Bibliothek und Referenz.',
         refs: ['clemson', 'hockanson1996', 'hubing2003'] as const,
+      },
+      ioCoupling: {
+        what: () =>
+          'Eine Leitung, die über einen Stecker die Platine verlässt (eine „I/O-Leitung“, oft ein langsames Signal wie Taster, LED, UART), läuft ein Stück parallel zu dieser schnellen Leitung. Über Übersprechen nimmt sie deren Oberwellen auf und trägt sie aufs Kabel.',
+        why: () =>
+          'Die Funktion der I/O-Leitung ist egal: Was an Hochfrequenz auf ihr liegt, fließt als Gleichtaktstrom auf das Kabel, und Kabel sind gute Antennen. Schon wenige Mikroampere auf 1 m Kabel erreichen den Grenzwert. Übersprechen von wenigen Prozent eines Taktsignals reicht dafür leicht; Hubing hebt diesen Weg eigens hervor, weil er so häufig ist.',
+        detected: () =>
+          'Methode des Clemson-EMV-Expertensystems (Radiation by I/O Coupling): Netze mit einem Pin an einem Stecker sind I/O-Netze (auch hinter einem Serienwiderstand oder Ferrit). Für jedes parallele Stück zur schnellen Leitung auf derselben Lage oder ohne Fläche dazwischen: Gegeninduktivität M = µ0/(4π)·ln(1 + 4h²/s²) und Koppelkapazität C_m = M·C/L; Störspannung induktiv ω·M·I·l, kapazitiv ω·C_m·V·l·100 Ω, die größere zählt. Abstrahlung E = 40·V/Z_ant in 3 m mit Z_ant = 80·(N+1) Ω (N Massepins im Stecker, höchstens 800 Ω; geschirmter Stecker 800 Ω). Gemeldet ab 6 dB unter dem Grenzwert.',
+        fixes: () => [
+          'Die I/O-Leitung weg von der schnellen Leitung führen: Die Kopplung fällt mit dem Abstand schnell (bei s ≫ h etwa mit 1/s²).',
+          'Am Stecker filtern: RC-Glied oder Ferrit mit Kondensator direkt am Stecker, Kondensator mit eigenem Masse-Via. Dann ist das, was davor einkoppelt, unschädlich.',
+          'Den Bereich am Stecker frei von schnellen Leitungen halten; I/O-Leitungen kurz und auf direktem Weg zum Stecker.',
+          'Wenn die Leitungen nah bleiben müssen: auf verschiedene Lagen mit einer Massefläche dazwischen, oder eine Masseleitung mit Vias dazwischen.',
+          'Mehr Massepins im Stecker neben schnellen oder empfindlichen Signalen senken den Gleichtaktstrom auf dem Kabel.',
+        ],
+        avoid: () => [
+          'I/O-Leitungen nicht „weil langsam“ quer durch die Digitalzone führen.',
+          'Den Filter nicht neben den IC statt an den Stecker setzen: Die Leitung dazwischen bleibt ungeschützt.',
+          'Keine schnellen Leitungen unter Steckern oder I/O-Bauteilen durchführen.',
+        ],
+        limits: () =>
+          'Eine Abschätzung für den ungünstigsten Fall: schwache Kopplung, resonantes Kabel, Phasen der Teilbeiträge addiert (die Quelle sagt selbst, das kann zu hoch liegen). Die Last auf der I/O-Leitung (100 Ω angesetzt), Filter am Stecker und die tatsächliche Kabellänge sind nicht berücksichtigt; ein Filter direkt am Stecker kann die Kopplung praktisch unschädlich machen. Welche Footprints Kabel tragen, rät die App aus Bibliothek und Referenz.',
+        refs: ['clemson', 'hubing2003'] as const,
       },
       edgeTrace: {
         what: (p: P) =>

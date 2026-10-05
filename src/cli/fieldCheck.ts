@@ -16,6 +16,7 @@ import { dipoleCompensated, farField, farMoment, limitAt } from '../physics/farf
 import { limitsFor } from '../physics/standards';
 import { diagnoseSource, referencePlane } from '../physics/diagnostics';
 import { commonModeEstimate } from '../physics/commonMode';
+import { ioCouplingEstimates } from '../physics/ioCoupling';
 import { attributeSource } from '../physics/attribution';
 import { selectionWeight } from '../compute/composer';
 import { migrateScenario, type Scenario } from '../state/scenario';
@@ -59,6 +60,8 @@ export interface SourceCheck {
   nearMax?: number;
   /** Common-mode estimate with cables (worst case, commonMode.ts): mechanism and worst line. */
   cm?: { mechanism: string; margin: number; f: number; db: number; sides: [string[], string[]] };
+  /** Strongest crosstalk into an I/O line (worst case, ioCoupling.ts). */
+  io?: { net: string; connector: string; margin: number; f: number; db: number };
   /** Far-field gain when fixed, dB (scope 'source': all plane gaps under the source together). */
   /** gainDb: share against ideal returns (orders the hints); aloneDb: effect of fixing only this spot. */
   hints: { kind: string; x: number; y: number; layer: string; value?: number; split?: boolean; otherNet?: string; gainDb?: number; gainScope?: 'finding' | 'source'; aloneDb?: number }[];
@@ -152,7 +155,9 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
       res.far = Number.isFinite(worst) ? { margin: round(worst), f: fw } : null;
       const cm = commonModeEstimate(board, planes, frame, src, model, limits, (l) => referencePlane(board, planes, l));
       if (cm?.worst) res.cm = { mechanism: cm.mechanism, margin: round(cm.worst.margin), f: cm.worst.f, db: round(cm.worst.db), sides: [cm.sideA, cm.sideB] };
-      res.hints = diagnoseSource(board, planes, frame, src, model, ctx.fMax, detours, attr.planeGapsDb, cm)
+      const io = ioCouplingEstimates(ctx, src, model, limits, (l) => referencePlane(board, planes, l));
+      if (io[0]?.worst) res.io = { net: io[0].ioNet, connector: io[0].connector, margin: round(io[0].worst.margin), f: io[0].worst.f, db: round(io[0].worst.db) };
+      res.hints = diagnoseSource(board, planes, frame, src, model, ctx.fMax, detours, attr.planeGapsDb, cm, io)
         .map((d) => ({
           kind: d.kind,
           x: round(d.at.x),

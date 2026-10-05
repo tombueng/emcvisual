@@ -298,6 +298,31 @@ def between_connectors(b, bad):
         b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x04_P2.54mm_Vertical', 'J2', 'Kabel', 4, 46, pins=pins)
 
 
+@case('io-crosstalk', 4, 80, 60,
+      title='Langsame Kabelleitung läuft neben dem Takt',
+      mistake='Eine Tasterleitung (IO_BTN) vom Stecker J2 läuft 20 mm direkt neben der 25-MHz-Taktleitung (0,4 mm Kante zu Kante). Über Übersprechen nimmt sie die Taktoberwellen auf und trägt sie aufs Kabel.',
+      fix='I/O-Leitung mit Abstand führen (hier ≥ 5 mm) und am Stecker filtern.',
+      sources=[clock_source('clk', 'Takt 25 MHz', ['CLK'], 'Y1.3')],
+      expect={'bad': ['io-coupling'], 'good_absent': ['io-coupling']})
+def io_crosstalk(b, bad):
+    clock_driver(b, 'Y1', 14, 30, 'CLK')
+    receiver(b, 'U1', 66, 30, 'CLK')
+    y = b.pad('Y1', '3')[1]
+    b.track('CLK', b.F, [b.pad('Y1', '3'), (19, y), (19, 30.95), (b.pad('U1', '1')[0] - 2, 30.95), b.pad('U1', '1')])
+    b.zone('GND', b.In1)
+    b.zone('+3V3', b.In2)
+    # a button input: connector J2 (with one ground pin) to a pull-up resistor near U1
+    b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x02_P2.54mm_Vertical', 'J2', 'Taster', 76, 40, pins={'1': 'IO_BTN', '2': 'GND'})
+    b.place('Resistor_SMD', 'R_0603_1608Metric', 'R2', '10k', 40, 40, rot=90, pins={'1': 'IO_BTN', '2': '+3V3'})
+    j = b.pad('J2', '1')
+    r = b.pad('R2', '1')
+    if bad:
+        yy = 30.95 + 0.6
+        b.track('IO_BTN', b.F, [r, (r[0], yy), (62, yy), (66, 36), (j[0] - 2, 36), (j[0] - 2, j[1]), j])
+    else:
+        b.track('IO_BTN', b.F, [r, (r[0], 37), (j[0] - 2, 37), (j[0] - 2, j[1]), j])
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

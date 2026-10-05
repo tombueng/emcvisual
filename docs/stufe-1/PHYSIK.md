@@ -314,6 +314,21 @@ keine Schaltregler-Schleifen, keine spannungsgetriebene Kopplung an Kühlkörper
 keine Summe mehrerer Quellen. Ob ein Footprint ein Kabel trägt, wird aus Bibliothek und
 Referenz geraten.
 
+## 11c. Übersprechen auf Kabelleitungen (Abschätzung, ungünstigster Fall)
+
+`src/physics/ioCoupling.ts`, nach dem Clemson-Algorithmus „Radiation by I/O Coupling“. I/O-Netze
+sind Netze mit einem Pin an einem Kabelstecker (auch einen Serienwiderstand oder Ferrit weiter).
+Für jedes parallele Stück einer schnellen Leitung (Winkel unter 15°, Abstand unter 15·h bzw.
+3 mm, gleiche Lage oder keine Fläche dazwischen):
+
+    M = µ0/(4π) · ln(1 + 4h²/s²),  C_m = M · C / L
+    V_mag = ω · M · I · l,  V_elec = ω · C_m · V · l · 100 Ω,  V_n = max(Σ V_mag, Σ V_elec)
+    E = 40 · V_n / Z_ant  (3 m),  Z_ant = min(800 Ω, 80 · (N + 1)),  geschirmter Stecker 800 Ω
+
+(N Massepins des Steckers). Gemeldet ab 6 dB unter dem Grenzwert. Grenzen: schwache Kopplung,
+resonantes Kabel, Teilbeiträge phasengleich addiert (eher zu hoch), Filter am Stecker und die
+Last der I/O-Leitung (100 Ω angesetzt) nicht berücksichtigt.
+
 ## 11a. Diagnose-Regeln
 
 - **Rückstrompfad unterbrochen:** Unter einem waagerechten Stromelement fehlt auf der

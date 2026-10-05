@@ -93,6 +93,13 @@ export function explain(d: Diagnostic): Explanation {
       if (c && w) figures.push(E.fig.cm(fmtNum(c.lp * 1e9, 3), formatEng(w.f, 'Hz', 3), formatEng(w.v, 'V', 2), E.fig.cmMech[c.mechanism]));
       break;
     }
+    case 'io-coupling': {
+      k = 'ioCoupling';
+      const e = d.io;
+      const w = e?.worst ? e.lines.find((l) => l.f === e.worst!.f) : undefined;
+      if (e && w) figures.push(E.fig.io(d.otherNet ?? '?', e.connector, fmtNum(e.mutual * 1e9, 2), fmtNum(e.capacitance * 1e12, 2), fmtNum(e.zAnt, 0), E.fig.ioKind[e.kind]));
+      break;
+    }
     case 'no-reference':
       k = 'noReference';
       figures.push(E.fig.noReference(p.loopArea));
@@ -166,7 +173,7 @@ export function explain(d: Diagnostic): Explanation {
     doubts.push(D.cavity(p.planeNet, p.otherNet, formatEng(C0 / (2 * L * Math.sqrt(er)), 'Hz', 2)));
   }
   if (d.kind === 'return-gap' && s && s.type !== 'loop' && s.type !== 'inductor') doubts.push(D.slotCm);
-  if (d.kind === 'cable-cm') doubts.push(D.cmWorstCase);
+  if (d.kind === 'cable-cm' || d.kind === 'io-coupling') doubts.push(D.cmWorstCase);
   if (d.detour && d.detour.length > 0) doubts.push(D.shortestPath);
   if (d.gain?.scope === 'source') doubts.push(D.idealMirror);
   if (s && (s.type === 'signal' || s.type === 'diffpair')) doubts.push(D.trapezoid);
@@ -177,9 +184,9 @@ export function explain(d: Diagnostic): Explanation {
   if (!app.planes.some((q) => q.override)) doubts.push(D.planesDetected);
 
   // --- severity -------------------------------------------------------------------------------------
-  const margin = d.kind === 'cable-cm' ? (d.cm?.worst?.margin ?? null) : worst ? worst.db - worst.lim : null;
+  const margin = d.kind === 'cable-cm' ? (d.cm?.worst?.margin ?? null) : d.kind === 'io-coupling' ? (d.io?.worst?.margin ?? null) : worst ? worst.db - worst.lim : null;
   const severity = findingSeverity(margin, d.gain?.db ?? null, d.kind, d.value);
-  const fAt = d.kind === 'cable-cm' ? d.cm?.worst?.f : worst?.f;
+  const fAt = d.kind === 'cable-cm' ? d.cm?.worst?.f : d.kind === 'io-coupling' ? d.io?.worst?.f : worst?.f;
   const reason = t.severity.reason(margin !== null && fAt !== undefined ? `${t.diag.margin(margin)} (${formatEng(fAt, 'Hz', 3)})` : '–', gain ? gainText(d) : t.severity.noGain);
 
   return {
