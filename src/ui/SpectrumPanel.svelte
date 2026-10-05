@@ -23,6 +23,8 @@
   let hover = $state<{ f: number; db: number; x: number; y: number } | null>(null);
 
   const F_MIN = 1e5;
+  /** Colour of the cable estimate (worst case) in the far-field view. */
+  const CM_COLOR = '#f1f5f9';
   const PAD = { l: 44, r: 10, t: 10, b: 20 };
 
   // what the screen shows: the probe spectrum, or the far-field estimate with limit lines
@@ -30,8 +32,20 @@
     if (app.spectrumMode === 'probe') return app.readout ? { ...app.readout, limits: null } : null;
     void app.models;
     void app.sources.map((s) => [s.enabled, s.waveform.f0, s.waveform.tr, s.waveform.amplitude, s.waveform.duty]);
-    const r = engine.farReadout(app.spectrumMode === 'far3' ? 3 : 10);
-    return r ? { sources: r.sources.map((s) => ({ ...s, h: 0, db: 0 })), total: r.total, unit: 'dBµV/m', limits: r.limits } : null;
+    void app.commonMode;
+    const dist = app.spectrumMode === 'far3' ? 3 : 10;
+    const r = engine.farReadout(dist);
+    if (!r) return null;
+    // the cable estimate (worst case, 3 m) of the enabled sources, scaled to the distance
+    const cm: { f: number; db: number }[] = [];
+    for (const s of app.sources) {
+      const e = s.enabled ? app.commonMode[s.id] : undefined;
+      if (e) for (const l of e.lines) cm.push({ f: l.f, db: l.db - 20 * Math.log10(dist / 3) });
+    }
+    // above this frequency the board is longer than λ/4: the small-dipole formula no longer holds
+    const b = app.board?.bbox;
+    const fValid = b ? 299_792_458 / (4 * (Math.hypot(b.x1 - b.x0, b.y1 - b.y0) / 1000)) : Infinity;
+    return { sources: r.sources.map((s) => ({ ...s, h: 0, db: 0 })), total: r.total, unit: 'dBµV/m', limits: r.limits, cm, fValid };
   });
 
   const peak = $derived.by(() => {
@@ -39,7 +53,13 @@
     if (!r || r.total.length === 0) return null;
     return r.total.reduce((a, b) => (b.db > a.db ? b : a));
   });
-  const refLevel = $derived(peak ? Math.ceil(peak.db / 10) * 10 + 10 : 120);
+  // the scale also has to show the cable estimate, which is often well above the board alone
+  const top = $derived.by(() => {
+    let m = peak?.db ?? -Infinity;
+    if (data && 'cm' in data) for (const l of data.cm ?? []) if (l.f <= app.fMax && l.db > m) m = l.db;
+    return Number.isFinite(m) ? m : null;
+  });
+  const refLevel = $derived(top !== null ? Math.ceil(top / 10) * 10 + 10 : 120);
 
   $effect(() => {
     const ro = new ResizeObserver(() => {
@@ -173,6 +193,54 @@
     g.globalAlpha = 1;
     g.lineWidth = 1;
 
+    // the board longer than λ/4: hatched, the far-field formula is not valid there
+    const fv = 'fValid' in r ? (r.fValid as number) : Infinity;
+    if (fv < fm) {
+      const xv = xOf(Math.max(fv, F_MIN), w);
+      g.save();
+      g.beginPath();
+      g.rect(xv, y0, x1 - xv, y1 - y0);
+      g.clip();
+      g.strokeStyle = 'rgba(160, 170, 185, 0.18)';
+      for (let k = -(y1 - y0); k < x1 - xv; k += 8) {
+        g.beginPath();
+        g.moveTo(xv + k, y1);
+        g.lineTo(xv + k + (y1 - y0), y0);
+        g.stroke();
+      }
+      g.restore();
+    }
+    // with cables, worst case: a dashed envelope over all sources
+    const cmLines = 'cm' in r ? (r.cm as { f: number; db: number }[]) : [];
+    if (cmLines.length) {
+      const cmMax = new Float32Array(cols).fill(-Infinity);
+      for (const l of cmLines) {
+        if (l.f < F_MIN || l.f > fm) continue;
+        const c = Math.min(cols - 1, Math.max(0, Math.floor(xOf(l.f, w) - x0)));
+        if (l.db > cmMax[c]!) cmMax[c] = l.db;
+      }
+      g.strokeStyle = CM_COLOR;
+      g.lineWidth = 2;
+      g.setLineDash([6, 4]);
+      g.beginPath();
+      let on = false;
+      for (let c = 0; c < cols; c++) {
+        let m = -Infinity;
+        for (let k = Math.max(0, c - R); k <= Math.min(cols - 1, c + R); k++) if (cmMax[k]! > m) m = cmMax[k]!;
+        if (!Number.isFinite(m)) {
+          on = false;
+          continue;
+        }
+        if (!on) {
+          g.moveTo(x0 + c, clampY(m));
+          on = true;
+        } else g.lineTo(x0 + c, clampY(m));
+      }
+      g.stroke();
+      g.setLineDash([]);
+      g.lineWidth = 1;
+    }
+
     if (r.limits) {
       g.strokeStyle = col('--warn');
       g.lineWidth = 1.5;
@@ -240,6 +308,8 @@
         <button class="csv" onclick={exportCsv}>{t.probe.csv}</button>
         <span>{data.unit}</span>
         {#if data.limits}<span class="limit">{t.probe.limit(standardShort())}</span>{/if}
+        {#if 'cm' in data && data.cm?.length}<span class="cmlegend" title={t.probe.cmHint}>{t.probe.cm}</span>{/if}
+        {#if 'fValid' in data && data.fValid !== undefined && data.fValid < app.fMax}<span class="validity" title={t.probe.validityHint}>{t.probe.validity(formatEng(data.fValid, 'Hz', 2))}</span>{/if}
         {#if peak}<span>{t.probe.peak}: {formatEng(peak.f, 'Hz', 4)}, {fmtNum(peak.db)}</span>{/if}
       {:else}
         <span>{t.probe.noProbe}</span>
@@ -362,6 +432,16 @@
   }
   .limit {
     color: var(--warn);
+  }
+  .cmlegend {
+    color: #f1f5f9;
+    pointer-events: auto;
+    cursor: help;
+  }
+  .validity {
+    color: var(--faint);
+    pointer-events: auto;
+    cursor: help;
   }
   .csv {
     pointer-events: auto;

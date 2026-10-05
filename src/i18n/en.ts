@@ -267,6 +267,10 @@ export const en: Strings = {
     goTo: 'Move the probe here',
   },
   probe: {
+    cm: '– – with cables',
+    cmHint: 'Common-mode estimate with attached cables after the Clemson method: a resonant cable at every frequency is assumed, so rather too high. The board alone (solid) is only the differential-mode part; tests usually fail on common mode.',
+    validity: (f: string) => `▨ from ${f}: board > λ/4`,
+    validityHint: 'There the formula for small radiators no longer holds: no saturation, no resonance. Single lines can be much higher or lower; the full wave (stage 3) computes that.',
     title: 'Probe',
     follow: 'follows the mouse',
     pinned: 'pinned (click releases)',

@@ -272,6 +272,10 @@ export const de = {
     goTo: 'Sonde hierher',
   },
   probe: {
+    cm: '– – mit Kabeln',
+    cmHint: 'Gleichtakt-Abschätzung mit angeschlossenen Kabeln nach der Clemson-Methode: resonantes Kabel bei jeder Frequenz angenommen, daher eher zu hoch. Die Platine allein (durchgezogen) ist nur der Gegentaktanteil; Prüfungen scheitern meist am Gleichtakt.',
+    validity: (f: string) => `▨ ab ${f}: Platine > λ/4`,
+    validityHint: 'Dort gilt die Formel für kleine Strahler nicht mehr: keine Sättigung, keine Resonanz. Einzelne Linien können deutlich höher oder niedriger sein; die Vollwelle (Stufe 3) rechnet das.',
     title: 'Sonde',
     follow: 'folgt der Maus',
     pinned: 'festgehalten (Klick löst)',
