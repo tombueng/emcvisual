@@ -95,9 +95,10 @@ export function detectPlanes(board: BoardModel, overrides: PlaneOverrides = {}, 
     const raster = fillSmallHoles(rasterize(polys, board.bbox, area), HOLE_EXTENT);
     // which net each cell belongs to, when the layer is split between nets
     let netData: Int32Array | undefined;
-    if (nets.size > 1) {
+    const layerNets = new Set(board.zones.filter((z) => z.layer === layer.index && z.net > 0).map((z) => z.net));
+    if (layerNets.size > 1 && !override) {
       netData = new Int32Array(raster.data.length);
-      for (const n of nets) {
+      for (const n of layerNets) {
         const r = rasterize(board.zones.filter((z) => z.layer === layer.index && z.net === n).flatMap((z) => z.polygons), board.bbox, area);
         for (let k = 0; k < r.data.length; k++) if (r.data[k]) netData[k] = n;
       }

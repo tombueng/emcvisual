@@ -80,6 +80,26 @@
     return rankedDiagnostics();
   });
 
+  // per source and kind the first GROUP_SHOW hints; the rest behind a "more" row
+  const GROUP_SHOW = 3;
+  let expanded = $state<Set<string>>(new Set());
+  const groupOf = (d: { sourceId: string; kind: string }) => `${d.sourceId}|${d.kind}`;
+  const rows = $derived.by(() => {
+    const total = new Map<string, number>();
+    for (const r of ranked) total.set(groupOf(r.d), (total.get(groupOf(r.d)) ?? 0) + 1);
+    const seen = new Map<string, number>();
+    const out: ({ type: 'hint'; rank: number; r: (typeof ranked)[number] } | { type: 'more'; group: string; n: number; r: (typeof ranked)[number] })[] = [];
+    ranked.forEach((r, i) => {
+      const g = groupOf(r.d);
+      const k = (seen.get(g) ?? 0) + 1;
+      seen.set(g, k);
+      if (k <= GROUP_SHOW || expanded.has(g)) out.push({ type: 'hint', rank: i + 1, r });
+      if (k === GROUP_SHOW && !expanded.has(g) && total.get(g)! > GROUP_SHOW) out.push({ type: 'more', group: g, n: total.get(g)! - GROUP_SHOW, r });
+    });
+    return out;
+  });
+  const expand = (g: string) => (expanded = new Set([...expanded, g]));
+
   // worst margin per source against the 3 m limit
   const far = $derived.by(() => {
     void app.models;
@@ -153,8 +173,14 @@
     <p class="hint">{t.diag.rankHint} {t.severity.scale}</p>
   {/if}
   <ol class="ranked">
-    {#each ranked as { d, margin, severity }, i (i)}
-      <li style:--c={severityColor(severity.score)}>
+    {#each rows as row, i (i)}
+      {#if row.type === 'more'}
+        <li class="more">
+          <button onclick={() => expand(row.group)}>{t.diag.moreOfKind(row.n, t.callouts.kinds[row.r.d.kind], nameOf(row.r.d.sourceId))}</button>
+        </li>
+      {:else}
+      {@const { d, margin, severity } = row.r}
+      <li style:--c={severityColor(severity.score)} data-rank={row.rank}>
         <button onclick={() => (app.focusKey = diagKey(d))} title={t.focus.open}>
           <span class="row"><span class="src"><span class="dot" style:background={colorOf(d.sourceId)}></span>{nameOf(d.sourceId)}</span><span class="sev" style:--s={severityColor(severity.score)}>{t.severity[severity.level]}</span></span>
           {#if margin !== null}<span class="value hint" class:over={margin >= 0}>{t.diag.margin(margin)}</span>{/if}
@@ -162,6 +188,7 @@
           {#if d.gain}<span class="gain value">{gainText(d)}</span>{/if}
         </button>
       </li>
+      {/if}
     {/each}
   </ol>
 
@@ -213,17 +240,21 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    counter-reset: rank;
   }
   ol.ranked li {
-    counter-increment: rank;
     position: relative;
+  }
+  ol.ranked li.more button {
+    padding-left: 30px;
+    color: var(--muted);
+    font-size: 12px;
   }
   ol.ranked li button {
     padding-left: 30px;
   }
-  ol.ranked li::before {
-    content: counter(rank);
+  /* the rank stays the same as on the bubbles, also when some rows are folded away */
+  ol.ranked li[data-rank]::before {
+    content: attr(data-rank);
     position: absolute;
     left: 8px;
     top: 5px;

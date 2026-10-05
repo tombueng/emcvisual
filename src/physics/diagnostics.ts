@@ -4,7 +4,7 @@
  * via, unterminated lines whose resonance falls into the measured range, and hot loops of
  * switching stages that are larger than the parts need.
  */
-import { covered, coveredNear, netAt, type PlaneLayer } from '../model/planes';
+import { covered, coveredNear, netAt, type CoverageRaster, type PlaneLayer } from '../model/planes';
 import type { BoardModel, Vec2 } from '../model/types';
 import { toBoard, type WorldFrame } from '../model/world';
 import { buildSource, groundNet, type CurrentElement, type SourceModel } from './currents';
@@ -100,13 +100,27 @@ const RESONANCE_SHARE = 0.01;
  * Lines closer to the edge of their reference plane than EDGE_H heights (at least EDGE_MIN mm)
  * over at least EDGE_RUN mm: the return current spreads like 1/(1 + (x/h)²) beside the line,
  * so within a few h of the edge part of it is pushed aside and the field reaches around the edge.
+ * LearnEMC asks for at least 2·h, Wyatt for 3–5 track widths; 3·h sits in between. The edge is
+ * the plane's outer boundary or a large gap (EDGE_GAP mm), not the clearance around other copper.
  */
-export const EDGE_H = 5;
+export const EDGE_H = 3;
+const EDGE_GAP = 5;
 const EDGE_MIN = 1;
 const EDGE_RUN = 3;
 
+const refCache = new WeakMap<PlaneLayer[], Map<number, PlaneLayer | undefined>>();
+
 /** Reference plane of a layer: the nearest plane layer, preferring the side towards the core. */
 export function referencePlane(board: BoardModel, planes: PlaneLayer[], layer: number): PlaneLayer | undefined {
+  let cache = refCache.get(planes);
+  if (!cache) refCache.set(planes, (cache = new Map()));
+  if (cache.has(layer)) return cache.get(layer);
+  const found = findReferencePlane(board, planes, layer);
+  cache.set(layer, found);
+  return found;
+}
+
+function findReferencePlane(board: BoardModel, planes: PlaneLayer[], layer: number): PlaneLayer | undefined {
   const y = board.layers[layer]!.y;
   const mid = (board.layers[0]!.y + board.layers[board.layers.length - 1]!.y) / 2;
   return planes
@@ -284,7 +298,8 @@ export function diagnoseSource(
   }
 
   // the signal couples into a line that leaves the board on a cable
-  for (const e of io) {
+  // the two strongest cable lines per source (the list is sorted, strongest first)
+  for (const e of io.slice(0, 2)) {
     if (!e.worst || e.worst.margin <= CM_REPORT) continue;
     out.push({ kind: 'io-coupling', sourceId: src.id, at: e.at, layer: '', plane: '', planeNet: '', otherNet: e.ioNet, value: e.worst.db, io: e });
   }
@@ -359,8 +374,57 @@ function virtualPlaneMoment(board: BoardModel, frame: WorldFrame, src: Source, f
  * (a line heading straight for the edge, e.g. into a connector, does not count): its length,
  * the smallest distance and where.
  */
+const edgeMasks = new WeakMap<CoverageRaster, Uint8Array>();
+
+/**
+ * Uncovered cells that count as a plane edge: regions open to the outside (beyond the plane's
+ * outer boundary) or larger than EDGE_GAP. The small gaps around tracks, pads and anti-pads in a
+ * pour are no edge.
+ */
+function edgeMask(r: CoverageRaster): Uint8Array {
+  let m = edgeMasks.get(r);
+  if (m) return m;
+  const { nx, ny } = r;
+  m = new Uint8Array(nx * ny);
+  const seen = new Uint8Array(nx * ny);
+  const stack: number[] = [];
+  const comp: number[] = [];
+  const big = EDGE_GAP / r.cell;
+  for (let start = 0; start < nx * ny; start++) {
+    if (r.data[start] || seen[start]) continue;
+    stack.length = 0;
+    comp.length = 0;
+    stack.push(start);
+    seen[start] = 1;
+    let open = false;
+    let i0 = nx;
+    let i1 = -1;
+    let j0 = ny;
+    let j1 = -1;
+    while (stack.length) {
+      const v = stack.pop()!;
+      comp.push(v);
+      const i = v % nx;
+      const j = (v - i) / nx;
+      if (i < i0) i0 = i;
+      if (i > i1) i1 = i;
+      if (j < j0) j0 = j;
+      if (j > j1) j1 = j;
+      if (i === 0 || j === 0 || i === nx - 1 || j === ny - 1) open = true;
+      if (i > 0 && !r.data[v - 1] && !seen[v - 1]) (seen[v - 1] = 1), stack.push(v - 1);
+      if (i < nx - 1 && !r.data[v + 1] && !seen[v + 1]) (seen[v + 1] = 1), stack.push(v + 1);
+      if (j > 0 && !r.data[v - nx] && !seen[v - nx]) (seen[v - nx] = 1), stack.push(v - nx);
+      if (j < ny - 1 && !r.data[v + nx] && !seen[v + nx]) (seen[v + nx] = 1), stack.push(v + nx);
+    }
+    if (open || Math.max(i1 - i0 + 1, j1 - j0 + 1) >= big) for (const v of comp) m[v] = 1;
+  }
+  edgeMasks.set(r, m);
+  return m;
+}
+
 function edgeRun(e: CurrentElement, ref: PlaneLayer, frame: WorldFrame, limit: number): { length: number; distance: number; at: Vec2 } | null {
   const r = ref.raster;
+  const edge = edgeMask(r);
   const a = toBoard(frame, e.a[0], e.a[2]);
   const b = toBoard(frame, e.b[0], e.b[2]);
   const len = Math.hypot(b.x - a.x, b.y - a.y);
@@ -384,7 +448,7 @@ function edgeRun(e: CurrentElement, ref: PlaneLayer, frame: WorldFrame, limit: n
         for (let di = -reach; di <= reach; di++) {
           const i = ci + di;
           const j = cj + dj;
-          const outside = i < 0 || j < 0 || i >= r.nx || j >= r.ny || r.data[j * r.nx + i] !== 1;
+          const outside = i < 0 || j < 0 || i >= r.nx || j >= r.ny || edge[j * r.nx + i] === 1;
           if (!outside) continue;
           const dx = r.x0 + (i + 0.5) * r.cell - x;
           const dy = r.y0 + (j + 0.5) * r.cell - y;

@@ -48,6 +48,9 @@ export const de = {
     reasons: {
       'clock-name': 'Netzname sieht nach Takt aus',
       'data-name': 'Netzname sieht nach Datenleitung aus',
+      'i2c-name': 'I²C-Leitung (angenommen 400 kbit/s, Flanken etwa 100 ns)',
+      'uart-name': 'UART-Leitung (angenommen 115200 Baud, schnelle Flanken)',
+      'regulator-boost': 'Aufwärtswandler: heiße Schleife über den Ausgangskondensator',
       'usb-pair': 'USB-Datenpaar (angenommen Full-Speed, 12 Mbit/s; bei High-Speed, 480 Mbit/s, Werte und Lastmodell ändern)',
       'diff-pair': 'Differenzpaar nach Namen',
       regulator: 'Schaltregler mit Eingangskondensator',
@@ -227,6 +230,7 @@ export const de = {
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
     board: 'Platine',
+    moreOfKind: (n: number, kind: string, src: string) => `+ ${n} weitere: ${kind} (${src})`,
     cmLine: (m: string, f: string, mech: string) => `mit Kabeln, ungünstigster Fall: ${m} (${f}; ${mech})`,
     farCompensated: 'Fernfeld hier nicht bezifferbar: Die durchgehende Fläche unter der flachen Schleife hebt ihr Dipolmoment im Modell auf. Maß ist die Schleifenfläche (siehe Hinweis).',
     detour: (d: { length: number; extraArea: number; via?: string }) =>

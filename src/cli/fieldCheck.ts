@@ -46,6 +46,9 @@ export interface CheckOptions {
 
 export const DEFAULT_CHECK: CheckOptions = { height: 2, step: 1 };
 
+/** The strongest near field lies at the source; points farther away than this are skipped, mm. */
+const NEAR_MM = 15;
+
 export interface SourceCheck {
   id: string;
   name: string;
@@ -125,7 +128,20 @@ export function runCheck(boardText: string, fileName: string, scenarioRaw: unkno
       const pack = packWithImages(model.elements, planes, frame);
       const masks = slotMaskTable(pack.planeY.length);
       const h = new Float64Array(3);
+      // the strongest near field is right at the source: only points within NEAR_MM of it
+      let ex0 = Infinity;
+      let ex1 = -Infinity;
+      let ez0 = Infinity;
+      let ez1 = -Infinity;
+      for (const e of model.elements)
+        for (const p of [e.a, e.b]) {
+          ex0 = Math.min(ex0, p[0]);
+          ex1 = Math.max(ex1, p[0]);
+          ez0 = Math.min(ez0, p[2]);
+          ez1 = Math.max(ez1, p[2]);
+        }
       const h2 = pts.map((p) => {
+        if (p.x < ex0 - NEAR_MM || p.x > ex1 + NEAR_MM || p.z < ez0 - NEAR_MM || p.z > ez1 + NEAR_MM) return 0;
         fieldAt(pack, masks, p.x, y, p.z, p.bits, h);
         return h[0]! * h[0]! + h[1]! * h[1]! + h[2]! * h[2]!;
       });

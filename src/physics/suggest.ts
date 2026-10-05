@@ -17,7 +17,10 @@ export interface Suggestion {
 const CLOCK = /(^|[_/\-])(CLK|SCK|SCLK|MCLK|BCLK|LRCLK|XTAL|XIN|XOUT|OSC|XO)([_\-\d]|$)|CLK/i;
 const DATA = /(MOSI|MISO|SDA|SDO|SDI|DATA|TXD|RXD|(^|[_/])TX|(^|[_/])RX|QSPI|SPI_|D\d+$)/i;
 const DIFF_P = /^(.*?)(D\+|_DP|DP|_P|\+)$/i;
+const I2C = /(^|[_/\-])(SDA|SCL|I2C)([_\-\d]|$)/i;
+const UART = /(^|[_/\-])(UART|TXD|RXD|TX|RX)([_\-\d]|$)/i;
 const SW_FN = /^(SW|LX|PH|PHASE)\d*$/i;
+const VOUT_FN = /^(VOUT|OUT|VO)\d*$/i;
 const VIN_FN = /^(VIN|PVIN|VCC|VDD|IN)\d*$/i;
 const GND_FN = /^(GND|PGND|VSS|AGND)\d*$/i;
 
@@ -71,16 +74,25 @@ export function suggestSources(board: BoardModel): Suggestion[] {
     });
   });
 
-  // clocks and data lines by name
+  // clocks and data lines by name; I²C and UART are slow interfaces with their own defaults
   board.nets.forEach((name, i) => {
     if (i === 0 || used.has(i) || !routed.has(i) || padsOf(i).length < 2) return;
-    const clock = CLOCK.test(name);
-    const data = !clock && DATA.test(name);
+    const i2c = I2C.test(name);
+    const uart = !i2c && UART.test(name);
+    const clock = !i2c && !uart && CLOCK.test(name);
+    const data = !clock && (i2c || uart || DATA.test(name));
     if (!clock && !data) return;
     const driver = detectDriver(board, [i]);
+    // I²C: up to 400 kbit/s, open-drain edges of about 100 ns (pull-up with bus capacitance);
+    // UART: 115200 baud from a GPIO with fast edges
+    const waveform = i2c
+      ? { f0: 200e3, duty: 0.5, tr: 100e-9, amplitude: 3.3 }
+      : uart
+        ? { f0: 57.6e3, duty: 0.5, tr: 5e-9, amplitude: 3.3 }
+        : { f0: frequencyFromName(name, clock ? 25e6 : 5e6), duty: 0.5, tr: clock ? 1e-9 : 2e-9, amplitude: 3.3 };
     out.push({
       key: `sig:${name}`,
-      reason: clock ? 'clock-name' : 'data-name',
+      reason: i2c ? 'i2c-name' : uart ? 'uart-name' : clock ? 'clock-name' : 'data-name',
       source: {
         id: `s-${crypto.randomUUID().slice(0, 8)}`,
         type: 'signal',
@@ -90,7 +102,7 @@ export function suggestSources(board: BoardModel): Suggestion[] {
         color: nextColor(),
         nets: [name],
         driver: driver >= 0 ? padName(board.pads[driver]!) : '',
-        waveform: { f0: frequencyFromName(name, clock ? 25e6 : 5e6), duty: 0.5, tr: clock ? 1e-9 : 2e-9, amplitude: 3.3 },
+        waveform,
         load: { model: 'capacitive', cLoad: 5e-12 },
       },
     });
@@ -105,26 +117,38 @@ export function suggestSources(board: BoardModel): Suggestion[] {
     const sw = pads.find((p) => SW_FN.test(p.pinFunction));
     if (!vin || !gnd || !sw || vin.net === 0 || gnd.net === 0) continue;
     if (sw.net > 0) swNets.add(sw.net);
+    // topology from the storage inductor: between VIN and SW it is a boost, whose hot loop runs
+    // through the output capacitor; otherwise a buck with its hot loop through the input capacitor
+    const boost =
+      sw.net > 0 &&
+      board.footprints.some((l) => {
+        if (!/^L\d/i.test(l.ref) || l.pads.length !== 2) return false;
+        const nets = l.pads.map((pi) => board.pads[pi]!.net);
+        return nets.includes(sw.net) && nets.includes(vin.net);
+      });
+    const vout = boost ? pads.find((p) => VOUT_FN.test(p.pinFunction) && p.net > 0) : undefined;
+    if (boost && !vout) continue; // the output is not known: no loop rather than a wrong one
+    const hot = boost ? vout! : vin;
     let best: { d: number; a: string; b: string } | null = null;
     for (const c of board.footprints) {
       if (c === fp || c.pads.length !== 2) continue;
       const [p1, p2] = c.pads.map((i) => board.pads[i]!);
-      const pin = p1!.net === vin.net && p2!.net === gnd.net ? [p1!, p2!] : p2!.net === vin.net && p1!.net === gnd.net ? [p2!, p1!] : null;
+      const pin = p1!.net === hot.net && p2!.net === gnd.net ? [p1!, p2!] : p2!.net === hot.net && p1!.net === gnd.net ? [p2!, p1!] : null;
       if (!pin) continue;
-      const d = dist(pin[0]!.at, vin.at);
+      const d = dist(pin[0]!.at, hot.at);
       if (!best || d < best.d) best = { d, a: padName(pin[0]!), b: padName(pin[1]!) };
     }
     if (!best) continue;
     out.push({
       key: `loop:${fp.ref}`,
-      reason: 'regulator',
+      reason: boost ? 'regulator-boost' : 'regulator',
       source: {
         id: `s-${crypto.randomUUID().slice(0, 8)}`,
         type: 'loop',
-        name: `${fp.ref} ${vin.pinFunction}–${gnd.pinFunction}`,
+        name: `${fp.ref} ${hot.pinFunction}–${gnd.pinFunction}`,
         enabled: true,
         color: nextColor(),
-        pads: [best.a, padName(vin), padName(gnd), best.b],
+        pads: [best.a, padName(hot), padName(gnd), best.b],
         waveform: { f0: 500e3, duty: 0.3, tr: 5e-9, amplitude: 1 },
         // switching node for the E field; the input voltage is unknown here, 12 V is a guess
         node: sw.net > 0 ? { net: board.nets[sw.net]!, voltage: 12 } : undefined,

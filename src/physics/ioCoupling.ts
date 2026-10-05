@@ -23,7 +23,7 @@ import { limitAt, type LimitSegment } from './farfield';
 import type { Source } from './sources';
 import { lineAmp, trapezoidLines } from './spectrum';
 import { MU0 } from './units';
-import { cableConnectors } from './commonMode';
+import { cableConnectors, SUPPLY_NET } from './commonMode';
 
 /** Lines farther apart than this many heights (at least 3 mm) are not coupled noticeably. */
 const MAX_SPACING_H = 15;
@@ -52,15 +52,42 @@ export interface IoCouplingEstimate {
 
 const GROUND = /^(\/)?(gnd|vss|0v|agnd|dgnd|pgnd|gndd|gnda|gndpwr|earth|ground|masse)([_\-.]?\w*)?$/i;
 
+const ioNetCache = new WeakMap<BoardModel, { net: number; connector: string }[]>();
+const segCache = new WeakMap<BoardModel, Map<number, Seg[]>>();
+
+/** Track segments per net (cached per board). */
+function netSegs(board: BoardModel): Map<number, Seg[]> {
+  let m = segCache.get(board);
+  if (m) return m;
+  m = new Map();
+  for (const t of board.tracks) {
+    let l = m.get(t.net);
+    if (!l) m.set(t.net, (l = []));
+    l.push({ a: t.a, b: t.b, layer: t.layer, width: t.width });
+  }
+  segCache.set(board, m);
+  return m;
+}
+
 /** Nets that leave the board through a cable connector (and the nets behind series parts). */
 export function ioNets(board: BoardModel): { net: number; connector: string }[] {
+  const hit = ioNetCache.get(board);
+  if (hit) return hit;
+  const r = findIoNets(board);
+  ioNetCache.set(board, r);
+  return r;
+}
+
+function findIoNets(board: BoardModel): { net: number; connector: string }[] {
   const conns = new Set(cableConnectors(board).map((c) => c.ref));
   const out = new Map<number, string>();
   board.footprints.forEach((fp, i) => {
     if (!conns.has(fp.ref)) return;
     for (const pi of fp.pads) {
       const p = board.pads[pi]!;
-      if (p.net > 0 && !GROUND.test(board.nets[p.net] ?? '')) out.set(p.net, fp.ref);
+      // signal lines only: supplies are decoupled at the connector, ground is the reference
+      const name = board.nets[p.net] ?? '';
+      if (p.net > 0 && !GROUND.test(name) && !SUPPLY_NET.test(name)) out.set(p.net, fp.ref);
     }
     void i;
   });
@@ -96,7 +123,23 @@ interface Seg {
 }
 
 function segsOf(board: BoardModel, nets: Set<number>): Seg[] {
-  return board.tracks.filter((t) => nets.has(t.net)).map((t) => ({ a: t.a, b: t.b, layer: t.layer, width: t.width }));
+  const m = netSegs(board);
+  return [...nets].flatMap((n) => m.get(n) ?? []);
+}
+
+function bboxOf(segs: Seg[], grow: number): { x0: number; y0: number; x1: number; y1: number } {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const s of segs)
+    for (const p of [s.a, s.b]) {
+      x0 = Math.min(x0, p.x);
+      y0 = Math.min(y0, p.y);
+      x1 = Math.max(x1, p.x);
+      y1 = Math.max(y1, p.y);
+    }
+  return { x0: x0 - grow, y0: y0 - grow, x1: x1 + grow, y1: y1 + grow };
 }
 
 /** No plane between the two layers (coupling through a plane is ignored, as in the source). */
@@ -141,9 +184,13 @@ export function ioCouplingEstimates(ctx: PhysicsContext, src: Source, model: Sou
   const vLines = trapezoidLines({ ...src.waveform, tr: model.info.trEff ?? src.waveform.tr }, ctx.fMax);
   const iLines = model.lines;
   const out: IoCouplingEstimate[] = [];
+  // only I/O segments near the source can couple
+  const near = bboxOf(srcSegs, 5);
+  const touches = (s: Seg) => Math.max(s.a.x, s.b.x) >= near.x0 && Math.min(s.a.x, s.b.x) <= near.x1 && Math.max(s.a.y, s.b.y) >= near.y0 && Math.min(s.a.y, s.b.y) <= near.y1;
   for (const { net, connector } of ioNets(board)) {
     if (srcNets.has(net) || net === gnd) continue;
-    const io = segsOf(board, new Set([net]));
+    const io = segsOf(board, new Set([net])).filter(touches);
+    if (!io.length) continue;
     // coupling per unit current / voltage, summed over all parallel pairs
     let mSum = 0; // Σ M·l, H
     let cSum = 0; // Σ C_m·l, F

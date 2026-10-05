@@ -56,8 +56,15 @@ export function marginOf(
  */
 const RULE_SCORE = { 'shield-open': 0.65, 'shield-weak': 0.45, 'filter-far': 0.45, 'filter-ground': 0.4, decoupling: 0.4 } as const;
 
+/**
+ * The cable estimates (commonMode.ts, ioCoupling.ts) assume a resonant cable at every frequency
+ * and add up phases; their sources call the result rather too high. For the rating they count
+ * this many dB lower: red from about 6 dB over the limit, yellow from about 6 dB below.
+ */
+export const WORST_CASE = 6;
+
 /** Below this far-field margin (dB) a gap under the source is left to the normal rating. */
-export const GAP_RELEVANT = -30;
+export const GAP_RELEVANT = -15;
 
 export function hotLoopScore(area: number): number {
   return clamp(Math.log10(area / 20), 0, 1);
@@ -66,7 +73,9 @@ export function hotLoopScore(area: number): number {
 export function findingSeverity(margin: number | null, gain: number | null, kind: DiagnosticKind, value?: number): Severity {
   // share of the problem: full from 6 dB gain on; unquantified hints in between
   const share = gain !== null ? clamp(gain / 6, 0.15, 1) : kind === 'long-line' ? 0.3 : 0.4;
-  let score = marginScore(margin) * (0.35 + 0.65 * share);
+  // worst-case estimates (resonant cable at every frequency) count from WORST_CASE dB over the limit
+  const m = margin !== null && (kind === 'cable-cm' || kind === 'io-coupling') ? margin - WORST_CASE : margin;
+  let score = marginScore(m) * (0.35 + 0.65 * share);
   if (kind === 'hot-loop' && value !== undefined) score = Math.max(score, hotLoopScore(value));
   // board rules have no margin of their own: a fixed priority per rule
   if (kind in RULE_SCORE) score = RULE_SCORE[kind as keyof typeof RULE_SCORE];

@@ -16,7 +16,7 @@ import type { PlaneLayer } from '../model/planes';
 import type { BoardModel, Footprint, Pad, Vec2 } from '../model/types';
 import type { PhysicsContext } from './currents';
 import { lineParams } from './currents';
-import { cableConnectors } from './commonMode';
+import { cableConnectors, SUPPLY_NET } from './commonMode';
 import type { Diagnostic } from './diagnostics';
 
 const GROUND = /^(\/)?(gnd|vss|0v|agnd|dgnd|pgnd|gndd|gnda|gndpwr|earth|ground|masse|chassis|shield)([_\-.]?\w*)?$/i;
@@ -83,7 +83,7 @@ export function layoutRules(ctx: PhysicsContext): Diagnostic[] {
   const conns = cableConnectors(board).map((c) => fpByRef.get(c.ref)!).filter(Boolean);
 
   // --- K-18: filters on cable lines ---------------------------------------------------------------
-  const isSupply = (net: number) => net > 0 && SUPPLY.test(board.nets[net] ?? '');
+  const isSupply = (net: number) => net > 0 && (SUPPLY.test(board.nets[net] ?? '') || SUPPLY_NET.test(board.nets[net] ?? ''));
   /** Series part: R, L or ferrite between two signal nets (a pull-up or pull-down is no filter). */
   const seriesOther = (fp: Footprint, net: number): number => {
     const pads = twoPin(board, fp);
@@ -112,7 +112,9 @@ export function layoutRules(ctx: PhysicsContext): Diagnostic[] {
         const on = pads.find((p) => nets.has(p.net));
         if (!on) continue;
         const other = pads.find((p) => p !== on)!;
-        const series = seriesOther(fp, on.net) > 0;
+        // filters: ferrites and inductors in series, capacitors to ground; a lone series resistor
+        // (a bus termination) is no EMC filter, it only extends the line to what lies behind it
+        const series = seriesOther(fp, on.net) > 0 && /^(L|FB)\d/i.test(fp.ref);
         const shunt = /^C\d/i.test(fp.ref) && isGround(board, other.net);
         if (!series && !shunt) continue;
         const d = dist(cp.at, on.at);

@@ -42,16 +42,29 @@ export interface CableConnector {
   at: Vec2;
 }
 
+/** Interfaces that always carry cables. */
+const CABLE_IFACE = /usb|rj45|rj11|hdmi|displayport|d.?sub|dsub|sma|bnc|xlr|jack|audio|terminal|barrel|dc.?jack|picoblade|jst|phoenix|ffc|fpc|sfp/i;
+/** Supply nets by name (VIN, VBUS, +5V, SYS_VIN_HV, …): power lines, not signal lines. */
+export const SUPPLY_NET = /(^|[_/\-~{])(\+?\d+(\.\d+)?V\d*|V\d+V\d*|VIN|VBUS|VBAT|VCC|VDD|VSYS|VIO|VCCIO|PWR|POWER|VSUP|VMAIN)([_\-}]|\d|$)/i;
+
+/** Board-to-board and module connectors: they carry no cable. */
+const BOARD_TO_BOARD = /df40|df12|df17|fx10|fx18|fx23|samtec|qsh|qth|erm8|erf8|sodimm|m\.2|m2_|pcie|mezzanine|btb|board.?to.?board|hirose_df|hermaphroditic|cm4|cm5|module/i;
+
 /**
  * Footprints where a cable can be attached: connector libraries, or references like J1, CN2,
- * USB1, X3 (test points and mounting holes are not cables).
+ * USB1, X3 (test points and mounting holes are not cables). Board-to-board and module sockets,
+ * and generic connectors with more than 40 pins, are left out unless they are a known cable
+ * interface.
  */
 export function cableConnectors(board: BoardModel): CableConnector[] {
   return board.footprints
     .filter((f) => {
       const lib = f.lib.toLowerCase();
       if (/testpoint|mountinghole|fiducial/.test(lib)) return false;
-      return /(^|:)connector/.test(lib) || /^(J|CN|CON|USB|X|P)\d/i.test(f.ref);
+      if (!(/(^|:)connector/.test(lib) || /^(J|CN|CON|USB|X|P)\d/i.test(f.ref))) return false;
+      if (CABLE_IFACE.test(lib)) return true;
+      if (BOARD_TO_BOARD.test(lib) || BOARD_TO_BOARD.test(f.value)) return false;
+      return f.pads.length <= 40;
     })
     .map((f) => ({ ref: f.ref, at: f.at }));
 }

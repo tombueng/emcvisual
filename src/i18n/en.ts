@@ -50,6 +50,9 @@ export const en: Strings = {
     reasons: {
       'clock-name': 'Net name looks like a clock',
       'data-name': 'Net name looks like a data line',
+      'i2c-name': 'I²C line (assumed 400 kbit/s, edges about 100 ns)',
+      'uart-name': 'UART line (assumed 115200 baud, fast edges)',
+      'regulator-boost': 'Boost converter: hot loop through the output capacitor',
       'usb-pair': 'USB data pair (assumed full speed, 12 Mbit/s; for high speed, 480 Mbit/s, change the values and the load model)',
       'diff-pair': 'Differential pair by name',
       regulator: 'Switching regulator with input capacitor',
@@ -223,6 +226,7 @@ export const en: Strings = {
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
     board: 'Board',
+    moreOfKind: (n: number, kind: string, src: string) => `+ ${n} more: ${kind} (${src})`,
     cmLine: (m: string, f: string, mech: string) => `with cables, worst case: ${m} (${f}; ${mech})`,
     farCompensated: 'Far field not quantifiable here: the solid plane under the flat loop cancels its dipole moment in the model. The measure is the loop area (see the hint).',
     detour: (d: { length: number; extraArea: number; via?: string }) =>
