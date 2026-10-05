@@ -69,6 +69,7 @@ const RULE_SCORE = {
   'pair-skew': 0.4,
   'connector-ground': 0.45,
   'inductor-placement': 0.4,
+  'filter-bypass': 0.45,
 } as const;
 
 /**
@@ -96,6 +97,8 @@ export function findingSeverity(margin: number | null, gain: number | null, kind
   if (gain !== null && gain < 0.5 && (kind === 'ref-change' || kind === 'no-stitching')) score = Math.min(score, 0.25);
   // board rules have no margin of their own: a fixed priority per rule
   if (kind in RULE_SCORE) score = RULE_SCORE[kind as keyof typeof RULE_SCORE];
+  // a filter bypassed already below 100 MHz no longer works in the range where cables radiate most
+  if (kind === 'filter-bypass' && value !== undefined && value <= 1e8) score = 0.6;
   // a gap in the return plane under a source with spectrum in the measured range: the voltage
   // across the gap drives the plane halves and cables against each other (common mode), which
   // the differential-mode figures do not contain. The literature treats it as one of the most

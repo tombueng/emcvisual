@@ -187,7 +187,7 @@ export const en: Strings = {
     tab: 'Diagnostics',
     viewTab: 'View',
     warnings: 'Layout hints',
-    none: 'None of the checked problems for the active sources (gaps and splits under lines, reference changes, missing stitching vias, unterminated lines, plane edges, hot loops, common mode with cables). Not checked: filters and shields at connectors, heat sinks, enclosure, decoupling.',
+    none: 'None of the checked problems for the active sources (gaps and splits under lines, reference changes, missing stitching vias, unterminated lines, plane edges, hot loops, common mode with cables). The board rules (filters, shields, decoupling, crystal, switch node) are listed separately below; not checked: enclosure and cable routing.',
     kinds: {
       'return-gap': (d) =>
         d.split
@@ -259,6 +259,8 @@ export const en: Strings = {
         const where = [c && c.edge < 3 ? `${c.edge.toFixed(1)} mm from the board edge` : '', c && c.connector < 10 ? `${c.connector.toFixed(0)} mm from a cable connector` : ''].filter(Boolean).join(' and ');
         return `Storage inductor ${d.parts?.[0] ?? '?'} on the switch node sits ${where}.`;
       },
+      'filter-bypass': (d, f) =>
+        `Filter ${d.parts?.[0] ?? '?'} bypassed: copper of ${d.nets?.[0] ?? '?'} and ${d.nets?.[1] ?? '?'} overlaps on ${(d.bypass?.area ?? 0).toFixed(0)} mm² (≈ ${((d.bypass?.cap ?? 0) * 1e12).toFixed(0)} pF); above about ${f(d.value)} the noise goes around it.`,
       'edge-trace': (d) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm of the line only ${d.value.toFixed(1)} mm from the edge of its reference plane ${d.planeNet} (guide value here: ${(d.run?.min ?? 0).toFixed(1)} mm).`,
     },
@@ -290,6 +292,7 @@ export const en: Strings = {
       'heatsink-floating': (n: number, who: string) => `Connect heat sink ${who} to ground.`,
       'ferrite-ground': (n: number, who: string) => `Replace ferrite ${who} between the grounds with a direct connection.`,
       'inductor-placement': (n: number, who: string) => `Move inductor ${who} away from connector and edge, close to the regulator.`,
+      'filter-bypass': (n: number, who: string) => `Separate the input and output copper of filter ${who}, with a ground plane between them.`,
     },
     counts: (r: number, y: number, g: number) => `${r} high priority · ${y} check · ${g} low priority`,
     howRanked: 'How order and priority come about',
@@ -503,6 +506,7 @@ export const en: Strings = {
       'pair-skew': 'Differential pair unequal',
       'connector-ground': 'Too few ground pins at the connector',
       'inductor-placement': 'Storage inductor at edge or connector',
+      'filter-bypass': 'Filter bypassed by overlap',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
@@ -529,6 +533,7 @@ export const en: Strings = {
     cmVoltage: (v: string, f: string) => `≈ ${v} between the plane halves at ${f}`,
     cable: (side: string, ref: string) => `cable ${side ? `${side} ` : ''}at ${ref}: antenna for common mode`,
     ioNet: (net: string, mm: string, s: string) => `${net}: ${mm} mm parallel, ${s} mm apart`,
+    overlap: (mm2: string, pf: string) => `overlap ${mm2} mm², ≈ ${pf} pF`,
     groundReach: (mm: string) => `nearest ground ${mm} mm`,
     back: 'Back to the whole board',
     open: 'Explain in 3D',
@@ -619,6 +624,10 @@ export const en: Strings = {
         `Mutual inductance along the parallel run ≈ ${m} nH, coupling capacitance ≈ ${c} pF; ${net} leaves the board at ${conn}, whose cable is taken as an antenna of ${z} Ω (${kind} dominates).`,
       ioKind: { mag: 'inductive coupling', elec: 'capacitive coupling' },
       cmMech: { 'cable-cable': 'connectors on both sides: cable against cable', 'cable-board': 'connectors on one side only: cable against the board', 'assumed-cable': 'no connector found: one supply cable assumed' },
+      bypass: (ref: string, part: string, cap: string, area: string, layers: string, fx: string) =>
+        `${ref} (${part}): ${area} mm² overlap, most of it between ${layers}; as a plate capacitor ε0·εr·A/h ≈ ${cap} pF. From about ${fx} on this capacitor has a lower impedance than the filter part.`,
+      bypassFerrite: (z: string, assumed: boolean) => (assumed ? `ferrite, value not readable, ${z} Ω at 100 MHz assumed` : `ferrite, ${z} Ω at 100 MHz`),
+      bypassInductor: (l: string) => `inductor, ${l}`,
       noReference: (mm2: string) => `Signal and return (through the ground copper) enclose about ${mm2} mm².`,
       hotLoop: (mm2: string) => `Area of the loop along the copper: about ${mm2} mm² (compact with SOT-23/0603: 10–20 mm²).`,
       series: (list: string, tr: string, trEff: string) => `Series resistor ${list}: the edge at the load slows from ${tr} to about ${trEff} (RC of the resistor with line plus load capacitance, added in quadrature).`,
@@ -670,6 +679,8 @@ export const en: Strings = {
       st2867: 'STMicroelectronics AN2867: Oscillator design guide for STM8AF/AL/S, STM32 MCUs and MPUs.',
       clemson: 'Clemson University CVEL, EMC Expert System: Grid Point Voltage Algorithm and Current-Driven Common-Mode Radiation Algorithm (cecas.clemson.edu/cvel).',
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
+      hubing2022: 'T. Hubing: Common PCB Layout Mistakes that Cause EMC Compliance Failures. AltiumLive 2022, keynote (resources.altium.com).',
+      adiFerrite: 'C. Burket: All About Ferrite Beads / Ferrite Beads Demystified. Analog Devices, Analog Dialogue 50-02, 2016.',
       an1149: 'Texas Instruments (National Semiconductor) AN-1149: Layout Guidelines for Switching Power Supplies (hot loop, input capacitor).',
     },
     kinds: {
@@ -900,6 +911,22 @@ export const en: Strings = {
         avoid: () => ['Do not flood the switch node over several layers for cooling.', 'Do not route sensitive lines past the switch node.'],
         limits: () => 'The area is a measure of coupling capacitance, not a level. A large area fully over ground and far from cables is less critical; TI found less than 1 dB in the far field for a switch node twice as long over ground, but clearly more in the near field.',
         refs: ['slyt682', 'an1149'] as const,
+      },
+      filterBypass: {
+        what: () => 'Copper before and after a filter (a ferrite or inductor in a supply or signal line) lies on top of each other on different layers, with no ground plane between.',
+        why: () =>
+          'The overlap is a capacitor across the filter. Hubing names this the second most common mistake in his layout reviews, typically 50 to 200 pF. Example: 400 mm² over 0.21 mm prepreg is about 74 pF, around 21 Ω at 100 MHz, against the ferrite\'s 600 Ω. Above some tens of MHz the noise goes around the filter, just where cables radiate most.',
+        detected: () =>
+          'For every two-pin ferrite (FB, or "ferrite"/"bead" in library or value) and every inductor with a readable value between two nets that are neither ground nor a switch node: copper of both nets (pours, tracks, pads) per layer on a 0.25 mm raster, overlap per layer pair as long as no other pour copper lies on a layer in between. Capacitance ε0·εr·A/h from the stack-up. Reported from 3 pF when the overlap gets a lower impedance than the part below 1 GHz (ferrite: inductive below 100 MHz with L = Z/(2π·100 MHz), |Z| constant above; inductor: parallel resonance 1/(2π√(LC))). High priority when that happens below 100 MHz already.',
+        fixes: () => [
+          'Separate the filter\'s input and output side: input towards the connector, output on the other side, not on top of each other on any layer.',
+          'Where that cannot be avoided: a solid ground plane between the two layers.',
+          'Put the filter at the board edge right at the connector, so the unfiltered side stays short.',
+        ],
+        avoid: () => ['Do not flood supply nets on every layer "for the current" without watching the filter boundary.', 'Do not route the filtered and unfiltered line side by side (the app does not compute that coupling).'],
+        limits: () =>
+          'How much attenuation remains depends on the shunt capacitor after the filter: the overlap forms a divider with it. With a good capacitor right at the output part of the effect remains; without one the filter is practically useless above the frequency given. Fringing is not computed (for narrow tracks the capacitance is larger), nor coupling side by side on the same layer or through the magnetic field. Pours of other nets in between count as a shield, since they usually connect to ground through capacitors. Whether the part is meant as a filter and its value come from reference and value field; an unreadable ferrite is taken as 600 Ω.',
+        refs: ['hubing2022', 'adiFerrite'] as const,
       },
       noAdjacentPlane: {
         what: (p: P) => `The line runs on ${p.layer}, but its nearest reference plane (${p.planeNet} on ${p.plane}) is not on the next layer: another copper layer lies in between.`,

@@ -185,7 +185,7 @@ export const de = {
     tab: 'Diagnose',
     viewTab: 'Ansicht',
     warnings: 'Hinweise zum Layout',
-    none: 'Keine der geprüften Auffälligkeiten bei den aktiven Quellen (Lücken und Trennungen unter Leitungen, Bezugswechsel, fehlende Stitching-Vias, ungedämpfte Leitungen, Rand der Fläche, heiße Schleifen, Gleichtakt mit Kabeln). Nicht geprüft: Filter und Schirme an Steckern, Kühlkörper, Gehäuse, Entkopplung.',
+    none: 'Keine der geprüften Auffälligkeiten bei den aktiven Quellen (Lücken und Trennungen unter Leitungen, Bezugswechsel, fehlende Stitching-Vias, ungedämpfte Leitungen, Rand der Fläche, heiße Schleifen, Gleichtakt mit Kabeln). Die Regeln der Platine (Filter, Schirme, Entkopplung, Quarz, Schaltknoten) stehen getrennt darunter; nicht geprüft: Gehäuse und Kabelführung.',
     kinds: {
       'return-gap': (d: { layer: string; plane: string; planeNet: string; value: number; split?: boolean; otherNet?: string }) =>
         d.split
@@ -265,6 +265,8 @@ export const de = {
         const where = [c && c.edge < 3 ? `${c.edge.toFixed(1).replace('.', ',')} mm von der Platinenkante` : '', c && c.connector < 10 ? `${c.connector.toFixed(0)} mm von einem Kabelstecker` : ''].filter(Boolean).join(' und ');
         return `Speicherdrossel ${d.parts?.[0] ?? '?'} am Schaltknoten sitzt ${where}.`;
       },
+      'filter-bypass': (d: { value: number; parts?: string[]; nets?: string[]; bypass?: { cap: number; area: number } }, f: (v: number) => string) =>
+        `Filter ${d.parts?.[0] ?? '?'} umgangen: Kupfer von ${d.nets?.[0] ?? '?'} und ${d.nets?.[1] ?? '?'} liegt auf ${(d.bypass?.area ?? 0).toFixed(0)} mm² übereinander (≈ ${((d.bypass?.cap ?? 0) * 1e12).toFixed(0)} pF); oberhalb von etwa ${f(d.value)} geht die Störung daran vorbei.`,
       'edge-trace': (d: { layer: string; planeNet: string; value: number; run?: { length: number; min: number } }) =>
         `${d.layer}: ${(d.run?.length ?? 0).toFixed(0)} mm der Leitung nur ${d.value.toFixed(1).replace('.', ',')} mm vom Rand der Bezugsfläche ${d.planeNet} (Richtwert hier: ${(d.run?.min ?? 0).toFixed(1).replace('.', ',')} mm).`,
     },
@@ -296,6 +298,7 @@ export const de = {
       'heatsink-floating': (n: number, who: string) => `Kühlkörper ${who} an Masse anschließen.`,
       'ferrite-ground': (n: number, who: string) => `Ferrit ${who} zwischen den Massen durch eine direkte Verbindung ersetzen.`,
       'inductor-placement': (n: number, who: string) => `Drossel ${who} weg von Stecker und Rand, nah an den Regler.`,
+      'filter-bypass': (n: number, who: string) => `Ein- und Ausgangskupfer von Filter ${who} auseinanderlegen, Massefläche dazwischen.`,
     },
     counts: (r: number, y: number, g: number) => `${r} hohe Priorität · ${y} ansehen · ${g} nachrangig`,
     howRanked: 'Wie Reihenfolge und Priorität entstehen',
@@ -509,6 +512,7 @@ export const de = {
       'pair-skew': 'Differenzpaar ungleich lang',
       'connector-ground': 'Zu wenige Massepins am Stecker',
       'inductor-placement': 'Speicherdrossel an Rand oder Stecker',
+      'filter-bypass': 'Filter durch Überlappung umgangen',
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
@@ -535,6 +539,7 @@ export const de = {
     cmVoltage: (v: string, f: string) => `≈ ${v} zwischen den Flächenhälften bei ${f}`,
     cable: (side: string, ref: string) => `Kabel ${side ? `${side} ` : ''}an ${ref}: Antenne für Gleichtakt`,
     ioNet: (net: string, mm: string, s: string) => `${net}: ${mm} mm parallel, ${s} mm Abstand`,
+    overlap: (mm2: string, pf: string) => `Überlappung ${mm2} mm², ≈ ${pf} pF`,
     groundReach: (mm: string) => `nächste Masse ${mm} mm`,
     back: 'Zurück zur Gesamtansicht',
     open: 'In 3D erklären',
@@ -625,6 +630,10 @@ export const de = {
         `Gegeninduktivität entlang der Parallelführung ≈ ${m} nH, Koppelkapazität ≈ ${c} pF; ${net} verlässt die Platine über ${conn}, dessen Kabel als Antenne mit ${z} Ω angesetzt ist (${kind} überwiegt).`,
       ioKind: { mag: 'induktive Kopplung', elec: 'kapazitive Kopplung' },
       cmMech: { 'cable-cable': 'Stecker auf beiden Seiten: Kabel gegen Kabel', 'cable-board': 'Stecker nur auf einer Seite: Kabel gegen die Platine', 'assumed-cable': 'kein Stecker erkannt: ein Versorgungskabel angenommen' },
+      bypass: (ref: string, part: string, cap: string, area: string, layers: string, fx: string) =>
+        `${ref} (${part}): ${area} mm² Überlappung, größter Anteil zwischen ${layers}; als Plattenkondensator ε0·εr·A/h ≈ ${cap} pF. Ab etwa ${fx} ist dieser Kondensator niederohmiger als das Filterbauteil.`,
+      bypassFerrite: (z: string, assumed: boolean) => (assumed ? `Ferrit, Wert nicht lesbar, ${z} Ω bei 100 MHz angenommen` : `Ferrit, ${z} Ω bei 100 MHz`),
+      bypassInductor: (l: string) => `Spule, ${l}`,
       noReference: (mm2: string) => `Hin- und Rückweg (durch das Massekupfer) umschließen etwa ${mm2} mm².`,
       hotLoop: (mm2: string) => `Fläche der Schleife entlang des Kupfers: etwa ${mm2} mm² (kompakt mit SOT-23/0603: 10–20 mm²).`,
       series: (list: string, tr: string, trEff: string) => `Serienwiderstand ${list}: Die Flanke an der Last wird von ${tr} auf etwa ${trEff} langsamer (RC aus Widerstand und Leitungs- plus Lastkapazität, quadratisch addiert).`,
@@ -677,6 +686,8 @@ export const de = {
       st2867: 'STMicroelectronics AN2867: Oscillator design guide for STM8AF/AL/S, STM32 MCUs and MPUs.',
       clemson: 'Clemson University CVEL, EMC Expert System: Grid Point Voltage Algorithm und Current-Driven Common-Mode Radiation Algorithm (cecas.clemson.edu/cvel).',
       slyt682: 'R. Taylor, R. Manack: Reduce buck-converter EMI and voltage stress by minimizing inductive parasitics. Texas Instruments Analog Applications Journal (SLYT682), 2016.',
+      hubing2022: 'T. Hubing: Common PCB Layout Mistakes that Cause EMC Compliance Failures. AltiumLive 2022, Keynote (resources.altium.com).',
+      adiFerrite: 'C. Burket: All About Ferrite Beads / Ferrite Beads Demystified. Analog Devices, Analog Dialogue 50-02, 2016.',
     },
     kinds: {
       gapDetour: {
@@ -906,6 +917,22 @@ export const de = {
         avoid: () => ['Den Schaltknoten nicht zur Kühlung großflächig auf mehrere Lagen fluten.', 'Keine empfindlichen Leitungen am Schaltknoten vorbei führen.'],
         limits: () => 'Die Fläche ist ein Maß für die Kopplungskapazität, kein Pegel. Eine große Fläche vollständig über Masse und weit weg von Kabeln ist weniger kritisch; TI fand für einen doppelt so langen Schaltknoten über Masse im Fernfeld weniger als 1 dB, im Nahfeld aber deutlich mehr.',
         refs: ['slyt682', 'an1149'] as const,
+      },
+      filterBypass: {
+        what: () => 'Kupfer vor und hinter einem Filter (Ferrit oder Spule in einer Versorgungs- oder Signalleitung) liegt auf verschiedenen Lagen übereinander, ohne Massefläche dazwischen.',
+        why: () =>
+          'Die Überlappung ist ein Kondensator parallel zum Filter. Hubing nennt das den zweithäufigsten Fehler in seinen Layoutprüfungen, mit typisch 50 bis 200 pF. Beispiel: 400 mm² über 0,21 mm Prepreg sind etwa 74 pF, bei 100 MHz rund 21 Ω, gegenüber 600 Ω des Ferrits. Oberhalb einiger zehn MHz läuft die Störung am Filter vorbei, genau dort, wo Kabel am stärksten abstrahlen.',
+        detected: () =>
+          'Für jeden zweipoligen Ferrit (FB, oder „ferrite“/„bead“ in Bibliothek oder Wert) und jede Spule mit lesbarem Wert zwischen zwei Netzen, die nicht Masse und nicht Schaltknoten sind: Kupfer beider Netze (Flächen, Bahnen, Pads) je Lage auf einem 0,25-mm-Raster, Überlappung je Lagenpaar, solange auf keiner Lage dazwischen anderes Flächenkupfer liegt. Kapazität ε0·εr·A/h mit dem Lagenaufbau. Gemeldet ab 3 pF, wenn die Überlappung unterhalb 1 GHz niederohmiger wird als das Bauteil (Ferrit: unter 100 MHz induktiv mit L = Z/(2π·100 MHz), darüber |Z| konstant; Spule: Parallelresonanz 1/(2π√(LC))). Hohe Priorität, wenn das schon unter 100 MHz geschieht.',
+        fixes: () => [
+          'Eingangs- und Ausgangsseite des Filters räumlich trennen: Eingang zum Stecker hin, Ausgang auf der anderen Seite, auf keiner Lage übereinander.',
+          'Wo sich das nicht vermeiden lässt: eine durchgehende Massefläche zwischen die beiden Lagen.',
+          'Filter an den Rand der Platine direkt an den Stecker, damit die ungefilterte Seite kurz bleibt.',
+        ],
+        avoid: () => ['Versorgungsnetze nicht „wegen des Stroms“ auf allen Lagen fluten, ohne auf die Filtergrenze zu achten.', 'Die gefilterte und die ungefilterte Leitung nicht nebeneinander führen (diese Kopplung rechnet die App nicht).'],
+        limits: () =>
+          'Wie viel Dämpfung bleibt, hängt vom Querkondensator hinter dem Filter ab: Die Überlappung bildet mit ihm einen Teiler. Mit einem guten Kondensator direkt am Ausgang bleibt ein Teil der Wirkung, ohne ihn ist der Filter oberhalb der genannten Frequenz praktisch wirkungslos. Randfelder sind nicht gerechnet (bei schmalen Bahnen ist die Kapazität größer), Kopplung nebeneinander auf derselben Lage und über das Magnetfeld auch nicht. Flächen anderer Netze dazwischen zählen als Schirm, weil sie meist über Kondensatoren an Masse hängen. Ob das Bauteil als Filter gemeint ist und welchen Wert es hat, liest die App aus Referenz und Wertfeld; ein nicht lesbarer Ferrit wird mit 600 Ω angesetzt.',
+        refs: ['hubing2022', 'adiFerrite'] as const,
       },
       noAdjacentPlane: {
         what: (p: P) => `Die Leitung läuft auf ${p.layer}, ihre nächste Bezugsfläche (${p.planeNet} auf ${p.plane}) liegt aber nicht auf der Nachbarlage: Dazwischen ist eine weitere Kupferlage.`,

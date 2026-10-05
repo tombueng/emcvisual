@@ -41,6 +41,7 @@ export type DiagnosticKind =
   | 'heatsink-floating'
   | 'ferrite-ground'
   | 'inductor-placement'
+  | 'filter-bypass'
   // per source: the reference plane is not on the next layer
   | 'no-adjacent-plane'
   | 'pair-skew'
@@ -62,6 +63,7 @@ export const BOARD_KINDS: DiagnosticKind[] = [
   'ferrite-ground',
   'connector-ground',
   'inductor-placement',
+  'filter-bypass',
 ];
 
 export interface Diagnostic {
@@ -101,6 +103,22 @@ export interface Diagnostic {
   skew?: { p: number; n: number; dt: number; tr: number };
   /** connector-ground: the connector, its ground pins and the fast pins of this source on it. */
   pins?: { connector: string; ground: number; fast: number; apart?: number };
+  /**
+   * filter-bypass (value: frequency above which the overlap wins, Hz): overlap capacitance (F)
+   * and area (mm²), the layer pair with most of it (names and indices) and the extent of the
+   * overlap there (board mm), and the filter part's value (ferrite: Ω at 100 MHz, inductor: H;
+   * assumed when the value could not be read).
+   */
+  bypass?: {
+    cap: number;
+    area: number;
+    layers: [string, string];
+    pair: [number, number];
+    box: { x0: number; y0: number; x1: number; y1: number };
+    ohms?: number;
+    henry?: number;
+    assumed: boolean;
+  };
   /** floating-copper: layer, and whether it is an unconnected island of a net (else no net at all). */
   copper?: { layer: string; island: boolean };
   otherNet?: string;

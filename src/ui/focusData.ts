@@ -65,6 +65,8 @@ export interface FocusSpec {
 
 /** Colour of a victim line in the problem view. */
 const VICTIM = '#e879f9';
+/** The unfiltered side of a bypassed filter. */
+const BYPASS_IN = '#f2a33a';
 
 /** A cable leaving at a connector, pointing away from the board centre. */
 function cableAt(board: BoardModel, ref: string, text: string): { at: Vec2; dir: Vec2; text: string } | null {
@@ -133,7 +135,16 @@ function buildBoardFocus(board: BoardModel, d: Diagnostic): FocusSpec {
   const nets = [...new Set((d.nets ?? []).map((n) => board.nets.indexOf(n)).filter((i) => i > 0))];
   const netSet = new Set(nets);
   const path: FocusSpec['path'] = board.tracks.filter((tr) => netSet.has(tr.net)).map((tr) => ({ a: tr.a, b: tr.b, layer: tr.layer, width: tr.width }));
-  const pts: Vec2[] = [d.at, ...parts.flatMap((i) => board.footprints[i]!.pads.map((pi) => board.pads[pi]!.at)), ...(d.dims ?? []).flatMap((x) => [x.a, x.b])];
+  const bx = d.bypass?.box;
+  const overlap: Vec2[] = bx
+    ? [
+        { x: bx.x0, y: bx.y0 },
+        { x: bx.x1, y: bx.y0 },
+        { x: bx.x1, y: bx.y1 },
+        { x: bx.x0, y: bx.y1 },
+      ]
+    : [];
+  const pts: Vec2[] = [d.at, ...overlap, ...parts.flatMap((i) => board.footprints[i]!.pads.map((pi) => board.pads[pi]!.at)), ...(d.dims ?? []).flatMap((x) => [x.a, x.b])];
   const region = { x0: Math.min(...pts.map((p) => p.x)) - 5, y0: Math.min(...pts.map((p) => p.y)) - 5, x1: Math.max(...pts.map((p) => p.x)) + 5, y1: Math.max(...pts.map((p) => p.y)) + 5 };
   const inRegion = (p: Vec2) => p.x >= region.x0 && p.x <= region.x1 && p.y >= region.y0 && p.y <= region.y1;
   const top = board.footprints[parts[0] ?? -1]?.side === 'bottom' ? board.layers.length - 1 : 0;
@@ -160,7 +171,29 @@ function buildBoardFocus(board: BoardModel, d: Diagnostic): FocusSpec {
   } else if (d.kind === 'shield-open') suggestions.push({ at: { x: d.at.x + 1.2, y: d.at.y }, layer: top, kind: 'via', text: t.focus.suggest.shieldToGround });
   else if (d.kind === 'filter-far' && d.dims?.[0]) suggestions.push({ at: { x: d.dims[0].a.x + 3, y: d.dims[0].a.y + 2 }, layer: top, kind: 'res', text: t.focus.suggest.filterHere });
   else if (d.kind === 'decoupling') suggestions.push({ at: { x: d.at.x + 1.5, y: d.at.y - 1.5 }, layer: top, kind: 'cap', text: t.focus.suggest.decoupleHere(d.decoupling?.pin ?? '') });
-  return { key: diagKey(d), diag: d, source: null, color, nets, path, planes, parts, vias, stitchVias: [], detour: null, region, labels, dims, areas: [], circles, paths: [], suggestions, field: null };
+  const areas: FocusSpec['areas'] = [];
+  let others: FocusSpec['others'];
+  if (d.kind === 'filter-bypass' && d.bypass) {
+    const [la, lb] = d.bypass.pair;
+    areas.push({ poly: overlap, layer: Math.min(la, lb), text: t.focus.overlap(fmtNum(d.bypass.area, 0), fmtNum(d.bypass.cap * 1e12, 0)) });
+    // the copper of both nets, outlined on its layer: the input side in the source colour, the output side like a victim
+    others = nets.map((n, k) => ({
+      color: k === 0 ? BYPASS_IN : VICTIM,
+      pieces: board.zones
+        .filter((z) => z.net === n)
+        .flatMap((z) => z.polygons.flatMap((poly) => poly.map((a, i) => ({ a, b: poly[(i + 1) % poly.length]!, layer: z.layer, width: 0.3 })))),
+    }));
+    // net labels on each net's copper of the pair, near opposite corners of the overlap
+    nets.forEach((n, k) => {
+      const layer = d.bypass!.pair[k] ?? la;
+      const all = board.zones.filter((x) => x.net === n && x.layer === layer).flatMap((x) => x.polygons.flat());
+      if (!all.length || !bx) return;
+      const corner = k === 0 ? { x: bx.x0, y: bx.y0 } : { x: bx.x1, y: bx.y1 };
+      const pick = all.reduce((best, q) => (Math.hypot(q.x - corner.x, q.y - corner.y) < Math.hypot(best.x - corner.x, best.y - corner.y) ? q : best));
+      labels.push({ at: pick, layer, text: `${board.nets[n]} (${board.layers[layer]?.name ?? ''})`, kind: 'net', color: k === 0 ? BYPASS_IN : VICTIM });
+    });
+  }
+  return { key: diagKey(d), diag: d, source: null, color, nets, path, planes, parts, vias, stitchVias: [], detour: null, region, labels, dims, areas, circles, paths: [], suggestions, field: null, ...(others ? { others } : {}) };
 }
 
 export function buildFocus(d: Diagnostic): FocusSpec | null {

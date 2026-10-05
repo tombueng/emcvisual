@@ -392,3 +392,22 @@ test('board rules: an open USB shield is found and shown in the problem view', a
   await page.screenshot({ path: 'e2e/output/board-rule.png' });
   expect(errors).toEqual([]);
 });
+
+test('board rules: a filter bypassed by overlapping copper, with the capacitance in the explanation', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const board = readFileSync('tests/fixtures/emc-cases/filter-bypass.bad.kicad_pcb', 'utf8');
+  await page.route('**/filter-bypass.kicad_pcb', (r) => r.fulfill({ body: board, contentType: 'text/plain', headers: { 'access-control-allow-origin': '*' } }));
+  await page.goto('/?board=' + encodeURIComponent('http://localhost:5175/filter-bypass.kicad_pcb'));
+  await page.getByRole('tab', { name: /Diagnose/ }).click();
+  const item = page.locator('ol.ranked li').filter({ hasText: 'Filter FB1 umgangen' });
+  await expect(item).toBeVisible({ timeout: 30_000 });
+  await expect(item).toContainText('+12V_IN und +12V_F');
+  await item.getByRole('button').click();
+  const card = page.locator('aside.card');
+  await expect(card.locator('.severity .chip')).toHaveText('hohe Priorität');
+  await expect(card).toContainText('Ferrit, 600 Ω bei 100 MHz');
+  await expect(card).toContainText('F.Cu / In2.Cu');
+  await page.screenshot({ path: 'e2e/output/filter-bypass.png' });
+  expect(errors).toEqual([]);
+});

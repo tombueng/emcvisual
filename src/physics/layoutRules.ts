@@ -8,14 +8,16 @@
  *   ground copper, let the cable shield be driven instead of returning its current.
  * - K-24 decoupling: an IC supply pin without a capacitor close by, or one connected over a
  *   long track (mounting inductance), pulls its current spikes over large loops.
+ * - K-19 filter bypass: copper of a filter's input and output nets lying on top of each other
+ *   (on different layers, no other copper between) is a capacitor across the filter.
  *
  * These are geometry rules with thresholds from the literature or rules of thumb; they do not
  * compute a field. Each finding names the parts involved, so the problem view can show them.
  */
-import type { PlaneLayer } from '../model/planes';
+import { rasterize, type CoverageRaster, type PlaneLayer } from '../model/planes';
 import type { BoardModel, Footprint, Pad, Vec2 } from '../model/types';
 import type { PhysicsContext } from './currents';
-import { lineParams } from './currents';
+import { dielectricBetween, lineParams } from './currents';
 import { cableConnectors, SUPPLY_NET } from './commonMode';
 import type { Diagnostic } from './diagnostics';
 import type { Source } from './sources';
@@ -46,6 +48,15 @@ export const INDUCTOR_CONN = 10;
 /** Floating copper or unconnected islands from this size, mm². */
 export const FLOAT_AREA = 25;
 const SW_CONN = 10;
+/**
+ * Overlap capacitance across a series filter part from which it is reported, F. A ferrite bead
+ * has 0.1–1 pF of its own across it; Hubing reports 50–200 pF on failed boards.
+ */
+export const BYPASS_MIN_C = 3e-12;
+/** Reported when the capacitance takes over below this frequency (the usual limit range ends at 1 GHz), Hz. */
+export const BYPASS_MAX_F = 1e9;
+/** A ferrite bead without a readable value: the common 600 Ω at 100 MHz. */
+const FERRITE_DEFAULT = 600;
 /** Package and vias of a decoupling capacitor, nH (Clemson power-bus decoupling: about 1 nH). */
 const MOUNT_NH = 1;
 
@@ -319,6 +330,35 @@ export function layoutRules(ctx: PhysicsContext, sources: Source[] = []): Diagno
     if (pads.length && pads.every((p) => p.net <= 0)) out.push(base('heatsink-floating', fp.at, pads.length, [fp.ref], []));
   }
 
+  // --- K-19: filters bypassed by overlapping input and output copper ----------------------------
+  const swSet = new Set(switchNets(board));
+  const capToGround = new Set<number>();
+  for (const c of caps) {
+    const [x, y] = twoPin(board, c)!;
+    if (isGround(board, x.net)) capToGround.add(y.net);
+    if (isGround(board, y.net)) capToGround.add(x.net);
+  }
+  for (const fp of board.footprints) {
+    const pads = twoPin(board, fp);
+    if (!pads) continue;
+    const [pa, pb] = pads;
+    if (pa.net <= 0 || pb.net <= 0 || pa.net === pb.net || isGround(board, pa.net) || isGround(board, pb.net)) continue;
+    if (swSet.has(pa.net) || swSet.has(pb.net)) continue; // storage inductor of a regulator
+    const part = filterPart(fp);
+    if (!part) continue;
+    // an inductor (not a ferrite) counts as a filter only with a capacitor to ground on both
+    // sides: the storage inductor of a regulator has none on its switch node
+    if (part.henry !== undefined && !(capToGround.has(pa.net) && capToGround.has(pb.net))) continue;
+    const ov = overlapCapacitance(ctx, pa.net, pb.net);
+    if (!ov || ov.cap < BYPASS_MIN_C) continue;
+    const fx = crossover(part, ov.cap);
+    if (fx > BYPASS_MAX_F) continue;
+    out.push({
+      ...base('filter-bypass', ov.at, fx, [fp.ref], [board.nets[pa.net] ?? '', board.nets[pb.net] ?? '']),
+      bypass: { cap: ov.cap, area: ov.area, layers: ov.layers, pair: ov.pair, box: ov.box, ohms: part.ohms, henry: part.henry, assumed: part.assumed },
+    });
+  }
+
   // --- K-26: ferrite between two grounds ---------------------------------------------------------
   for (const fp of board.footprints) {
     if (!/^(FB|L)\d/i.test(fp.ref)) continue;
@@ -328,6 +368,181 @@ export function layoutRules(ctx: PhysicsContext, sources: Source[] = []): Diagno
       out.push(base('ferrite-ground', fp.at, 0, [fp.ref], pads.map((p) => board.nets[p.net] ?? '')));
   }
   return out;
+}
+
+export interface FilterPart {
+  /** Ferrite: impedance at 100 MHz, Ω. Inductor: inductance, H. */
+  ohms?: number;
+  henry?: number;
+  /** The value could not be read; a typical one is assumed. */
+  assumed: boolean;
+}
+
+const SI: Record<string, number> = { p: 1e-12, n: 1e-9, u: 1e-6, µ: 1e-6, μ: 1e-6, m: 1e-3, '': 1 };
+
+/**
+ * A series filter part from reference, library and value: ferrite beads ("600R@100MHz",
+ * "BLM18PG221SN1" = 220 Ω, or FB without a value: 600 Ω assumed) and inductors ("10uH").
+ * Parts whose value says nothing are left out unless they are named as ferrites.
+ */
+export function filterPart(fp: Footprint): FilterPart | null {
+  const v = fp.value.replace(',', '.');
+  const isFb = /^FB\d/i.test(fp.ref) || /ferrite|bead/i.test(fp.lib) || /ferrite|ferret|bead|^FB|BLM\d|MPZ\d/i.test(v);
+  if (!isFb && !/^L\d/i.test(fp.ref)) return null;
+  // "600R", "600R@100MHz", "600 Ω": an impedance (not "2R2", which is 2.2 µH on inductors)
+  const ohm = /(\d+(?:\.\d+)?)\s*(?:R|Ω|ohms?)(?![a-z0-9])/i.exec(v);
+  if (ohm) return { ohms: Number(ohm[1]), assumed: false };
+  const murata = /BLM\d{2}[A-Z]{2}(\d)(\d)(\d)/i.exec(v);
+  if (murata) return { ohms: Number(murata[1]! + murata[2]!) * 10 ** Number(murata[3]!), assumed: false };
+  if (!isFb) {
+    // "10uH", "4.7 µH", "10u" and "4u7"
+    const h = /(\d+(?:\.\d+)?)\s*([pnuµμm]?)H(?![a-z])/i.exec(v) ?? /^(\d+(?:\.\d+)?)\s*([pnuµμ])$/i.exec(v.trim());
+    if (h) return { henry: Number(h[1]) * (SI[h[2]!.toLowerCase()] ?? 1), assumed: false };
+    const mid = /^(\d+)([pnuµμ])(\d+)$/i.exec(v.trim());
+    if (mid) return { henry: Number(`${mid[1]}.${mid[3]}`) * (SI[mid[2]!.toLowerCase()] ?? 1), assumed: false };
+    return null;
+  }
+  return { ohms: FERRITE_DEFAULT, assumed: true };
+}
+
+/**
+ * Frequency above which the overlap capacitance C has a lower impedance than the filter part:
+ * inductor L: the parallel resonance 1/(2π√(LC)); ferrite with |Z| at 100 MHz: inductive up to
+ * there (L = Z/(2π·100 MHz)), resistive above, so 1/(2π·C·Z) when that lies above 100 MHz.
+ */
+export function crossover(part: FilterPart, cap: number): number {
+  const henry = part.henry ?? (part.ohms ?? FERRITE_DEFAULT) / (2 * Math.PI * 1e8);
+  const fl = 1 / (2 * Math.PI * Math.sqrt(henry * cap));
+  if (part.henry !== undefined || fl <= 1e8) return fl;
+  return 1 / (2 * Math.PI * cap * (part.ohms ?? FERRITE_DEFAULT));
+}
+
+const EPS0 = 8.854e-12;
+/** Raster of the overlap search, mm. */
+const OVERLAP_CELL = 0.25;
+
+/** Copper shapes of a net per layer: zone fills, tracks as rectangles, pads as their outline. */
+function netCopper(board: BoardModel, net: number): Map<number, Vec2[][]> {
+  const m = new Map<number, Vec2[][]>();
+  const add = (l: number, ring: Vec2[]) => {
+    const list = m.get(l) ?? [];
+    list.push(ring);
+    m.set(l, list);
+  };
+  for (const z of board.zones) if (z.net === net) for (const poly of z.polygons) add(z.layer, poly);
+  for (const t of board.tracks) {
+    if (t.net !== net) continue;
+    const dx = t.b.x - t.a.x;
+    const dy = t.b.y - t.a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const h = t.width / 2;
+    const ux = (dx / len) * h;
+    const uy = (dy / len) * h;
+    add(t.layer, [
+      { x: t.a.x - ux - uy, y: t.a.y - uy + ux },
+      { x: t.b.x + ux - uy, y: t.b.y + uy + ux },
+      { x: t.b.x + ux + uy, y: t.b.y + uy - ux },
+      { x: t.a.x - ux + uy, y: t.a.y - uy - ux },
+    ]);
+  }
+  for (const p of board.pads) {
+    if (p.net !== net) continue;
+    const ring = boxCorners({ center: p.at, size: p.size, angle: p.angle });
+    for (const l of p.layers) add(l, ring);
+  }
+  return m;
+}
+
+function ringsBox(rings: Vec2[][]): { x0: number; y0: number; x1: number; y1: number } {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const r of rings)
+    for (const p of r) {
+      x0 = Math.min(x0, p.x);
+      y0 = Math.min(y0, p.y);
+      x1 = Math.max(x1, p.x);
+      y1 = Math.max(y1, p.y);
+    }
+  return { x0, y0, x1, y1 };
+}
+
+/**
+ * Copper of net a on one layer over copper of net b on another, where no other copper lies in
+ * between (a plane between them shields), summed into a parallel-plate capacitance ε0·εr·A/h
+ * (fringing ignored). Returns the total, the overlap area, the layer pair with the largest share
+ * and a point inside it.
+ */
+export function overlapCapacitance(
+  ctx: PhysicsContext,
+  a: number,
+  b: number,
+): { cap: number; area: number; layers: [string, string]; pair: [number, number]; box: { x0: number; y0: number; x1: number; y1: number }; at: Vec2 } | null {
+  const { board } = ctx;
+  const ca = netCopper(board, a);
+  const cb = netCopper(board, b);
+  const ba = ringsBox([...ca.values()].flat());
+  const bb = ringsBox([...cb.values()].flat());
+  const box = { x0: Math.max(ba.x0, bb.x0), y0: Math.max(ba.y0, bb.y0), x1: Math.min(ba.x1, bb.x1), y1: Math.min(ba.y1, bb.y1) };
+  if (!(box.x1 > box.x0 && box.y1 > box.y0)) return null;
+  // rasterize() picks its cell from the area it is given: this one gives OVERLAP_CELL
+  const cellArea = 2e6 * OVERLAP_CELL * OVERLAP_CELL;
+  const rast = (rings: Vec2[][]): CoverageRaster => rasterize(rings, box, cellArea);
+  const shieldCache = new Map<number, CoverageRaster>();
+  const shield = (l: number) => {
+    let r = shieldCache.get(l);
+    if (!r) shieldCache.set(l, (r = rast(board.zones.filter((z) => z.layer === l && z.net !== a && z.net !== b && z.net > 0).flatMap((z) => z.polygons))));
+    return r;
+  };
+  let cap = 0;
+  let area = 0;
+  let best: { c: number; i: number; j: number; at: Vec2; box: { x0: number; y0: number; x1: number; y1: number } } | null = null;
+  for (const [i, ra] of ca) {
+    const gridA = rast(ra);
+    for (const [j, rb] of cb) {
+      if (i === j) continue;
+      const gridB = rast(rb);
+      const between: CoverageRaster[] = [];
+      for (let k = Math.min(i, j) + 1; k < Math.max(i, j); k++) between.push(shield(k));
+      let n = 0;
+      let sx = 0;
+      let sy = 0;
+      let i0 = Infinity;
+      let i1 = -1;
+      let j0 = Infinity;
+      let j1 = -1;
+      for (let q = 0; q < gridA.data.length; q++) {
+        if (!gridA.data[q] || !gridB.data[q] || between.some((g) => g.data[q])) continue;
+        n++;
+        const ci = q % gridA.nx;
+        const cj = Math.floor(q / gridA.nx);
+        sx += ci;
+        sy += cj;
+        i0 = Math.min(i0, ci);
+        i1 = Math.max(i1, ci);
+        j0 = Math.min(j0, cj);
+        j1 = Math.max(j1, cj);
+      }
+      if (!n) continue;
+      const cell = gridA.cell;
+      const A = n * cell * cell;
+      const d = dielectricBetween(ctx, i, j);
+      const c = (EPS0 * d.er * A * 1e-6) / (d.h * 1e-3);
+      cap += c;
+      area += A;
+      if (!best || c > best.c)
+        best = {
+          c,
+          i,
+          j,
+          at: { x: gridA.x0 + (sx / n + 0.5) * cell, y: gridA.y0 + (sy / n + 0.5) * cell },
+          box: { x0: gridA.x0 + i0 * cell, y0: gridA.y0 + j0 * cell, x1: gridA.x0 + (i1 + 1) * cell, y1: gridA.y0 + (j1 + 1) * cell },
+        };
+    }
+  }
+  if (!best) return null;
+  return { cap, area, layers: [board.layers[best.i]?.name ?? '', board.layers[best.j]?.name ?? ''], pair: [best.i, best.j], box: best.box, at: best.at };
 }
 
 function polyArea(p: Vec2[]): number {

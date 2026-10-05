@@ -612,6 +612,31 @@ def inductor_connector(b, bad):
     b.track('VOUT', b.F, [b.pad('L1', '2'), b.pad('J1', '1')], width=0.8)
 
 
+@case('filter-bypass', 4, 60, 40,
+      title='Versorgungsfilter durch übereinanderliegende Flächen umgangen',
+      mistake='Die ungefilterte Versorgung (+12V_IN, Fläche auf F.Cu) und die gefilterte (+12V_F, Fläche auf In2.Cu) liegen auf rund 400 mm² übereinander, die Massefläche auf In1 ist dort ausgespart. Die Überlappung (gut 10 pF über 1,3 mm) überbrückt den Ferrit FB1 oberhalb von etwa 50 MHz.',
+      fix='Gefilterte Fläche erst hinter FB1, Massefläche auf In1 durchgehend.',
+      sources=[],
+      expect={'bad': ['filter-bypass'], 'good_absent': ['filter-bypass']})
+def filter_bypass(b, bad):
+    b.zone('GND', b.In1)
+    if bad:
+        b.keepout(b.In1, (1.5, 7, 19.5, 33))
+    b.place('Connector_PinHeader_2.54mm', 'PinHeader_1x02_P2.54mm_Vertical', 'J1', 'DC', 4, 20, pins={'1': '+12V_IN', '2': 'GND'})
+    b.place('Inductor_SMD', 'L_0805_2012Metric', 'FB1', '600R@100MHz', 20, 20, pins={'1': '+12V_IN', '2': '+12V_F'})
+    b.place('Capacitor_SMD', 'C_0805_2012Metric', 'C7', '100nF', 16, 25, rot=90, pins={'1': '+12V_IN', '2': 'GND'})
+    b.place('Capacitor_SMD', 'C_0805_2012Metric', 'C8', '1uF', 24, 25, rot=90, pins={'1': '+12V_F', '2': 'GND'})
+    for ref in ('C7', 'C8'):
+        x, y = b.pad(ref, '2')
+        b.via('GND', x, y + 1.2)
+        b.track('GND', b.F, [(x, y), (x, y + 1.2)], width=0.4)
+    b.zone('+12V_IN', b.F, [(2, 8), (19, 8), (19, 32), (2, 32)])
+    b.zone('+12V_F', b.F, [(21, 8), (50, 8), (50, 32), (21, 32)])
+    x0 = 2 if bad else 21
+    b.zone('+12V_F', b.In2, [(x0, 8), (50, 8), (50, 32), (x0, 32)])
+    b.via('+12V_F', 30, 20)
+
+
 @case('via-no-stitch', 4, 40, 30,
       title='Lagenwechsel ohne Masse-Via daneben',
       mistake='Ein Takt wechselt per Via von oben (Bezug In1) nach unten (Bezug In2). Beide Flächen sind Masse, aber ohne Masse-Via in der Nähe findet der Rückstrom keinen kurzen Weg von einer Fläche zur anderen.',

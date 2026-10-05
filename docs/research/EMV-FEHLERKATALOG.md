@@ -196,7 +196,7 @@ Einträge sind die, die ein layoutbasiertes Werkzeug unbedingt finden sollte.
 | 5 | K-09 | Zweilagig ohne Rückleiterfläche / Two-layer board without return plane | gesichert | hoch | teilweise | **ja** |
 | 6 | K-07 | Lagenwechsel ohne Masse-Via / Layer change without ground stitching via | gesichert | hoch | ja | **ja** |
 | 7 | K-08 | Referenzwechsel GND↔Versorgung ohne Kondensator / Reference change without capacitor | gesichert | mittel | ja | **ja** |
-| 8 | K-19 | Filter durch Überlappung oder Parallelführung umgangen / Filter bypassed by layout | Konsens | hoch | nein | **ja** |
+| 8 | K-19 | Filter durch Überlappung oder Parallelführung umgangen / Filter bypassed by layout | Konsens | hoch | ja (Überlappung; Parallelführung nein) | **ja** |
 | 9 | K-18 | I/O-Filter weit vom Stecker / I/O filter far from the connector | Konsens | hoch | nein | **ja** |
 | 10 | K-20 | Steckerschirm schlecht angebunden / Poor connector shield termination | gesichert | hoch | nein | **ja** |
 | 11 | K-16 | HF-Leitungen koppeln auf I/O-Leitungen / HF traces coupling into I/O nets | Konsens | mittel–hoch | nein | **ja** |
@@ -1019,7 +1019,9 @@ Lage. *Daten:* Zonen und Tracks je Netz und Lage, Stackup (Dicke, εr), Bauteilw
 Überlappung mit einer Massefläche dazwischen (schirmt ab). *Falsch-negativ:* Kopplung über
 Bauteilkörper (große Drosseln).
 
-**Engine heute.** Nein.
+**Engine heute.** Ja für die Überlappung (`filter-bypass`, Testplatine `filter-bypass`):
+Ferrite und Spulen mit lesbarem Wert, Überlappung je Lagenpaar ohne Flächenkupfer dazwischen,
+Plattenkondensator ohne Randfeld. Parallelführung auf derselben Lage nein.
 
 **Testboard.** Basis TB-4L ohne Taktquelle; J1 (2-polig, `+12V_IN` und GND) bei (3, 30); FB1
 (`L_0805_2012Metric`, Wert `600R@100MHz`) bei (12, 30) mit C7 (100 nF) davor und C8 (1 µF) danach.

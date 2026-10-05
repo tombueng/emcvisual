@@ -34,7 +34,7 @@
       const p = viewer.project(a.pos);
       const w = el.offsetWidth;
       const h = el.offsetHeight;
-      const tries = a.kind === 'dim' ? [[-w / 2, -h / 2], [-w / 2, -h - 6], [-w / 2, 6]] : [[8, -h - 14], [-w - 8, -h - 14], [8, -h - 40], [-w - 8, -h - 40], [8, 10], [-w - 8, 10]];
+      const tries = a.kind === 'dim' ? [[-w / 2, -h / 2], [-w / 2, -h - 6], [-w / 2, 6], [0, -h / 2], [-w, -h / 2]] : [[8, -h - 14], [-w - 8, -h - 14], [8, -h - 40], [-w - 8, -h - 40], [8, 10], [-w - 8, 10]];
       let spot: [number, number] | null = null;
       if (!p.behind)
         for (const [dx, dy] of tries) {

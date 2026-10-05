@@ -145,6 +145,15 @@ export function explain(d: Diagnostic): Explanation {
     case 'inductor-placement':
       k = 'inductorPlacement';
       break;
+    case 'filter-bypass': {
+      k = 'filterBypass';
+      const b = d.bypass;
+      if (b) {
+        const part = b.henry !== undefined ? E.fig.bypassInductor(formatEng(b.henry, 'H', 2)) : E.fig.bypassFerrite(fmtNum(b.ohms ?? 600, 0), b.assumed);
+        figures.push(E.fig.bypass(d.parts?.[0] ?? '?', part, fmtNum(b.cap * 1e12, 0), fmtNum(b.area, 0), b.layers.join(' / '), formatEng(d.value, 'Hz', 2)));
+      }
+      break;
+    }
     case 'no-reference':
       k = 'noReference';
       figures.push(E.fig.noReference(p.loopArea));

@@ -570,6 +570,23 @@
    ]
   }
  },
+ "filter-bypass": {
+  "layers": 4,
+  "w": 60,
+  "h": 40,
+  "title": "Versorgungsfilter durch übereinanderliegende Flächen umgangen",
+  "mistake": "Die ungefilterte Versorgung (+12V_IN, Fläche auf F.Cu) und die gefilterte (+12V_F, Fläche auf In2.Cu) liegen auf rund 400 mm² übereinander, die Massefläche auf In1 ist dort ausgespart. Die Überlappung (gut 10 pF über 1,3 mm) überbrückt den Ferrit FB1 oberhalb von etwa 50 MHz.",
+  "fix": "Gefilterte Fläche erst hinter FB1, Massefläche auf In1 durchgehend.",
+  "sources": [],
+  "expect": {
+   "bad": [
+    "filter-bypass"
+   ],
+   "good_absent": [
+    "filter-bypass"
+   ]
+  }
+ },
  "via-no-stitch": {
   "layers": 4,
   "w": 40,

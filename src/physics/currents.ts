@@ -153,7 +153,7 @@ function neighbourPlanes(ctx: PhysicsContext, layer: number): { above?: PlaneLay
   return { above, below };
 }
 
-function dielectricBetween(ctx: PhysicsContext, l0: number, l1: number): { h: number; er: number } {
+export function dielectricBetween(ctx: PhysicsContext, l0: number, l1: number): { h: number; er: number } {
   const lo = Math.min(l0, l1);
   const hi = Math.max(l0, l1);
   let h = 0;
