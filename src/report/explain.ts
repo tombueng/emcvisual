@@ -14,6 +14,7 @@ import { limitAt } from '../physics/farfield';
 import { limitsFor } from '../physics/standards';
 import { findingSeverity, type Severity } from '../physics/severity';
 import { gainText, standardShort } from './texts';
+import { cableConnectors } from '../physics/commonMode';
 import { C0 } from '../physics/units';
 
 export interface Explanation {
@@ -157,8 +158,7 @@ export function explain(d: Diagnostic): Explanation {
     const diag = Math.hypot(board.bbox.x1 - board.bbox.x0, board.bbox.y1 - board.bbox.y0) / 1000;
     const fHalf = C0 / (2 * diag);
     if (worst.f > fHalf / 1.5) doubts.push(D.boardSize(fmtNum(diag * 1000, 0), formatEng(fHalf, 'Hz', 2)));
-    const connectors = board.footprints.filter((f) => /^(J|P|CN|X)\d/i.test(f.ref)).length;
-    doubts.push(D.cables(connectors));
+    doubts.push(D.cables(cableConnectors(board).length));
   }
   if (d.kind === 'ref-change' && board) {
     const L = Math.max(board.bbox.x1 - board.bbox.x0, board.bbox.y1 - board.bbox.y0) / 1000;
@@ -170,6 +170,9 @@ export function explain(d: Diagnostic): Explanation {
   if (d.detour && d.detour.length > 0) doubts.push(D.shortestPath);
   if (d.gain?.scope === 'source') doubts.push(D.idealMirror);
   if (s && (s.type === 'signal' || s.type === 'diffpair')) doubts.push(D.trapezoid);
+  if (s?.type === 'loop') doubts.push(D.loopRinging);
+  if (s?.type === 'inductor') doubts.push(D.inductor);
+  if (s?.type === 'diffpair') doubts.push(D.skew);
   doubts.push(D.detector);
   if (!app.planes.some((q) => q.override)) doubts.push(D.planesDetected);
 

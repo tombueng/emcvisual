@@ -29,6 +29,7 @@ import type { SourceModel } from './currents';
 import { limitAt, type LimitSegment } from './farfield';
 import type { Source } from './sources';
 import { MU0 } from './units';
+import { lineAmp } from './spectrum';
 
 const EPS0 = 8.854e-12;
 /** Radiation resistance of a resonant cable antenna (Clemson: about a resonant dipole), Ω. */
@@ -167,7 +168,7 @@ export function commonModeEstimate(
 
   const lines = model.lines.map((l) => {
     const w = 2 * Math.PI * l.f;
-    const v = w * lp * l.amp * wMean;
+    const v = w * lp * lineAmp(l) * wMean;
     const e = mechanism === 'cable-cable' ? k * v : (k * v * R_RAD) / Math.hypot(R_RAD, 1 / (w * cB));
     return { f: l.f, v, db: e > 0 ? 20 * Math.log10(e) + 120 : -200 };
   });

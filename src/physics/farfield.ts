@@ -7,7 +7,7 @@ import { packWithImages, STRIDE, type ElementPack } from './images';
 import type { CurrentElement } from './currents';
 import type { PlaneLayer } from '../model/planes';
 import type { WorldFrame } from '../model/world';
-import type { Line } from './spectrum';
+import { lineAmp, type Line } from './spectrum';
 
 /** η0·(2π/c)²/(4π) in V/m per (A·m² · Hz² / m). */
 export const K_DIPOLE = 1.316e-14;
@@ -65,7 +65,8 @@ export function farField(moment: [number, number, number], lines: Line[], r: num
   const m = Math.hypot(...moment);
   const k = (groundReflection ? 2 : 1) * K_DIPOLE;
   return lines
-    .map((l) => ({ f: l.f, e: (k * l.f * l.f * m * l.amp) / r }))
+    // each harmonic on its own, as the receiver sees it (not the band-power scaled amplitude)
+    .map((l) => ({ f: l.f, e: (k * l.f * l.f * m * lineAmp(l)) / r }))
     .filter((x) => x.e > 0)
     .map((x) => ({ f: x.f, db: 20 * Math.log10(x.e) + 120 }));
 }

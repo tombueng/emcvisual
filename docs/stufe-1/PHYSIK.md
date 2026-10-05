@@ -330,7 +330,10 @@ Referenz geraten.
 
 1. Keine Laufzeit- und Resonanzeffekte (Quasistatik, konzentrierte Leitungen).
 2. Rückstrom immer direkt unter dem Hinweg; Umwege um Schlitze nur als Warnung.
-3. Flächen als ideale Leiter (Skin-Tiefe von 35 µm Kupfer < Kupferdicke ab ≈ 4 MHz).
+3. Flächen als ideale Leiter. Für 35 µm Kupfer ist das ab etwa 10 MHz gut erfüllt (mehrere
+   Skintiefen). Bei den Grundwellen von Schaltreglern (0,1–2 MHz, Skintiefe 50–210 µm) dringt
+   das Magnetfeld teilweise durch die Fläche, und die Spiegelwirkung ist schwächer; das Modell
+   zeigt dort hinter Flächen zu wenig Feld.
 4. Keine Kabel, kein Gehäuse, keine Bauteil-Parasitics (ESL, Streufeld von Spulen).
 5. Chip-interne Ströme nur über die angegebenen Pads.
 6. Quellen untereinander inkohärent.

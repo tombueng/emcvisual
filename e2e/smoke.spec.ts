@@ -279,7 +279,7 @@ test('problem view: a click on a hint shows only what matters, with labels and e
   await expect(card.locator('ol.fixes li').first()).toContainText('Bezugsnetz');
   await expect(card).toContainText('Zum Nachlesen');
   // severity, the calculation with this case's numbers, and the doubts
-  await expect(card.locator('.severity .chip')).toHaveText('kritisch');
+  await expect(card.locator('.severity .chip')).toHaveText('hohe Priorität');
   await expect(card.locator('ol.calc')).toContainText('Dipolmoment');
   await expect(card.locator('ul.doubts')).toContainText('Kabel');
   // labels in the scene: the net with its values, the planes, the capacitor that carries the return
@@ -350,7 +350,7 @@ test('speech bubbles: red and yellow always stay in view, green ones are points'
   // green findings and sources are only points, with the text as tooltip
   const points = page.locator('.callouts .point');
   expect(await points.count()).toBeGreaterThanOrEqual(1);
-  await expect(points.first()).toHaveAttribute('title', /unauffällig\. Klick: genauer ansehen/);
+  await expect(points.first()).toHaveAttribute('title', /nachrangig\. Klick: genauer ansehen/);
   await page.screenshot({ path: 'e2e/output/bubbles-overview.png' });
 
   // zoom far into a corner: the spots leave the view, the important bubbles stay at the edge

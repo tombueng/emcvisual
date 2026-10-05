@@ -17,9 +17,20 @@ export interface Waveform {
 export interface Line {
   /** Frequency in Hz. */
   f: number;
-  /** RMS amplitude in the unit of the waveform amplitude (V or A). */
+  /**
+   * RMS amplitude in the unit of the waveform amplitude (V or A). When the spectrum is
+   * thinned out (every k-th harmonic kept), scaled by √k so band powers stay right.
+   */
   amp: number;
+  /**
+   * The line's own amplitude without that scaling, when it differs: what a measuring receiver
+   * (120 kHz / 1 MHz bandwidth) shows for one harmonic, so this is what is compared with a limit.
+   */
+  single?: number;
 }
+
+/** Amplitude of one line as a receiver sees it (for limits), see Line.single. */
+export const lineAmp = (l: Line) => l.single ?? l.amp;
 
 export interface Band {
   id: string;
@@ -59,9 +70,10 @@ export function trapezoidLines(w: Waveform, fMax: number, maxLines = 4096, floor
   const lines: Line[] = [];
   let peak = 0;
   for (let n = 1; n <= nMax; n += step) {
-    const amp = (trapezoidCoefficient(w, n) / Math.SQRT2) * (n === 1 ? 1 : scale);
+    const single = trapezoidCoefficient(w, n) / Math.SQRT2;
+    const amp = single * (n === 1 ? 1 : scale);
     if (amp > peak) peak = amp;
-    lines.push({ f: n * w.f0, amp });
+    lines.push(amp !== single ? { f: n * w.f0, amp, single } : { f: n * w.f0, amp });
   }
   const floor = peak * 10 ** (floorDb / 20);
   return lines.filter((l) => l.amp > floor);
@@ -81,7 +93,10 @@ export function bandPower(lines: Line[], f0: number, f1: number): number {
 
 /** Scale every line by a frequency-dependent factor (e.g. jωC for a capacitive load). */
 export function mapLines(lines: Line[], factor: (f: number) => number): Line[] {
-  return lines.map((l) => ({ f: l.f, amp: l.amp * factor(l.f) }));
+  return lines.map((l) => {
+    const k = factor(l.f);
+    return l.single !== undefined ? { f: l.f, amp: l.amp * k, single: l.single * k } : { f: l.f, amp: l.amp * k };
+  });
 }
 
 /**
@@ -100,9 +115,10 @@ export function triangleLines(w: Waveform, fMax: number, maxLines = 4096, floorD
   let peak = 0;
   for (let n = 1; n <= nMax; n += step) {
     const c = (w.amplitude * Math.abs(Math.sin(n * Math.PI * D))) / (Math.PI * Math.PI * n * n * D * (1 - D));
-    const amp = (c / Math.SQRT2) * (n === 1 ? 1 : scale);
+    const single = c / Math.SQRT2;
+    const amp = single * (n === 1 ? 1 : scale);
     if (amp > peak) peak = amp;
-    lines.push({ f: n * w.f0, amp });
+    lines.push(amp !== single ? { f: n * w.f0, amp, single } : { f: n * w.f0, amp });
   }
   const floor = peak * 10 ** (floorDb / 20);
   return lines.filter((l) => l.amp > floor);

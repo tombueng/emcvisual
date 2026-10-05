@@ -48,7 +48,7 @@ export const de = {
     reasons: {
       'clock-name': 'Netzname sieht nach Takt aus',
       'data-name': 'Netzname sieht nach Datenleitung aus',
-      'usb-pair': 'USB-Datenpaar',
+      'usb-pair': 'USB-Datenpaar (angenommen Full-Speed, 12 Mbit/s; bei High-Speed, 480 Mbit/s, Werte und Lastmodell ändern)',
       'diff-pair': 'Differenzpaar nach Namen',
       regulator: 'Schaltregler mit Eingangskondensator',
       inductor: 'Speicherdrossel am Schaltknoten',
@@ -175,7 +175,7 @@ export const de = {
     tab: 'Diagnose',
     viewTab: 'Ansicht',
     warnings: 'Hinweise zum Layout',
-    none: 'Keine Auffälligkeiten bei den aktiven Quellen.',
+    none: 'Keine der geprüften Auffälligkeiten bei den aktiven Quellen (Lücken und Trennungen unter Leitungen, Bezugswechsel, fehlende Stitching-Vias, ungedämpfte Leitungen, Rand der Fläche, heiße Schleifen, Gleichtakt mit Kabeln). Nicht geprüft: Filter und Schirme an Steckern, Kühlkörper, Gehäuse, Entkopplung.',
     kinds: {
       'return-gap': (d: { layer: string; plane: string; planeNet: string; value: number; split?: boolean; otherNet?: string }) =>
         d.split
@@ -219,7 +219,7 @@ export const de = {
     hotspotsNone: 'Noch kein Feld berechnet.',
     near: 'in der Nähe',
     far: (std: string) => `Fernfeld-Orientierung (${std}, 3 m)`,
-    farHint: 'Nur Gegentakt der Platine, ohne Kabel. Grobe Orientierung, keine Prüfaussage.',
+    farHint: 'Oben: nur Gegentakt der Platine (Modell). Darunter, wo es passt: Gleichtakt mit Kabeln als Abschätzung im ungünstigsten Fall. Beides ist Orientierung, keine Prüfaussage.',
     margin: (db: number) => (db >= 0 ? `${db.toFixed(0)} dB über Grenzwert` : db < -100 ? 'mehr als 100 dB Abstand' : `${(-db).toFixed(0)} dB Abstand`),
     rankHint: 'Reihenfolge: zuerst die Quelle am nächsten am Grenzwert (3 m), darin die Behebung mit der größten Wirkung.',
     gainAlone: (v: string) => `3 m (Modell): nur diese Stelle behoben ${v} leiser`,
@@ -246,7 +246,7 @@ export const de = {
     limit: (std: string) => std,
     csv: 'CSV',
     noProbe: 'Keine Sonde über der Platine',
-    total: 'Summe',
+    total: 'Summe (Quellen unabhängig angenommen)',
     peak: 'Höchste Linie',
   },
   audio: {
@@ -303,7 +303,7 @@ export const de = {
     showMeasured: 'Zeigen',
     showDiff: 'Differenz zur Simulation',
     fit: 'Quellen anpassen',
-    fitHint: 'Bestimmt je Quelle, wie viel lauter oder leiser sie in der Messung ist als im Modell (gewählter Frequenzbereich).',
+    fitHint: 'Bestimmt je Quelle, wie viel lauter oder leiser sie in der Messung ist als im Modell (gewählter Frequenzbereich). Die Sonde ist als ideale Leerlaufspannung gerechnet; an 50 Ω begrenzt ihre Eigeninduktivität ab etwa 50 Ω/(2π·L) (10-mm-Schleife: rund 400 MHz), darüber zeigt die Rechnung zu viel. Für Absolutwerte den Sondenfaktor des Herstellers verwenden, sonst schreibt der Abgleich Sondenfehler den Quellen zu.',
     fitTitle: 'Quellen an die Messung angepasst',
     fitDb: (db: number) => (db >= 0 ? `${db.toFixed(1).replace('.', ',')} dB lauter` : `${(-db).toFixed(1).replace('.', ',')} dB leiser`),
     fitNotSeen: 'zu schwach in diesem Frequenzbereich',
@@ -322,7 +322,7 @@ export const de = {
     origin: 'Magnetfeld aus',
     origins: { fast: 'Schnell (Stufe 1–2)', fullwave: 'Vollwelle (openEMS)' },
     eOnly: 'openEMS-Ergebnisse enthalten nur das Magnetfeld; das elektrische Feld kommt aus dem schnellen Modell.',
-    hint: 'Löst die Maxwell-Gleichungen ohne Näherung (Resonanzen, Abstrahlung). Läuft lokal mit openEMS, nicht im Browser: Job exportieren, im Projektordner mit dem Befehl unten rechnen lassen (Einrichtung: tools/openems/README.md), Ergebnis laden. Spulen bleiben aus dem schnellen Modell.',
+    hint: 'Löst die Maxwell-Gleichungen numerisch (FDTD), ohne die Näherungen des schnellen Modells: Laufzeiten, Resonanzen und die Abstrahlung der Platine sind enthalten. Grenzen: Gitter 0,5–1 mm, Kupfer als idealer Leiter (Resonanzen eher zu scharf), Bauteile vereinfacht (Kondensatoren als Kurzschluss, Schalter als Widerstand), keine Kabel, kein Gehäuse; das Stromspektrum kommt weiter aus dem Quellenmodell. Läuft lokal mit openEMS, nicht im Browser: Job exportieren, im Projektordner mit dem Befehl unten rechnen lassen (Einrichtung: tools/openems/README.md), Ergebnis laden. Spulen bleiben aus dem schnellen Modell.',
     exportJob: 'Job exportieren',
     loadResult: 'Ergebnis laden',
     loaded: (n: number, f0: string, f1: string, k: number) => `${n} Quellen, ${f0} bis ${f1} in ${k} Frequenzen`,
@@ -399,7 +399,7 @@ export const de = {
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm Umweg über ${via}` : `${mm} mm Umweg`),
     peak: (db: string) => `Nahfeld bis ${db} dBµA/m`,
-    far: (m: string) => `3 m: ${m}`,
+    far: (m: string) => `3 m (Modell): ${m}`,
     pointHint: 'Klick: genauer ansehen',
   },
   parts: {
@@ -510,8 +510,8 @@ export const de = {
     fieldNames: { 'waveform.f0': 'Frequenz', 'waveform.tr': 'Anstiegszeit', 'waveform.amplitude': 'Amplitude' },
     calc: {
       path: (mm: string, plane: string) => `Strompfad der Quelle: ${mm} mm, Bezugsfläche ${plane}.`,
-      moment: (mm2: string) => `Magnetisches Dipolmoment je Ampere Referenzstrom (die wirksame Schleifenfläche, mit Spiegelströmen und Umwegen): |m| = ${mm2} mm².`,
-      formula: 'Jede Spektrallinie I strahlt in 3 m mit E = 2 · η0 · k² · |m| · I / (4π · r), k = 2π f / c, r = 3 m, Faktor 2 für die Reflexion am Boden des Messplatzes (Ott, Gl. 12-2).',
+      moment: (mm2: string) => `Magnetisches Dipolmoment je Ampere Referenzstrom aus Hin- und Rückstrom (Rückstrom in der Bezugsfläche unter der Leitung, mit Umwegen): |m| = ${mm2} mm².`,
+      formula: 'Jede Spektrallinie I strahlt in 3 m mit E = 2 · η0 · k² · |m| · I / (4π · r), k = 2π f / c, r = 3 m; der Faktor 2 ist die Bodenreflexion des Messplatzes im ungünstigsten Fall (Ott, Gl. 12-2). Gilt für elektrisch kleine Strukturen und nur für den Gegentaktanteil.',
       worst: (std: string, f: string, db: string, lim: string, margin: string) => `Stärkste Linie gegen den Grenzwert (${std}, 3 m): ${f} mit ${db} dBµV/m bei ${lim} dBµV/m Grenzwert, also ${margin}.`,
       fixed: (mm2: string, g: string, db: string, margin: string) => `Mit Behebung: |m| ≈ ${mm2} mm², alle Linien ${g} tiefer; die stärkste Linie läge bei ${db} dBµV/m, also ${margin}.`,
       fixedSolid: (mm2: string, g: string, db: string, margin: string) => `Über lückenloser Fläche: |m| = ${mm2} mm², alle Linien ${g} tiefer; die stärkste Linie läge bei ${db} dBµV/m, also ${margin}.`,
@@ -519,19 +519,22 @@ export const de = {
     doubt: {
       inputs: (list: string, fEdge: string) =>
         `${list} ${list.includes(',') ? 'sind' : 'ist'} nicht durch ein Datenblatt belegt (Vorgabe oder Annahme). Jede Linie ist proportional zur Amplitude; ${fEdge ? `die Anstiegszeit bestimmt, wo die Oberwellen mit 40 dB/Dekade abfallen (hier ab etwa ${fEdge}): Halbiert hebt sie die Linien darüber um bis zu 6 dB.` : 'beim Rippelstrom zählt der Wert direkt.'}`,
-      aboveValidity: (f: string, fs: string) => `Die stärkste Linie (${f}) liegt oberhalb der Grenze, bis zu der die Leitung elektrisch kurz ist (${fs}). Laufzeiten und Reflexionen sind dort nicht gerechnet; Abweichungen um 10 dB nach oben oder unten sind möglich.`,
+      aboveValidity: (f: string, fs: string) => `Die stärkste Linie (${f}) liegt oberhalb der Grenze, bis zu der die Leitung elektrisch kurz ist (${fs}). Laufzeiten und Reflexionen sind dort nicht gerechnet; Abweichungen von 10 dB und mehr in beide Richtungen sind möglich, an Resonanzen auch deutlich mehr.`,
       boardSize: (mm: string, f: string) => `Die Platine misst diagonal ${mm} mm und erreicht ab etwa ${f} eine halbe Wellenlänge. Ab da können Resonanzen der Platine und der Flächen einzelne Linien deutlich anheben; das Modell enthält keine Resonanzen.`,
       cables: (n: number) =>
         n > 0
-          ? `Angeschlossene Kabel fehlen in der Rechnung (die Platine hat ${n} Steckverbinder). Gleichtaktströme auf Kabeln strahlen in der Praxis oft 10–20 dB stärker als die Platine selbst; das Ergebnis ist dann zu günstig.`
-          : 'Kabel fehlen in der Rechnung. Sobald Kabel angeschlossen sind, dominieren oft deren Gleichtaktströme.',
-      cavity: (a: string, b: string, f: string) => `Der Hohlraum zwischen ${a} und ${b} hat seine erste Resonanz bei etwa ${f}. Dort kann der Lagenwechsel weit stärker abstrahlen als gerechnet.`,
+          ? `Angeschlossene Kabel fehlen in dieser Rechnung (die Platine hat ${n} Steckverbinder). Gleichtaktströme auf Kabeln übertreffen die Gegentaktabstrahlung der Platine oft um 20 dB und mehr; schon wenige µA Gleichtaktstrom auf 1 m Kabel erreichen bei 100 MHz den Grenzwert. Das Ergebnis ist dann viel zu günstig; die Abschätzung „mit Kabeln“ (Reiter Diagnose) zeigt die Größenordnung.`
+          : 'Kabel fehlen in dieser Rechnung. Auch ohne Kabel strahlt eine Platine über Gleichtaktwege, die das Modell nicht kennt: Spannungsabfall über der Fläche, Kopplung an Kühlkörper und Gehäuse, die Versorgungsleitung im Prüfaufbau.',
+      cavity: (a: string, b: string, f: string) => `Der Hohlraum zwischen ${a} und ${b} hat seine erste Resonanz grob geschätzt bei etwa ${f} (aus der Platinengröße; kleinere Flächeninseln resonieren höher). Dort kann der Lagenwechsel weit stärker abstrahlen als gerechnet.`,
       slotCm: 'Die Zahl „behoben … leiser“ rechnet nur die größere Gegentakt-Schleife. Der Rückstrom erzeugt über der Lücke aber eine Spannung, die beide Flächenhälften und angeschlossene Kabel gegeneinander treibt. Dieser Gleichtakt-Effekt ist in Messungen oft deutlich größer (10 dB und mehr) und hier nicht gerechnet. Deshalb ist der Befund höher eingestuft, als die Zahl allein ergäbe.',
       cmWorstCase: 'Die Gleichtakt-Abschätzung nimmt bei jeder Frequenz ein resonantes Kabel an (Strahlungswiderstand 100 Ω) und einen Messplatz mit Bodenreflexion. Die Quelle der Methode sagt selbst: eher zu hoch. Reale Kabel sind nur bei einzelnen Frequenzen resonant; Ferrite, geschirmte Kabel mit gutem Schirmanschluss oder ein Metallgehäuse senken den Wert stark. Umgekehrt fehlen Lücken in der Fläche, die die Spannung erhöhen, und mehrere Quellen gleichzeitig.',
-      shortestPath: 'Der Rückstrom-Umweg folgt dem kürzesten Weg durchs Kupfer. Real verteilt sich der Strom breiter, die zusätzliche Fläche ist eher überschätzt, der Gewinn der Behebung eher etwas kleiner.',
-      idealMirror: 'Über einer idealen, unendlichen Fläche heben sich Strom und Spiegelstrom fast auf; deshalb erscheint der Gewinn einer durchgehenden Fläche sehr groß. Real eher 10–20 dB.',
+      shortestPath: 'Der Rückstrom-Umweg ist als einzelner Faden auf dem kürzesten Weg gerechnet. Der wirkliche Strom verteilt sich um diesen Weg; die zusätzliche Fläche kann dadurch größer oder kleiner sein. Meist wiegt schwerer, dass die Spannung über der Lücke nicht gerechnet ist, die Gleichtaktströme antreibt.',
+      idealMirror: 'Über einer idealen, unendlich großen Fläche heben sich Strom und Spiegelstrom fast vollständig auf; deshalb erscheint der Gewinn einer durchgehenden Fläche sehr groß. Bei einer endlichen Platine ist er kleiner; wie viel, hängt von Flächengröße, Höhe der Schleife und Frequenz ab und ist hier nicht gerechnet (die Vollwelle, Stufe 3, zeigt es).',
+      loopRinging: 'Der Schleifenstrom ist ein ideales Trapez. Echte Schaltflanken klingen mit der Induktivität der heißen Schleife und der Kapazität der Schalter nach, meist zwischen 50 und 200 MHz. Diese Resonanzspitze liegt oft deutlich über der Trapez-Hüllkurve und ist nicht gerechnet.',
+      inductor: 'Die wirksame Windungszahl des Streufelds (offen 12, halb geschirmt 4, geschirmt 0,8) ist ein grober Erfahrungswert, keine Herstellerangabe. Gerechnet wird nur der dreieckige Rippelstrom; die Ankopplung der Schaltknoten-Flanken über die Wicklungskapazität, die oberhalb einiger MHz überwiegt, fehlt.',
+      skew: 'Der Gleichtaktanteil des Paars kommt nur aus der eingestellten Amplituden-Unsymmetrie (Vorgabe 5 %, nicht gemessen). Laufzeitversatz zwischen P und N ist nicht gerechnet; sein Gleichtaktanteil wächst mit der Frequenz (bei 10 ps Versatz und 1 GHz rund 3 %).',
       trapezoid: 'Das Spektrum stammt aus einem idealen Trapez. Überschwingen und Klingeln echter Flanken heben einzelne Oberwellen an; ein Takt mit Spread-Spectrum senkt sie um mehrere dB (beides nicht gerechnet).',
-      detector: 'Die Prüfung misst mit Quasi-Peak-Detektor, dreht den Prüfling und fährt die Antenne in der Höhe; die Rechnung nimmt die stärkste Richtung mit voller Bodenreflexion. Für die Platine allein ist das eher eine obere Abschätzung.',
+      detector: 'Die Prüfung misst mit Quasi-Peak-Detektor (für eine stabile Taktlinie gleich dem Spitzenwert), dreht den Prüfling und fährt die Antenne in der Höhe; die Rechnung nimmt die stärkste Richtung mit voller Bodenreflexion. Für den Gegentaktanteil der Platine ist das eher eine obere Abschätzung; über die Gesamtabstrahlung des Geräts sagt es nichts.',
       planesDetected: 'Die Bezugsflächen sind automatisch erkannt, nicht bestätigt. Stimmt eine Zuordnung nicht (Ansicht → Lagen), ist der Befund falsch.',
     },
     refs: {
@@ -554,8 +557,8 @@ export const de = {
           'Die App rastert jede Bezugsfläche (0,25 mm) und prüft unter jedem Leitungsstück, ob Kupfer darunter liegt. Gemeldet werden Lücken ab 1 mm Länge mit Kupfer auf beiden Seiten; kleine Freistellungen (bis 3 mm², z. B. um Vias) zählen als Kupfer. Das Rückstrommodell (Stufe 2) sucht den kürzesten Weg durchs Flächenkupfer um die Lücke herum und rechnet ihn als echten Strompfad.',
         fixes: () => [
           'Leitung umlegen, sodass sie über durchgehender Fläche bleibt.',
-          'Lücke schließen oder die Fläche unter der Leitung durchgehend machen. Flächen nur dort teilen, wo keine schnellen Signale kreuzen.',
-          'Wenn die Leitung kreuzen muss: Brückenkondensator (z. B. 100 nF, 0402) über die Lücke, direkt neben der Kreuzung, zwischen beiden Flächenteilen.',
+          'Lücke schließen oder die Fläche unter der Leitung durchgehend machen. Die Bezugsfläche (meist GND) grundsätzlich nicht teilen; Analog- und Digitalteil durch Platzierung trennen, nicht durch Schlitze. Getrennte Versorgungsinseln nur auf Lagen, die schnellen Signalen nicht als Bezug dienen.',
+          'Wenn die Leitung kreuzen muss: Brückenkondensator über die Lücke, direkt an der Kreuzung, mit kurzen, eng benachbarten Vias. Ab etwa 100 MHz begrenzt die Induktivität von Bauform und Vias (etwa 1–3 nH) die Wirkung zunehmend; der Kapazitätswert ist dort zweitrangig. Besser ist immer, die Lücke nicht zu kreuzen.',
           'Auf eine Lage mit durchgehender Bezugsfläche wechseln, mit einer Stitching-Via direkt neben dem Lagenwechsel.',
           'Flanken verlangsamen (größere Anstiegszeit): Das senkt alle Oberwellen oberhalb von etwa 1/(π·tr).',
         ],
@@ -574,15 +577,15 @@ export const de = {
             ? `Unter einem Teil der Stromschleife (${p.gap} mm auf ${p.layer}) gibt es keine Bezugsfläche ${p.planeNet}, etwa eine Aussparung unter dem Schaltregler.`
             : `Unter ${p.gap} mm der Leitung auf ${p.layer} gibt es keine Bezugsfläche ${p.planeNet}, und kein Weg führt im Kupfer drumherum.`,
         why: () =>
-          'Über einer durchgehenden Fläche fließt unter dem Strom sein Spiegelbild in Gegenrichtung; aus der Ferne heben sich beide fast auf, übrig bleibt eine sehr flache Schleife. Fehlt die Fläche, strahlt die Schleife mit ihrer vollen Fläche. Bei Schaltreglern ist die „heiße Schleife“ (Eingangskondensator → Schalter → Masse) mit Strömen von Ampere und Flanken von Nanosekunden die stärkste Quelle der Platine.',
+          'Über einer durchgehenden Fläche fließt unter dem Strom sein Spiegelbild in Gegenrichtung; aus der Ferne heben sich beide fast auf, übrig bleibt eine sehr flache Schleife. Fehlt die Fläche, strahlt die Schleife mit ihrer vollen Fläche. Bei Schaltreglern ist die „heiße Schleife“ (Eingangskondensator → Schalter → Masse) mit Strömen von Ampere und Flanken von Nanosekunden oft eine der stärksten Quellen der Platine; dazu kommen das elektrische Feld des Schaltknotens und Störungen, die über die Eingangsleitungen abfließen.',
         detected: () =>
           'Wie bei Lücken unter Leitungen: Rasterung der Bezugsfläche, Lücken ab 1 mm. Gibt es keinen Weg um die Lücke, rechnet die App die Schleife an dieser Stelle ohne Spiegel. Die Wirkung gilt für alle Lücken unter dieser Quelle zusammen: verglichen wird mit derselben Quelle über lückenloser Fläche.',
         fixes: (p: P) =>
           p.loop
             ? [
-                'Die Lage direkt unter der heißen Schleife als durchgehende GND-Fläche ausführen. Aussparungen nur dort, wo das Datenblatt sie verlangt (meist unter dem Schaltknoten, nicht unter der Schleife).',
+                'Die Lage direkt unter der heißen Schleife und unter dem Schaltknoten als durchgehende GND-Fläche ausführen. Aussparungen nur, wo das Datenblatt sie ausdrücklich verlangt; übliche Freistellungen betreffen Kupfer auf der Bauteillage unter der Drossel, nicht die GND-Fläche.',
                 'Schleife verkleinern: Eingangskondensator so nah wie möglich an VIN und PGND, kurze breite Verbindungen, Kondensator auf derselben Lage wie der Regler.',
-                'Einen kleinen Hochfrequenz-Kondensator (z. B. 100 nF, 0402) zusätzlich direkt an VIN/PGND.',
+                'Einen Kondensator in kleiner Bauform (z. B. 0402) als nächsten an VIN/PGND setzen, mit kürzester Schleife. Er wirkt über seine kleine Einbauinduktivität, nicht über den Wert. Zusammen mit den größeren Eingangskondensatoren kann er eine Parallelresonanz bilden; im Zweifel den Impedanzverlauf prüfen.',
                 'Schaltflanken verlangsamen, wenn der Regler das erlaubt (Bootstrap-Widerstand, Slew-Rate-Einstellung).',
               ]
             : ['Fläche unter der Leitung durchgehend machen.', 'Leitung über durchgehende Fläche umlegen.', 'Auf eine Lage mit Bezugsfläche wechseln (mit Stitching-Via).'],
@@ -607,13 +610,13 @@ export const de = {
           'An jeder Via des Signals bestimmt die App die Bezugsflächen vor und nach dem Lagenwechsel. Sind es verschiedene Netze, sucht sie das nächste zweipolige Bauteil zwischen beiden Netzen und führt den Rückstrom als Pfad über die Flächen und durch dieses Bauteil.',
         fixes: (p: P) => [
           `Beide Signallagen auf dasselbe Bezugsnetz legen (z. B. ${p.planeNet} unter beiden). Dann genügt eine Stitching-Via direkt neben der Signal-Via.`,
-          `Wenn der Wechsel bleiben muss: Kondensator (100 nF, 0402) zwischen ${p.planeNet} und ${p.otherNet} direkt an der Signal-Via (weniger als 2 mm).`,
+          `Wenn der Wechsel bleiben muss: Kondensator zwischen ${p.planeNet} und ${p.otherNet} direkt an der Signal-Via (weniger als 2 mm), kleine Bauform, kurze Vias. Er wirkt bis einige hundert MHz; darüber trägt vor allem die Kapazität zwischen den Flächen.`,
           'Den Lagenwechsel vermeiden oder an eine Stelle legen, an der ein Entkoppelkondensator ohnehin sitzt.',
           'Flanken verlangsamen, wenn das Signal es erlaubt.',
         ],
         avoid: (p: P) => [
           `Schnelle Signale nicht zwischen Lagen mit unterschiedlichem Bezug (${p.planeNet}, ${p.otherNet}) wechseln lassen: Der Rückstrom findet an der Via keinen direkten Weg.`,
-          'Sich nicht auf die Kapazität zwischen den Flächen allein verlassen: Bei hohen Frequenzen ist sie ein Resonator, keine Verbindung.',
+          'Sich nicht auf die Kapazität zwischen den Flächen allein verlassen: Bei hohen Frequenzen trägt sie zwar einen großen Teil des Rückstroms (umso mehr, je dünner das Dielektrikum), bei ihren Hohlraumresonanzen wird sie aber hochohmig.',
           'Den Brückenkondensator nicht weit weg setzen: Jeder Millimeter verlängert die Schleife.',
         ],
         limits: () =>
@@ -626,7 +629,7 @@ export const de = {
         why: () =>
           'Der Rückstrom muss zur nächsten Verbindung der beiden Flächen laufen und dann zurück unter die Leitung. Je weiter diese Verbindung entfernt ist, desto größer wird die zusätzliche Schleife, und desto mehr wird der Hohlraum zwischen den Flächen angeregt.',
         detected: (p: P) => `Die App sucht um jede Signal-Via mit Lagenwechsel nach Vias oder durchkontaktierten Pads des Flächennetzes im Umkreis von ${p.radius} mm.`,
-        fixes: (p: P) => [`Eine ${p.planeNet}-Stitching-Via direkt neben jede Signal-Via setzen, die die Lage wechselt (Abstand 1–2 mm).`, 'Bei Differenzpaaren eine Stitching-Via je Paar, symmetrisch.'],
+        fixes: (p: P) => [`Eine ${p.planeNet}-Stitching-Via direkt neben jede Signal-Via setzen, die die Lage wechselt (Abstand 1–2 mm).`, 'Bei Differenzpaaren ein bis zwei Masse-Vias symmetrisch zum Paar, möglichst je eine neben jeder Signal-Via.'],
         avoid: () => [
           'Lagenwechsel schneller Signale ohne Stitching-Via daneben vermeiden: Der Rückstrom sucht sich sonst den nächsten Weg zwischen den Flächen.',
           'Nicht eine weit entfernte Via für viele Signale teilen: Die Schleifen werden groß und koppeln untereinander.',
@@ -642,7 +645,7 @@ export const de = {
         detected: (p: P) =>
           `Aus dem längsten Weg im Netz (${p.length} mm) und der effektiven Permittivität (${p.eeff}) folgt f = c / (4 · L · √εeff). Gemeldet wird, wenn diese Frequenz unter der oberen Spektrumsgrenze liegt, die Quelle dort noch mindestens 1 % der stärksten Linie hat und weder ein Serienwiderstand (ab 10 Ω, höchstens 15 mm vom Treiber) noch eine Terminierung eingetragen ist.`,
         fixes: () => [
-          'Serienwiderstand direkt am Treiber (Wert etwa Z0 minus Ausgangswiderstand des Treibers, typisch 22–33 Ω): Die Reflexion vom offenen Ende wird am Treiber geschluckt, und die Flanke wird etwas langsamer.',
+          'Serienwiderstand direkt am Treiber (Wert etwa Z0 minus Ausgangswiderstand des Treibers, typisch 22–33 Ω), wenn die Leitung zu einem Empfänger am Ende führt: Die Reflexion vom offenen Ende wird am Treiber geschluckt, und die Flanke wird etwas langsamer. Bei mehreren Empfängern entlang der Leitung sehen die mittleren eine Stufe; dann Abschluss am Ende oder sternförmige Führung.',
           'Leitung kürzer führen: Die Resonanz wandert nach oben, aus dem Messbereich heraus.',
           'Flanken verlangsamen, soweit das Timing es erlaubt (Treiberstärke, Slew-Rate): Oberhalb von etwa 1/(π·tr) fallen die Oberwellen mit 40 dB pro Dekade.',
           'Für belastbare Zahlen zur Resonanzüberhöhung die Vollwelle rechnen (Stufe 3, openEMS).',
@@ -747,10 +750,10 @@ export const de = {
     },
   },
   severity: {
-    critical: 'kritisch',
+    critical: 'hohe Priorität',
     check: 'ansehen',
-    minor: 'unauffällig',
-    scale: 'Schweregrad: rot entscheidet über die Prüfung (Quelle nahe am oder über dem Grenzwert in 3 m und dieser Hinweis trägt viel dazu bei), gelb sollte man ansehen, grün strahlt, fällt aber nicht auf.',
+    minor: 'nachrangig',
+    scale: 'Priorität im Modell: rot = die Quelle liegt im Modell nahe am oder über dem Grenzwert (3 m) und dieser Hinweis trägt viel dazu bei, oder es ist ein Fehler, an dem Prüfungen erfahrungsgemäß scheitern (Lücke unter schnellen Leitungen, große heiße Schleife); gelb = ansehen; grün = im Modell weit unter dem Grenzwert. Das ordnet die Arbeit und sagt nichts über das Prüfergebnis: Gleichtaktströme auf Kabeln und auf der Platine selbst rechnet die App nur als grobe Abschätzung im ungünstigsten Fall, und sie übertreffen die Gegentaktabstrahlung oft um 20 dB und mehr.',
     reason: (margin: string, gain: string) => `${margin}; ${gain}`,
     noGain: 'Wirkung nicht beziffert',
   },
@@ -758,13 +761,13 @@ export const de = {
     title: 'Norm für den Grenzwert',
     pick: 'Norm',
     allTitle: 'Alle Normen erklärt',
-    common: 'Die App vergleicht nur die Abstrahlung der Platine selbst (Gegentakt, ohne Kabel und Gehäuse) mit dem Grenzwert – eine Orientierung, keine Prüfaussage. Die Grenzwerte gelten für Quasi-Peak unter 1 GHz und Mittelwert darüber; eine nicht tabellierte Entfernung wird mit 20 dB je Dekade umgerechnet.',
+    common: 'Die App vergleicht die Abstrahlung der Platine selbst (Gegentakt, ohne Gehäuse) mit dem Grenzwert, dazu eine grobe Gleichtakt-Abschätzung mit Kabeln – eine Orientierung, keine Prüfaussage. Die Grenzwerte gelten für Quasi-Peak unter 1 GHz und Mittelwert darüber; an Bandgrenzen gilt der strengere Wert; eine nicht tabellierte Entfernung wird mit 20 dB je Dekade umgerechnet (eine Konvention der Normen, keine Physik in 3 m bei 30 MHz). Verglichen wird jede Spektrallinie einzeln, wie der Messempfänger sie zeigt (120 kHz Bandbreite unter 1 GHz, 1 MHz darüber), solange die Grundfrequenz größer als diese Bandbreite ist; darunter fasst der Empfänger mehrere Linien zusammen und zeigt mehr an als die Rechnung.',
     missing: 'Nicht enthalten: CISPR 25 (Fahrzeugkomponenten) und MIL-STD-461 RE102 (Militär). Beide messen in 1 m an einem Aufbau mit Kabelbaum, der die Abstrahlung bestimmt; das lässt sich mit dem Platinenmodell nicht sinnvoll abschätzen.',
     items: {
       'cispr32-b': {
         name: 'CISPR 32 / EN 55032 Klasse B',
         short: 'CISPR 32 B',
-        text: 'Multimedia-Geräte (IT, Audio und Video, Netzwerk) für den Wohnbereich – die übliche Norm für Elektronik in Europa (CE-Kennzeichnung über EN 55032). Klasse B ist die strengere Klasse. Gemessen auf dem Freifeld oder in der Absorberhalle in 3 m oder 10 m: unter 1 GHz mit Quasi-Peak-Detektor (40/47 dBµV/m in 3 m), darüber Mittelwert (50/54 dBµV/m) und Spitzenwert (20 dB höher). Unter 30 MHz gibt es keine Abstrahlgrenzen; dort zählt die leitungsgebundene Störaussendung an den Anschlüssen.',
+        text: 'Multimedia-Geräte (IT, Audio und Video, Netzwerk) für den Wohnbereich (CE-Kennzeichnung über EN 55032); Industrie- und Laborelektronik fällt meist unter EN 55011 bzw. EN 61326-1, Haushaltsgeräte unter EN 55014-1. Klasse B ist die strengere Klasse. Gemessen auf dem Freifeld oder in der Halbabsorberhalle in 3 m oder 10 m: unter 1 GHz mit Quasi-Peak-Detektor (40/47 dBµV/m in 3 m; in der Vollabsorberhalle 42–35/42 dBµV/m), darüber Mittelwert (50/54 dBµV/m) und Spitzenwert (20 dB höher), über 1 GHz nur so weit, wie es die höchste intern erzeugte Frequenz verlangt (bis 108 MHz: nur bis 1 GHz; bis 500 MHz: bis 2 GHz; bis 1 GHz: bis 5 GHz; darüber das Fünffache, höchstens 6 GHz). Unter 30 MHz gibt es keine Abstrahlgrenzen; dort zählt die leitungsgebundene Störaussendung an den Anschlüssen.',
       },
       'cispr32-a': {
         name: 'CISPR 32 / EN 55032 Klasse A',
@@ -774,7 +777,7 @@ export const de = {
       'fcc15-b': {
         name: 'FCC Part 15 Klasse B (USA)',
         short: 'FCC 15 B',
-        text: 'USA: unbeabsichtigte Strahler, also digitale Geräte, für den Wohnbereich (47 CFR Part 15, Subpart B, §15.109). Grenzwerte in µV/m in 3 m: 100 (30–88 MHz), 150 (88–216 MHz), 200 (216–960 MHz), 500 (über 960 MHz), also 40, 43,5, 46 und 54 dBµV/m. Bis 1 GHz Quasi-Peak, darüber Mittelwert; die Spitze darf 20 dB darüber liegen. Die Bänder sind feiner gestuft als bei CISPR, deshalb ist FCC zwischen 30 und 88 MHz und zwischen 216 und 230 MHz etwas anders streng.',
+        text: 'USA: unbeabsichtigte Strahler, also digitale Geräte, für den Wohnbereich (47 CFR Part 15, Subpart B, §15.109). Grenzwerte in µV/m in 3 m: 100 (30–88 MHz), 150 (88–216 MHz), 200 (216–960 MHz), 500 (über 960 MHz), also 40, 43,5, 46 und 54 dBµV/m. Bis 1 GHz Quasi-Peak, darüber Mittelwert; die Spitze darf 20 dB darüber liegen. Gegenüber CISPR 32 Klasse B in 3 m: 30–88 MHz gleich (40 dBµV/m), 88–230 MHz ist FCC 3,5 bis 6 dB lockerer, 230–960 MHz 1 dB strenger, 960–1000 MHz 7 dB lockerer, 1–3 GHz 4 dB lockerer. An Bandgrenzen gilt der strengere Wert.',
       },
       'fcc15-a': {
         name: 'FCC Part 15 Klasse A (USA)',
@@ -794,7 +797,7 @@ export const de = {
       cispr14: {
         name: 'CISPR 14-1 / EN 55014-1',
         short: 'CISPR 14-1',
-        text: 'Haushaltsgeräte, Elektrowerkzeuge und ähnliche Geräte. Die Abstrahlung 30 MHz–1 GHz hat dieselben Werte wie CISPR 32 Klasse B (30/37 dBµV/m in 10 m). Dazu kommen Störleistung an den Leitungen und Knackstörungen, die die App nicht rechnet.',
+        text: 'Haushaltsgeräte, Elektrowerkzeuge und ähnliche Geräte. Die Abstrahlung 30 MHz–1 GHz hat dieselben Werte wie CISPR 32 Klasse B (30/37 dBµV/m in 10 m). Je nach Gerät wird statt der Abstrahlung die Störleistung an den Leitungen (30–300 MHz) gemessen; dazu kommen Knackstörungen. Beides rechnet die App nicht.',
       },
     },
   },

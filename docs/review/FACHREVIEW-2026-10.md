@@ -5,6 +5,23 @@ vom selben Tag. Während des Reviews wurden `src/physics/currents.ts`, `src/phys
 `src/fullwave/job.ts` parallel geändert; Zeilennummern beziehen sich auf den gelesenen Stand
 und können sich um einige Zeilen verschoben haben.
 
+## Stand der Umsetzung (2026-10-05)
+
+| Nr. | Thema | Stand |
+|---|---|---|
+| 1 | „behoben X dB leiser“ | umgesetzt: angezeigt wird die Wirkung der Behebung nur dieser Stelle, mit Vorzeichen; der Anteil ordnet nur noch |
+| 2 | Fernfeld 6 dB zu hoch | umgesetzt: Rückstrom für das Fernfeld in der Fläche (`imageAt: 'plane'`), Test `tests/farMoment.test.ts` |
+| 3 | Grenzwert an Bandgrenzen | umgesetzt: strengerer Wert an jeder Stufe |
+| 4 | Schweregrad zu sicher | umgesetzt: „hohe Priorität / ansehen / nachrangig“, Erklärung ohne Prüfaussage |
+| 5 | Gleichtakt-Vorbehalt zu klein | umgesetzt: neue Texte, Steckererkennung über Bibliothek und Referenz, dazu eine Gleichtakt-Abschätzung mit Kabeln (Clemson-Methode) |
+| 6 | Flächentrennung, schmale Schlitze | umgesetzt: Netz je Rasterzelle, Lücken ab 0,2 mm, Löcher nach Ausdehnung, Meldung nach echtem Umweg; Testplatinen `split-plane`, `narrow-slot` |
+| 7, 8, 11–16, 18, 20–25, 28, 29 | Texte | umgesetzt wie vorgeschlagen |
+| 9 | Schaltregler-Vorbehalte | umgesetzt (Klingeln, Drossel), dazu Befund „heiße Schleife“ nach Fläche |
+| 10 | Ausdünnung mit √k | umgesetzt: Grenzwertvergleich mit der Amplitude der einzelnen Linie |
+| 17 | Laufzeitversatz bei Paaren | als Vorbehalt umgesetzt, nicht gerechnet |
+| 19 | Schraffur in PHYSIK.md | Text korrigiert, Schraffur nicht umgesetzt |
+| 26, 27 | Formeltext, Summe | umgesetzt |
+
 ## Umfang und Vorgehen
 
 Gelesen wurden: `src/report/explain.ts`, `src/report/texts.ts`, `src/report/report.ts`,

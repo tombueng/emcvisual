@@ -50,7 +50,7 @@ export const en: Strings = {
     reasons: {
       'clock-name': 'Net name looks like a clock',
       'data-name': 'Net name looks like a data line',
-      'usb-pair': 'USB data pair',
+      'usb-pair': 'USB data pair (assumed full speed, 12 Mbit/s; for high speed, 480 Mbit/s, change the values and the load model)',
       'diff-pair': 'Differential pair by name',
       regulator: 'Switching regulator with input capacitor',
       inductor: 'Storage inductor at the switching node',
@@ -177,7 +177,7 @@ export const en: Strings = {
     tab: 'Diagnostics',
     viewTab: 'View',
     warnings: 'Layout hints',
-    none: 'Nothing conspicuous for the active sources.',
+    none: 'None of the checked problems for the active sources (gaps and splits under lines, reference changes, missing stitching vias, unterminated lines, plane edges, hot loops, common mode with cables). Not checked: filters and shields at connectors, heat sinks, enclosure, decoupling.',
     kinds: {
       'return-gap': (d) =>
         d.split
@@ -217,7 +217,7 @@ export const en: Strings = {
     hotspotsNone: 'No field computed yet.',
     near: 'near',
     far: (std: string) => `Far-field estimate (${std}, 3 m)`,
-    farHint: 'Differential mode of the board only, no cables. A rough estimate, not a test result.',
+    farHint: 'Top: differential mode of the board only (model). Below, where it applies: common mode with cables as a worst-case estimate. Both are orientation, not a test result.',
     margin: (db: number) => (db >= 0 ? `${db.toFixed(0)} dB over the limit` : db < -100 ? 'more than 100 dB margin' : `${(-db).toFixed(0)} dB margin`),
     rankHint: 'Order: the source closest to the limit (3 m) first, within it the fix with the biggest effect.',
     gainAlone: (v: string) => `3 m (model): only this spot fixed, ${v} quieter`,
@@ -244,7 +244,7 @@ export const en: Strings = {
     limit: (std: string) => std,
     csv: 'CSV',
     noProbe: 'No probe over the board',
-    total: 'Total',
+    total: 'Total (sources assumed independent)',
     peak: 'Highest line',
   },
   audio: {
@@ -301,7 +301,7 @@ export const en: Strings = {
     showMeasured: 'Show',
     showDiff: 'Difference to simulation',
     fit: 'Fit sources',
-    fitHint: 'Finds for each source how much louder or quieter it is in the measurement than in the model (selected frequencies).',
+    fitHint: 'Finds for each source how much louder or quieter it is in the measurement than in the model (selected frequencies). The probe is computed as an ideal open-circuit voltage; into 50 Ω its self-inductance limits it from about 50 Ω/(2π·L) (10 mm loop: around 400 MHz), above that the calculation reads too high. For absolute values use the manufacturer\'s probe factor, otherwise the fit attributes probe errors to the sources.',
     fitTitle: 'Sources fitted to the measurement',
     fitDb: (db: number) => (db >= 0 ? `${db.toFixed(1)} dB louder` : `${(-db).toFixed(1)} dB quieter`),
     fitNotSeen: 'too weak at these frequencies',
@@ -320,7 +320,7 @@ export const en: Strings = {
     origin: 'Magnetic field from',
     origins: { fast: 'Fast (stages 1–2)', fullwave: 'Full wave (openEMS)' },
     eOnly: 'openEMS results hold the magnetic field only; the electric field comes from the fast model.',
-    hint: 'Solves Maxwell\'s equations without approximation (resonances, radiation). Runs locally with openEMS, not in the browser: export the job, run the command below in the project folder (setup: tools/openems/README.md), load the result. Inductors stay from the fast model.',
+    hint: 'Solves Maxwell\'s equations numerically (FDTD), without the approximations of the fast model: delays, resonances and the board\'s radiation are included. Limits: 0.5–1 mm grid, copper as a perfect conductor (resonances rather too sharp), simplified parts (capacitors as shorts, switch as a resistor), no cables, no enclosure; the current spectrum still comes from the source model. Runs locally with openEMS, not in the browser: export the job, run the command below in the project folder (setup: tools/openems/README.md), load the result. Inductors stay from the fast model.',
     exportJob: 'Export job',
     loadResult: 'Load result',
     loaded: (n: number, f0: string, f1: string, k: number) => `${n} sources, ${f0} to ${f1} at ${k} frequencies`,
@@ -397,7 +397,7 @@ export const en: Strings = {
     },
     detour: (mm: number, via: string) => (via ? `${mm} mm detour via ${via}` : `${mm} mm detour`),
     peak: (db: string) => `near field up to ${db} dBµA/m`,
-    far: (m: string) => `3 m: ${m}`,
+    far: (m: string) => `3 m (model): ${m}`,
     pointHint: 'Click to look closer',
   },
   parts: {
@@ -508,8 +508,8 @@ export const en: Strings = {
     fieldNames: { 'waveform.f0': 'Frequency', 'waveform.tr': 'Rise time', 'waveform.amplitude': 'Amplitude' },
     calc: {
       path: (mm: string, plane: string) => `Current path of the source: ${mm} mm, reference plane ${plane}.`,
-      moment: (mm2: string) => `Magnetic dipole moment per ampere of reference current (the effective loop area, with image currents and detours): |m| = ${mm2} mm².`,
-      formula: 'Every spectral line I radiates at 3 m with E = 2 · η0 · k² · |m| · I / (4π · r), k = 2π f / c, r = 3 m, factor 2 for the reflection off the test-site floor (Ott, eq. 12-2).',
+      moment: (mm2: string) => `Magnetic dipole moment per ampere of reference current from forward and return current (return in the reference plane under the line, with detours): |m| = ${mm2} mm².`,
+      formula: 'Every spectral line I radiates at 3 m with E = 2 · η0 · k² · |m| · I / (4π · r), k = 2π f / c, r = 3 m; the factor 2 is the worst-case reflection off the test-site floor (Ott, eq. 12-2). Valid for electrically small structures and for the differential mode only.',
       worst: (std: string, f: string, db: string, lim: string, margin: string) => `Strongest line against the limit (${std}, 3 m): ${f} at ${db} dBµV/m against ${lim} dBµV/m, i.e. ${margin}.`,
       fixed: (mm2: string, g: string, db: string, margin: string) => `Fixed: |m| ≈ ${mm2} mm², every line ${g} lower; the strongest line would be at ${db} dBµV/m, i.e. ${margin}.`,
       fixedSolid: (mm2: string, g: string, db: string, margin: string) => `Over continuous planes: |m| = ${mm2} mm², every line ${g} lower; the strongest line would be at ${db} dBµV/m, i.e. ${margin}.`,
@@ -517,19 +517,22 @@ export const en: Strings = {
     doubt: {
       inputs: (list: string, fEdge: string) =>
         `${list} ${list.includes(',') ? 'are' : 'is'} not backed by a datasheet (default or assumption). Every line scales with the amplitude; ${fEdge ? `the rise time decides where the harmonics start falling at 40 dB/decade (here from about ${fEdge}): halved, it raises the lines above by up to 6 dB.` : 'for the ripple current the value counts directly.'}`,
-      aboveValidity: (f: string, fs: string) => `The strongest line (${f}) is above the limit up to which the line is electrically short (${fs}). Delays and reflections are not computed there; deviations of 10 dB either way are possible.`,
+      aboveValidity: (f: string, fs: string) => `The strongest line (${f}) is above the limit up to which the line is electrically short (${fs}). Delays and reflections are not computed there; deviations of 10 dB or more either way are possible, much more at resonances.`,
       boardSize: (mm: string, f: string) => `The board is ${mm} mm across and reaches half a wavelength from about ${f}. From there resonances of the board and the planes can raise single lines a lot; the model has no resonances.`,
       cables: (n: number) =>
         n > 0
-          ? `Attached cables are not in the calculation (the board has ${n} connectors). Common-mode currents on cables often radiate 10–20 dB more than the board itself; the result is then too optimistic.`
-          : 'Cables are not in the calculation. Once cables are attached, their common-mode currents often dominate.',
-      cavity: (a: string, b: string, f: string) => `The cavity between ${a} and ${b} has its first resonance at about ${f}. There the layer change can radiate far more than computed.`,
+          ? `Attached cables are not in this calculation (the board has ${n} connectors). Common-mode currents on cables often exceed the board's differential-mode emission by 20 dB or more; a few µA of common-mode current on 1 m of cable reach the limit at 100 MHz. The result is then far too optimistic; the estimate "with cables" (Diagnostics tab) shows the order of magnitude.`
+          : 'Cables are not in this calculation. Even without cables a board radiates through common-mode paths the model does not know: voltage drop across the plane, coupling to heat sinks and enclosure, the supply lead in the test set-up.',
+      cavity: (a: string, b: string, f: string) => `The cavity between ${a} and ${b} has its first resonance roughly at about ${f} (from the board size; smaller plane islands resonate higher). There the layer change can radiate far more than computed.`,
       slotCm: 'The "fixed … quieter" figure only counts the larger differential-mode loop. The return current also builds a voltage across the gap that drives both plane halves and attached cables against each other. In measurements this common-mode effect is often much larger (10 dB and more) and it is not computed here. That is why the finding is rated higher than the figure alone would give.',
       cmWorstCase: 'The common-mode estimate assumes a resonant cable at every frequency (radiation resistance 100 Ω) and a test site with ground reflection. The method\'s source says itself: rather too high. Real cables are resonant at single frequencies only; ferrites, shielded cables with a good shield connection or a metal enclosure lower it a lot. On the other hand, gaps in the plane, which raise the voltage, and several sources at once are missing.',
-      shortestPath: 'The return detour follows the shortest way through the copper. Real current spreads wider, so the extra area is rather overstated and the gain of the fix a bit smaller.',
-      idealMirror: 'Over an ideal, infinite plane current and image almost cancel, so the gain of a continuous plane looks very large. Real gains are more like 10–20 dB.',
+      shortestPath: 'The return detour is computed as a single filament along the shortest path. The real current spreads around it, so the extra area can be larger or smaller. Usually more important: the voltage across the gap, which drives common-mode currents, is not computed.',
+      idealMirror: 'Over an ideal, infinite plane current and image almost cancel, so the gain of a continuous plane looks very large. On a finite board it is smaller; how much depends on plane size, loop height and frequency and is not computed here (the full wave, stage 3, shows it).',
+      loopRinging: 'The loop current is an ideal trapezoid. Real switching edges ring with the hot-loop inductance and the switch capacitance, mostly between 50 and 200 MHz. That resonance peak is often well above the trapezoid envelope and is not computed.',
+      inductor: 'The effective turns of the stray field (open 12, semi-shielded 4, shielded 0.8) are a rough rule of thumb, not manufacturer data. Only the triangular ripple current is computed; coupling of the switch-node edges through the winding capacitance, which dominates above a few MHz, is missing.',
+      skew: 'The pair\'s common-mode part comes only from the set amplitude imbalance (default 5 %, not measured). Skew between P and N is not computed; its common-mode part grows with frequency (about 3 % at 10 ps skew and 1 GHz).',
       trapezoid: 'The spectrum comes from an ideal trapezoid. Overshoot and ringing of real edges raise single harmonics; a spread-spectrum clock lowers them by several dB (neither is computed).',
-      detector: 'The test measures with a quasi-peak detector, turns the device and scans the antenna height; the calculation takes the strongest direction with full floor reflection. For the board alone that is rather an upper estimate.',
+      detector: 'The test measures with a quasi-peak detector (for a stable clock line the same as the peak), turns the device and scans the antenna height; the calculation takes the strongest direction with full floor reflection. For the board\'s differential-mode part that is rather an upper estimate; it says nothing about the emission of the whole device.',
       planesDetected: 'The reference planes are detected automatically, not confirmed. If an assignment is wrong (View → Layers), the finding is wrong.',
     },
     refs: {
@@ -552,8 +555,8 @@ export const en: Strings = {
           'The app rasterises every reference plane (0.25 mm) and checks under every piece of line whether there is copper. It reports gaps of 1 mm or more with copper on both sides; small clearances (up to 3 mm², e.g. around vias) count as copper. The return model (stage 2) finds the shortest way through the plane copper around the gap and computes it as a real current path.',
         fixes: () => [
           'Reroute the line so it stays over continuous plane.',
-          'Close the gap, or make the plane continuous under the line. Split planes only where no fast signals cross.',
-          'If the line has to cross: a stitching capacitor (e.g. 100 nF, 0402) across the gap, right next to the crossing, between the two plane parts.',
+          'Close the gap, or make the plane continuous under the line. Do not split the return plane (usually GND) at all; separate analog and digital by placement, not by slots. Split supply islands only on layers that fast signals do not use as reference.',
+          'If the line has to cross: a stitching capacitor across the gap, right at the crossing, with short, closely spaced vias. From about 100 MHz the inductance of package and vias (about 1–3 nH) increasingly limits it; the capacitance value hardly matters there. Not crossing the gap is always better.',
           'Change to a layer with a continuous reference plane, with a stitching via right next to the layer change.',
           'Slow the edges (longer rise time): that lowers every harmonic above about 1/(π·tr).',
         ],
@@ -572,15 +575,15 @@ export const en: Strings = {
             ? `Under part of the current loop (${p.gap} mm on ${p.layer}) there is no reference plane ${p.planeNet}, e.g. a cut-out under the regulator.`
             : `Under ${p.gap} mm of the line on ${p.layer} there is no reference plane ${p.planeNet}, and no copper leads around it.`,
         why: () =>
-          'Over a continuous plane the current has its mirror image flowing the other way beneath it; from afar the two nearly cancel and only a very flat loop remains. Without the plane the loop radiates with its full area. In switching regulators the hot loop (input capacitor → switch → ground) with amperes and nanosecond edges is the strongest source on the board.',
+          'Over a continuous plane the current has its mirror image flowing the other way beneath it; from afar the two nearly cancel and only a very flat loop remains. Without the plane the loop radiates with its full area. In switching regulators the hot loop (input capacitor → switch → ground) with amperes and nanosecond edges is often one of the strongest sources on the board, along with the electric field of the switch node and noise conducted out on the input lines.',
         detected: () =>
           'As for gaps under lines: rasterised reference planes, gaps of 1 mm or more. Without a way around, the app computes the loop there without the mirror image. The effect covers all gaps under this source together: the comparison is the same source over continuous planes.',
         fixes: (p: P) =>
           p.loop
             ? [
-                'Make the layer right under the hot loop a continuous GND plane. Cut-outs only where the datasheet asks for them (usually under the switch node, not under the loop).',
+                'Make the layer right under the hot loop and under the switch node a continuous GND plane. Cut-outs only where the datasheet explicitly asks for them; the usual keep-out is top-layer copper under the inductor, not the GND plane.',
                 'Shrink the loop: input capacitor as close as possible to VIN and PGND, short wide connections, capacitor on the same layer as the regulator.',
-                'Add a small high-frequency capacitor (e.g. 100 nF, 0402) right at VIN/PGND.',
+                'Put a capacitor in a small package (e.g. 0402) closest to VIN/PGND, with the shortest loop. It works through its low mounting inductance, not its value. Together with the larger input capacitors it can form a parallel resonance; check the impedance curve when in doubt.',
                 'Slow the switching edges if the regulator allows it (bootstrap resistor, slew-rate setting).',
               ]
             : ['Make the plane continuous under the line.', 'Reroute the line over continuous plane.', 'Change to a layer with a reference plane (with a stitching via).'],
@@ -605,13 +608,13 @@ export const en: Strings = {
           'At every via of the signal the app determines the reference planes before and after the layer change. If they are different nets, it finds the nearest two-pin part between them and routes the return current as a path through the planes and that part.',
         fixes: (p: P) => [
           `Put both signal layers on the same reference net (e.g. ${p.planeNet} under both). Then a stitching via right next to the signal via is enough.`,
-          `If the change has to stay: a capacitor (100 nF, 0402) between ${p.planeNet} and ${p.otherNet} right at the signal via (less than 2 mm).`,
+          `If the change has to stay: a capacitor between ${p.planeNet} and ${p.otherNet} right at the signal via (less than 2 mm), small package, short vias. It works up to a few hundred MHz; above that the capacitance between the planes carries most of the return.`,
           'Avoid the layer change, or put it where a decoupling capacitor sits anyway.',
           'Slow the edges if the signal allows it.',
         ],
         avoid: (p: P) => [
           `Do not let fast signals change between layers with different references (${p.planeNet}, ${p.otherNet}): the return current has no direct way at the via.`,
-          'Do not rely on the capacitance between the planes alone: at high frequencies it is a resonator, not a connection.',
+          'Do not rely on the capacitance between the planes alone: at high frequencies it carries much of the return current (the more the thinner the dielectric), but at its cavity resonances it becomes high impedance.',
           'Do not put the bridging capacitor far away: every millimetre lengthens the loop.',
         ],
         limits: () =>
@@ -624,7 +627,7 @@ export const en: Strings = {
         why: () =>
           'The return current has to run to the nearest connection between the planes and back under the line. The farther that connection, the bigger the extra loop and the more the cavity between the planes is excited.',
         detected: (p: P) => `Around every signal via with a layer change the app looks for vias or plated pads of the plane net within ${p.radius} mm.`,
-        fixes: (p: P) => [`Put a ${p.planeNet} stitching via right next to every signal via that changes layers (1–2 mm away).`, 'For differential pairs one stitching via per pair, symmetric.'],
+        fixes: (p: P) => [`Put a ${p.planeNet} stitching via right next to every signal via that changes layers (1–2 mm away).`, 'For differential pairs one or two ground vias symmetric to the pair, ideally one next to each signal via.'],
         avoid: () => [
           'Avoid layer changes of fast signals without a stitching via next to them: the return current otherwise finds its own way between the planes.',
           'Do not share one distant via for many signals: the loops get large and couple to each other.',
@@ -640,7 +643,7 @@ export const en: Strings = {
         detected: (p: P) =>
           `From the longest path in the net (${p.length} mm) and the effective permittivity (${p.eeff}) follows f = c / (4 · L · √εeff). Reported when that frequency is below the upper spectrum limit, the source still has at least 1 % of its strongest line there, and neither a series resistor (10 Ω or more, at most 15 mm from the driver) nor a termination is entered.`,
         fixes: () => [
-          'A series resistor right at the driver (about Z0 minus the driver output resistance, typically 22–33 Ω): the reflection from the open end is absorbed at the driver, and the edge gets a little slower.',
+          'A series resistor right at the driver (about Z0 minus the driver output resistance, typically 22–33 Ω) when the line goes to one receiver at its end: the reflection from the open end is absorbed at the driver, and the edge gets a little slower. With several receivers along the line the middle ones see a step; then terminate at the end or route as a star.',
           'Route the line shorter: the resonance moves up and out of the measured range.',
           'Slow the edges as far as the timing allows (drive strength, slew rate): above about 1/(π·tr) the harmonics fall at 40 dB per decade.',
           'For solid numbers on the resonance peak, run the full wave (stage 3, openEMS).',
@@ -742,10 +745,10 @@ export const en: Strings = {
     },
   },
   severity: {
-    critical: 'critical',
+    critical: 'high priority',
     check: 'check',
-    minor: 'minor',
-    scale: 'Severity: red decides the test (the source is near or over the limit at 3 m and this finding contributes a lot), yellow is worth a look, green radiates but does not stand out.',
+    minor: 'low priority',
+    scale: 'Priority in the model: red = the source is near or over the limit at 3 m in the model and this finding contributes a lot, or it is a mistake tests are known to fail on (gap under fast lines, large hot loop); yellow = worth a look; green = far below the limit in the model. This orders the work and says nothing about the test result: the app computes common-mode currents on cables and on the board itself only as a rough worst-case estimate, and they often exceed the differential-mode emission by 20 dB or more.',
     reason: (margin: string, gain: string) => `${margin}; ${gain}`,
     noGain: 'effect not quantified',
   },
@@ -753,13 +756,13 @@ export const en: Strings = {
     title: 'Standard for the limit',
     pick: 'Standard',
     allTitle: 'All standards explained',
-    common: 'The app compares only the radiation of the board itself (differential mode, no cables or enclosure) with the limit – an orientation, not a test verdict. The limits apply to quasi-peak below 1 GHz and average above; a distance a standard does not tabulate is converted with 20 dB per decade.',
+    common: 'The app compares the radiation of the board itself (differential mode, no enclosure) with the limit, plus a rough common-mode estimate with cables – an orientation, not a test verdict. The limits apply to quasi-peak below 1 GHz and average above; at band edges the tighter limit applies; a distance a standard does not tabulate is converted with 20 dB per decade (a convention of the standards, not physics at 3 m and 30 MHz). Each spectral line is compared on its own, as the measuring receiver shows it (120 kHz bandwidth below 1 GHz, 1 MHz above), as long as the fundamental is above that bandwidth; below it the receiver combines several lines and reads higher than the calculation.',
     missing: 'Not included: CISPR 25 (vehicle components) and MIL-STD-461 RE102 (military). Both measure at 1 m on a set-up with a cable harness that dominates the emission; the board model cannot estimate that sensibly.',
     items: {
       'cispr32-b': {
         name: 'CISPR 32 / EN 55032 class B',
         short: 'CISPR 32 B',
-        text: 'Multimedia equipment (IT, audio and video, networking) for residential use – the usual standard for electronics in Europe (CE marking via EN 55032). Class B is the stricter class. Measured on an open-area test site or in a semi-anechoic chamber at 3 m or 10 m: below 1 GHz with a quasi-peak detector (40/47 dBµV/m at 3 m), above with average (50/54 dBµV/m) and peak (20 dB higher). Below 30 MHz there are no radiated limits; conducted emission at the ports counts there.',
+        text: 'Multimedia equipment (IT, audio and video, networking) for residential use (CE marking via EN 55032); industrial and lab electronics usually fall under EN 55011 or EN 61326-1, household appliances under EN 55014-1. Class B is the stricter class. Measured on an open-area test site or in a semi-anechoic chamber at 3 m or 10 m: below 1 GHz with a quasi-peak detector (40/47 dBµV/m at 3 m; 42–35/42 dBµV/m in a fully anechoic room), above with average (50/54 dBµV/m) and peak (20 dB higher), above 1 GHz only as far as the highest internal frequency requires (up to 108 MHz: only to 1 GHz; up to 500 MHz: to 2 GHz; up to 1 GHz: to 5 GHz; above: five times, at most 6 GHz). Below 30 MHz there are no radiated limits; conducted emission at the ports counts there.',
       },
       'cispr32-a': {
         name: 'CISPR 32 / EN 55032 class A',
@@ -769,7 +772,7 @@ export const en: Strings = {
       'fcc15-b': {
         name: 'FCC Part 15 class B (USA)',
         short: 'FCC 15 B',
-        text: 'USA: unintentional radiators, i.e. digital devices, for residential use (47 CFR Part 15, Subpart B, §15.109). Limits in µV/m at 3 m: 100 (30–88 MHz), 150 (88–216 MHz), 200 (216–960 MHz), 500 (above 960 MHz), i.e. 40, 43.5, 46 and 54 dBµV/m. Quasi-peak up to 1 GHz, average above; the peak may be 20 dB higher. The bands are finer than CISPR, so FCC is a bit stricter or looser between 30 and 88 MHz and between 216 and 230 MHz.',
+        text: 'USA: unintentional radiators, i.e. digital devices, for residential use (47 CFR Part 15, Subpart B, §15.109). Limits in µV/m at 3 m: 100 (30–88 MHz), 150 (88–216 MHz), 200 (216–960 MHz), 500 (above 960 MHz), i.e. 40, 43.5, 46 and 54 dBµV/m. Quasi-peak up to 1 GHz, average above; the peak may be 20 dB higher. Compared with CISPR 32 class B at 3 m: 30–88 MHz is the same (40 dBµV/m), 88–230 MHz FCC is 3.5 to 6 dB looser, 230–960 MHz 1 dB stricter, 960–1000 MHz 7 dB looser, 1–3 GHz 4 dB looser. At band edges the tighter limit applies.',
       },
       'fcc15-a': {
         name: 'FCC Part 15 class A (USA)',
@@ -789,7 +792,7 @@ export const en: Strings = {
       cispr14: {
         name: 'CISPR 14-1 / EN 55014-1',
         short: 'CISPR 14-1',
-        text: 'Household appliances, electric tools and similar equipment. The radiated emission 30 MHz–1 GHz has the same values as CISPR 32 class B (30/37 dBµV/m at 10 m). Disturbance power on the leads and clicks come on top; the app does not compute them.',
+        text: 'Household appliances, electric tools and similar equipment. The radiated emission 30 MHz–1 GHz has the same values as CISPR 32 class B (30/37 dBµV/m at 10 m). Depending on the device, the disturbance power on the leads (30–300 MHz) is measured instead of the radiation; clicks come on top. The app computes neither.',
       },
     },
   },

@@ -2,6 +2,7 @@
  * Combine per-source |h|² volumes with spectral weights (docs/stufe-1/PHYSIK.md §6) and
  * convert to an 8-bit volume of normalised dBµA/m for the 3D texture.
  */
+import { lineAmp } from '../physics/spectrum';
 import type { Line } from '../physics/spectrum';
 
 /** Dynamic range stored in the texture below the maximum, dB. */
@@ -25,7 +26,7 @@ export function selectionWeight(lines: Line[], sel: Selection): number {
     if (sel.mode === 'all') w += l.amp * l.amp;
     else if (sel.mode === 'band') {
       if (l.f >= sel.f0 && l.f < sel.f1) w += l.amp * l.amp;
-    } else if (Math.abs(l.f - sel.f) <= Math.max(1, sel.f * 1e-6)) w += l.amp * l.amp;
+    } else if (Math.abs(l.f - sel.f) <= Math.max(1, sel.f * 1e-6)) w += lineAmp(l) ** 2;
   }
   return w;
 }

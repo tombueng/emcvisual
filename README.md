@@ -35,11 +35,17 @@ Alles läuft im Browser. Die Platinendatei verlässt den Rechner nicht.
 - Feld als leuchtendes Volumen, Isoflächen, Schnittebene, Feldlinien der gewählten Quelle, Ameisenblick
 - Sprechblasen in 3D: die Hinweise nummeriert an ihrer Stelle auf der Platine (mit der Wirkung
   auf das Fernfeld), Quellen mit Nahfeld und Abstand zum Grenzwert, auf Wunsch Hotspots
-- virtuelle Nahfeldsonde mit Spektrumanalysator, Fernfeld-Abschätzung gegen CISPR 32 B
+- virtuelle Nahfeldsonde mit Spektrumanalysator, Fernfeld-Abschätzung gegen wählbare Normen
+  (CISPR 32, CISPR 11, CISPR 14-1, FCC Part 15) mit Erklärung jeder Norm
 - Klang: jede Quelle klingt, laut wo das Feld stark ist
-- Diagnose: unterbrochene Rückstrompfade, Bezugswechsel an Vias, fehlende Stitching-Vias,
-  Hotspots mit den Netzen und Bauteilen in der Nähe; die Hinweise sind nach ihrer Wirkung auf
-  das Fernfeld in 3 m geordnet („behoben 11 dB leiser“), die lauteste Quelle zuerst
+- Diagnose: unterbrochene Rückstrompfade (auch Flächentrennungen und schmale Schlitze),
+  Bezugswechsel an Vias, fehlende Stitching-Vias, ungedämpfte Leitungen mit Resonanz im
+  Messbereich, Leitungen am Rand der Fläche, Leitungen ohne Bezugsfläche, zu große heiße
+  Schleifen von Schaltreglern, Gleichtakt mit Kabeln (Abschätzung im ungünstigsten Fall).
+  Die Hinweise sind nach ihrem Anteil am berechneten Fernfeld geordnet; die Zahl an der Blase
+  sagt, was das Beheben nur dieser Stelle im Modell bringt. Jede Diagnose hat eine Priorität
+  (rot, gelb, grün), eine Erklärung mit Rechnung, Abhilfe, Dingen, die man vermeiden sollte,
+  und den Gründen, warum die Aussage hier falsch sein kann
 - echte 3D-Bauteilmodelle: aus deinem Modellordner oder GitHub-Repo (STEP, WRL, GLB, STL, nach
   Dateinamen gefunden), Standardteile aus KiCads Bibliothek, oder aus KiCads GLB-Export
 - Szenario als JSON speichern, PNG- und CSV-Export, EMV-Bericht als HTML (druckbar als PDF)
@@ -139,10 +145,15 @@ Beispiel: [Glasgow revC3](https://tombueng.github.io/emcvisual/?board=https://ra
 
 ## Was die Simulation kann und was nicht
 
-Sie zeigt zuverlässig, **wo** Stromschleifen Felder erzeugen und wie sich Änderungen auswirken
-(Schleifenfläche, Rückstrompfad, Flankensteilheit). Sie sagt **nicht** voraus, ob ein Gerät
-eine EMV-Prüfung besteht: keine Resonanzen, keine Kabel, kein Gehäuse. Die Annahmen und
-Grenzen stehen in [docs/stufe-1/PHYSIK.md](docs/stufe-1/PHYSIK.md).
+Sie zeigt, **wo** Stromschleifen Magnetfelder erzeugen und wie sich Änderungen an
+Schleifenfläche, Rückstrompfad und Flanken auf diese Felder auswirken, und sie findet die
+bekannten Layoutfehler (geprüft an erzeugten Fehler-Platinen, `tools/emc-cases`). Sie sagt
+**nicht** voraus, ob ein Gerät eine EMV-Prüfung besteht: Prüfungen scheitern meist an
+Gleichtaktströmen auf Kabeln, die die App nur grob im ungünstigsten Fall abschätzt; keine
+Resonanzen, kein Gehäuse. Jede Erklärung sagt, warum ihre Zahl hier falsch sein kann. Die
+Annahmen und Grenzen stehen in [docs/stufe-1/PHYSIK.md](docs/stufe-1/PHYSIK.md), die bekannten
+Fehlerarten in [docs/research/EMV-FEHLERKATALOG.md](docs/research/EMV-FEHLERKATALOG.md), das
+Fachreview in [docs/review/FACHREVIEW-2026-10.md](docs/review/FACHREVIEW-2026-10.md).
 
 ## Dokumentation
 

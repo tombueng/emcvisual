@@ -2,6 +2,7 @@
  * Orchestration: board loading, source models, volume jobs, composition, probe readouts.
  * Holds the large typed arrays outside the reactive state.
  */
+import { lineAmp } from '../physics/spectrum';
 import { parseBoard } from '../kicad/parseBoard';
 import { detectPlanes, covered, type PlaneLayer } from '../model/planes';
 import { worldFrame, toBoard, type WorldFrame } from '../model/world';
@@ -700,11 +701,16 @@ class Engine {
       for (const l of this.linesOf(m)) {
         const hl = fwValues ? Math.sqrt(valueAtFrequency(fw!.freqs, fwValues, l.f)) : hv;
         if (fwValues && hRef === 0) hRef = hl;
-        let a = l.amp * hl;
-        if (asV && !isE) a *= 2 * Math.PI * l.f * MU0 * area;
+        // the line as a receiver shows it; the band power keeps the thinned-out lines' share
+        let a = lineAmp(l) * hl;
+        let ap = l.amp * hl;
+        if (asV && !isE) {
+          a *= 2 * Math.PI * l.f * MU0 * area;
+          ap *= 2 * Math.PI * l.f * MU0 * area;
+        }
         if (!(a > 0)) continue;
         lines.push({ f: l.f, db: 20 * Math.log10(a) + 120 });
-        power += a * a;
+        power += ap * ap;
         const key = Math.round(l.f);
         totals.set(key, (totals.get(key) ?? 0) + a * a);
       }
@@ -857,7 +863,7 @@ class Engine {
       const lines =
         fw && meta
           ? m.lines
-              .map((l) => ({ f: l.f, e: l.amp * valueAtFrequency(fw.freqs, meta.farE3mPerA, l.f) * (3 / distance) }))
+              .map((l) => ({ f: l.f, e: lineAmp(l) * valueAtFrequency(fw.freqs, meta.farE3mPerA, l.f) * (3 / distance) }))
               .filter((l) => l.e > 0)
               .map((l) => ({ f: l.f, db: 20 * Math.log10(l.e) + 120 }))
           : farField(moment, m.lines, distance);

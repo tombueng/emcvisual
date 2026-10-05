@@ -9,14 +9,16 @@ löschen, sondern als „ersetzt durch Nr. X“ markieren.
 2. **2026-10-04 · TypeScript + Vite + Svelte 5 + three.js.** Svelte für die Panels (wenig
    Laufzeit-Overhead, gut lesbar), three.js imperativ für die Szene, kein React-Three-Fiber.
    Vitest für Tests, weil es Vites Konfiguration teilt.
-3. **2026-10-04 · Stufe 1 rechnet nur das H-Feld.** Es zeigt Stromschleifen, die häufigste
-   EMV-Ursache auf Platinen; das E-Feld folgt als optionaler Meilenstein (M8).
+3. **2026-10-04 · Stufe 1 rechnet nur das H-Feld.** Es zeigt Stromschleifen, eine häufige
+   EMV-Ursache auf Platinen (Prüfungen scheitern meist an Gleichtaktströmen, die solche
+   Schleifen antreiben); das E-Feld folgt als optionaler Meilenstein (M8).
 4. **2026-10-04 · Feldmuster je Quelle frequenzunabhängig, Spektrum getrennt.** Ermöglicht
    Echtzeit-Änderungen ohne Neuberechnung (PHYSIK.md §6).
 5. **2026-10-04 · Quellen untereinander inkohärent (Leistungssumme).** Unabhängige
    Oszillatoren sind nicht phasenstarr; innerhalb einer Quelle wird kohärent gerechnet.
 6. **2026-10-04 · Rückstrom über Spiegelung mit lokaler Flächenbedeckung.** Einfach, schnell,
-   physikalisch richtig für durchgehende Flächen; Aussparungen verschieben den Spiegel zur
+   für das Nahfeld über großen, durchgehenden Flächen richtig (für das Fernfeld kleiner
+   Platinen nicht, siehe Nr. 34); Aussparungen verschieben den Spiegel zur
    nächsten Fläche. Echte Umwege kommen in Stufe 2.
 7. **2026-10-04 · Rechnung im rechtshändigen Weltsystem (X = x, Y = Höhe, Z = KiCad-y).**
    Vermeidet Vorzeichenfehler bei Kreuzprodukten; KiCads linkshändiges System wird beim

@@ -11,6 +11,7 @@ import { buildSource, groundNet, type CurrentElement, type SourceModel } from '.
 import { farMoment } from './farfield';
 import type { Source } from './sources';
 import type { Detour } from './returnPaths';
+import { lineAmp } from './spectrum';
 import type { CmEstimate } from './commonMode';
 
 /** A common-mode estimate this close to the limit (dB) or above becomes a finding. */
@@ -193,9 +194,9 @@ export function diagnoseSource(
   if ((src.type === 'signal' || src.type === 'diffpair') && model.info.fShort < Infinity) {
     const fq = 2.5 * model.info.fShort; // c / (4 · L · √εeff), with fShort = c / (10 · L · √εeff)
     const terminated = src.load.model === 'terminated' || (model.info.series ?? []).some((r) => r.ohms >= 10 && r.fromDriverMm <= SOURCE_TERMINATION_MM);
-    const peak = Math.max(...model.lines.map((l) => l.amp), 0);
+    const peak = Math.max(...model.lines.map((l) => lineAmp(l)), 0);
     const near = model.lines.filter((l) => l.f >= fq * 0.7 && l.f <= fq * 1.5);
-    if (!terminated && fq < fMax && near.some((l) => l.amp >= peak * RESONANCE_SHARE)) {
+    if (!terminated && fq < fMax && near.some((l) => lineAmp(l) >= peak * RESONANCE_SHARE)) {
       out.push({
         kind: 'long-line',
         sourceId: src.id,

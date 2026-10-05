@@ -44,3 +44,16 @@ describe('limits at band edges', () => {
     expect(limitAt(limitsFor('fcc15-b', 3), 88e6)).toBe(40);
   });
 });
+
+describe('thinned-out spectra', () => {
+  it('compare each harmonic with its own amplitude, not the band-power scaled one', async () => {
+    const { trapezoidLines, lineAmp, trapezoidCoefficient } = await import('../src/physics/spectrum');
+    const w = { f0: 500e3, duty: 0.3, tr: 5e-9, amplitude: 1 };
+    // up to 6 GHz with 4096 lines kept: every 3rd harmonic, amp scaled by √3
+    const lines = trapezoidLines(w, 6e9);
+    const l = lines.find((x) => x.f > 100e6)!;
+    const n = Math.round(l.f / w.f0);
+    expect(lineAmp(l)).toBeCloseTo(trapezoidCoefficient(w, n) / Math.SQRT2, 12);
+    expect(l.amp / lineAmp(l)).toBeCloseTo(Math.sqrt(3), 6);
+  });
+});
