@@ -15,10 +15,27 @@ the browser; the file does not leave the computer.
 | ODB++ | `.tgz`, `.tar.gz`, `.zip` or `.tar` archive of the job folder | Altium, Allegro/OrCAD, PADS/Xpedition, Zuken, KiCad, most CAM tools | layer matrix, stack-up from the attribute lists, outline (profile), tracks, arcs, pads, surfaces (filled copper with islands and holes), net of each feature, components with pins, values and nets, drill layers (pin holes, vias, span) | same board as KiCad's original, positions to 0.01 mm (the precision KiCad writes) |
 | Eagle / Fusion 360 Electronics | `.brd` (XML, Eagle 6 and later) | Autodesk Eagle, Fusion 360 Electronics | layers from the layer setup, outline (Dimension and Milling layers), elements with their packages from the embedded libraries, pads and vias with the design-rule sizes, wires (also curved), polygons, supply layers, restrict areas | pads, tracks and vias identical to KiCad's own Eagle import; copper pours computed (see below) |
 
-Not supported (yet): binary Eagle files from before version 6 (open and save them in Eagle 6 or
-later, or let KiCad convert them), native Altium (`.PcbDoc`), Allegro (`.brd` binary), PADS
-ASCII, EasyEDA, Gerber files. For these tools, export IPC-2581 or ODB++ instead: both carry the
-netlist, which a Gerber set does not.
+Not read directly: binary Eagle files from before version 6 (open and save them in Eagle 6 or
+later), native Altium (`.PcbDoc`), Allegro (`.brd` binary), PADS ASCII, EasyEDA, CADSTAR and
+Gerber files. For these, either export IPC-2581 or ODB++ from the tool (both carry the netlist,
+which a Gerber set does not), or let KiCad convert the native file (next section).
+
+## Native files through KiCad
+
+KiCad 10 imports Altium Designer, CircuitMaker and CircuitStudio (`.PcbDoc`), Cadence Allegro
+(`.brd`), EasyEDA Std and Pro, CADSTAR, PADS, P-CAD, Fabmaster, gEDA and SolidWorks PCB boards
+(File → Import → Non-KiCad Board File). Save the result as `.kicad_pcb` and open that in the app.
+The script `tools/convert/to_kicad.py` does the same from the command line with KiCad's Python
+module, and fills the zones so the poured copper is there:
+
+```bash
+python3 tools/convert/to_kicad.py board.PcbDoc            # writes board.kicad_pcb
+```
+
+Use the Python that comes with KiCad (on Linux the system `python3` with the `pcbnew` module). The
+conversion is KiCad's, not the app's: check the result in KiCad, especially the layer stack and
+the zones. KiCad's importers can fail on some files (one of the Eagle boards used for testing
+makes KiCad 10.0.6 crash while loading; the app's own Eagle importer reads it).
 
 ## How to export
 

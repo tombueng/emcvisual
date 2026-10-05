@@ -139,7 +139,9 @@ sources), and only **Open board** and **Demo board** stay in the top bar.
 **Supported formats:** KiCad `.kicad_pcb` files from KiCad 6 to 10. IPC-2581, Eagle/Fusion 360
 and ODB++ (see [IMPORT.md](IMPORT.md)): IPC-2581 `.xml` from Altium, Allegro/OrCAD,
 PADS/Xpedition, Zuken and KiCad; Eagle/Fusion 360 `.brd`; ODB++ archives. [IMPORT.md](IMPORT.md)
-describes what each importer reads and what it approximates.
+describes what each importer reads and what it approximates. Native files of Altium, Allegro,
+EasyEDA, CADSTAR, PADS and others can be converted with KiCad first (File → Import → Non-KiCad
+Board File, or `tools/convert/to_kicad.py`) and then opened as `.kicad_pcb`.
 
 There are five ways to open a board:
 

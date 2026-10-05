@@ -30,6 +30,7 @@ speaks English and German.
 | IPC-2581 `.xml` | Altium Designer, Cadence Allegro/OrCAD, Siemens PADS/Xpedition, Zuken, KiCad |
 | ODB++ archive `.tgz` / `.zip` | the same tools and most CAM software |
 | Eagle `.brd` (XML, Eagle 6 and later) | Autodesk Eagle, Fusion 360 Electronics |
+| native files of Altium, Allegro, EasyEDA, CADSTAR, PADS, P-CAD, … | through KiCad's importers (`tools/convert/to_kicad.py`), then as `.kicad_pcb` |
 
 Boards from IPC-2581 and ODB++ exports give the same board and the same results as the KiCad
 original (checked on real boards). Eagle stores only the outlines of copper pours; the app pours
